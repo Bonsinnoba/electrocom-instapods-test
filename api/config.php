@@ -1,0 +1,89 @@
+<?php
+/**
+ * Configuration Loader
+ * Loads environment variables from .env using phpdotenv and 
+ * provides a unified $config array for backward compatibility.
+ */
+
+require_once __DIR__ . '/vendor/autoload.php';
+
+use Dotenv\Dotenv;
+
+// Initialize Dotenv
+try {
+    $dotenv = Dotenv::createImmutable(__DIR__);
+    $dotenv->load();
+} catch (Exception $e) {
+    // If .env is missing in production, we might rely on actual environment variables
+    // so we don't necessarily want to halt, but in this project context .env is expected.
+}
+
+// Map environment variables to the $config array
+$config = [
+    'APP_ENV'             => $_ENV['APP_ENV'] ?? 'production',
+    'APP_URL'             => $_ENV['APP_URL'] ?? '',
+    'FRONTEND_URL'        => $_ENV['FRONTEND_URL'] ?? '',
+    
+    // Database
+    'DB_HOST'             => $_ENV['DB_HOST'] ?? 'localhost',
+    'DB_USER'             => $_ENV['DB_USER'] ?? '',
+    'DB_PASS'             => $_ENV['DB_PASS'] ?? '',
+    'DB_NAME'             => $_ENV['DB_NAME'] ?? '',
+    'DB_AUTO_REPAIR'      => filter_var($_ENV['DB_AUTO_REPAIR'] ?? false, FILTER_VALIDATE_BOOLEAN),
+    
+    // Security & Encryption
+    'JWT_SECRET'          => $_ENV['JWT_SECRET'] ?? '',
+    'PASSWORD_PEPPER'     => $_ENV['PASSWORD_PEPPER'] ?? '',
+    'DATA_ENCRYPTION_KEY' => $_ENV['DATA_ENCRYPTION_KEY'] ?? '',
+    
+    // Payment: Paystack
+    'PAYSTACK_SECRET'     => $_ENV['PAYSTACK_SECRET'] ?? '',
+    
+    // Social Login: Google
+    'GOOGLE_CLIENT_ID'     => $_ENV['GOOGLE_CLIENT_ID'] ?? '',
+    'GOOGLE_CLIENT_SECRET' => $_ENV['GOOGLE_CLIENT_SECRET'] ?? '',
+    'GOOGLE_REDIRECT'      => $_ENV['GOOGLE_REDIRECT'] ?? '',
+    
+    // Social Login: Github
+    'GITHUB_CLIENT_ID'     => $_ENV['GITHUB_CLIENT_ID'] ?? '',
+    'GITHUB_CLIENT_SECRET' => $_ENV['GITHUB_CLIENT_SECRET'] ?? '',
+    'GITHUB_REDIRECT'      => $_ENV['GITHUB_REDIRECT'] ?? '',
+    
+    // Notification: Email
+    'EMAIL_PROVIDER'    => $_ENV['EMAIL_PROVIDER'] ?? 'smtp',
+    'EMAIL_QUEUE_ENABLED' => filter_var($_ENV['EMAIL_QUEUE_ENABLED'] ?? true, FILTER_VALIDATE_BOOLEAN),
+    'EMAIL_MAX_ATTEMPTS'  => (int)($_ENV['EMAIL_MAX_ATTEMPTS'] ?? 5),
+    'EMAIL_SMTP_ENABLED'    => filter_var($_ENV['EMAIL_SMTP_ENABLED'] ?? true, FILTER_VALIDATE_BOOLEAN),
+    'EMAIL_MAILGUN_ENABLED' => filter_var($_ENV['EMAIL_MAILGUN_ENABLED'] ?? false, FILTER_VALIDATE_BOOLEAN),
+    'EMAIL_SENDGRID_ENABLED'=> filter_var($_ENV['EMAIL_SENDGRID_ENABLED'] ?? false, FILTER_VALIDATE_BOOLEAN),
+    'MAIL_FROM_NAME'      => $_ENV['MAIL_FROM_NAME'] ?? 'ElectrCom',
+    'MAIL_FROM'       => $_ENV['MAIL_FROM'] ?? '',
+    'SMTP_HOST'       => $_ENV['SMTP_HOST'] ?? '',
+    'SMTP_PORT'       => (int)($_ENV['SMTP_PORT'] ?? 587),
+    'SMTP_USER'       => $_ENV['SMTP_USER'] ?? '',
+    'SMTP_PASS'       => $_ENV['SMTP_PASS'] ?? '',
+    'SMTP_ENCRYPTION' => $_ENV['SMTP_ENCRYPTION'] ?? 'tls',
+    'MAILGUN_API_KEY' => $_ENV['MAILGUN_API_KEY'] ?? '',
+    'MAILGUN_DOMAIN'  => $_ENV['MAILGUN_DOMAIN'] ?? '',
+    'MAILGUN_REGION'  => $_ENV['MAILGUN_REGION'] ?? 'us',
+    'SENDGRID_API_KEY' => $_ENV['SENDGRID_API_KEY'] ?? '',
+    
+    // Notification: SMS (Hubtel)
+    'SMS_CLIENT_ID'     => $_ENV['SMS_CLIENT_ID'] ?? '',
+    'SMS_CLIENT_SECRET' => $_ENV['SMS_CLIENT_SECRET'] ?? '',
+    'SMS_FROM'          => $_ENV['SMS_FROM'] ?? '',
+    'SMS_API_URL'       => $_ENV['SMS_API_URL'] ?? '',
+    
+    // Business Logic
+    'ELITE_THRESHOLD' => (int)($_ENV['ELITE_THRESHOLD'] ?? 500),
+    'VIP_THRESHOLD'   => (int)($_ENV['VIP_THRESHOLD'] ?? 2000),
+    
+    // Complex Types (Parsed from comma-separated strings)
+    'ALLOWED_ORIGINS'     => array_filter(array_map('trim', explode(',', $_ENV['ALLOWED_ORIGINS'] ?? ''))),
+    'ALLOWED_IMAGE_BASES' => array_filter(array_map('trim', explode(',', $_ENV['ALLOWED_IMAGE_BASES'] ?? ''))),
+];
+
+// Provide global access if needed
+$GLOBALS['config'] = $config;
+
+return $config;
