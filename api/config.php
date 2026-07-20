@@ -26,9 +26,11 @@ $config = [
     
     // Database
     'DB_HOST'             => $_ENV['DB_HOST'] ?? 'localhost',
+    'DB_PORT'             => $_ENV['DB_PORT'] ?? 3306,
     'DB_USER'             => $_ENV['DB_USER'] ?? '',
     'DB_PASS'             => $_ENV['DB_PASS'] ?? '',
     'DB_NAME'             => $_ENV['DB_NAME'] ?? '',
+    'DB_SSL'              => filter_var($_ENV['DB_SSL'] ?? false, FILTER_VALIDATE_BOOLEAN),
     'DB_AUTO_REPAIR'      => filter_var($_ENV['DB_AUTO_REPAIR'] ?? false, FILTER_VALIDATE_BOOLEAN),
     
     // Security & Encryption
