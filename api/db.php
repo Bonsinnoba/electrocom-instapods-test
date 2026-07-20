@@ -12,10 +12,12 @@ if (!isset($config) || !is_array($config)) {
 require_once 'cors_middleware.php';
 
 $host = $config['DB_HOST'];
+$port = $config['DB_PORT'] ?? 3306;
 $user = $config['DB_USER'];
 $pass = $config['DB_PASS'];
 $db   = $config['DB_NAME'];
 $charset = 'utf8mb4';
+$ssl = $config['DB_SSL'] ?? false;
 
 $options = [
     PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
@@ -25,7 +27,13 @@ $options = [
     PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true,
 ];
 
-$dsn = "mysql:host=$host;dbname=$db;charset=$charset";
+$dsn = "mysql:host=$host;port=$port;dbname=$db;charset=$charset";
+
+// Add SSL options for Aiven MySQL
+if ($ssl) {
+    $options[PDO::MYSQL_ATTR_SSL_CA] = '/etc/ssl/certs/ca-certificates.crt';
+    $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
+}
 
 try {
     $pdo = new PDO($dsn, $user, $pass, $options);
