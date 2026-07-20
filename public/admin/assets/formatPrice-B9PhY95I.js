@@ -1,0 +1,1 @@
+const r=r=>{const t="string"==typeof r?parseFloat(r):r;return isNaN(t)?"GH₵ 0.00":new Intl.NumberFormat("en-GH",{style:"currency",currency:"GHS",minimumFractionDigits:2}).format(t).replace("GHS","GH₵")};export{r as f};
