@@ -1,0 +1,17 @@
+# Protect sensitive files and config
+<FilesMatch "(\.env\.php|db\.php|security\.php|cors_middleware\.php|schema\.sql|\.txt|\.log|\.htaccess)$">
+    Order Deny,Allow
+    Deny from all
+</FilesMatch>
+
+# Allow access to API endpoints
+<FilesMatch "^(index|login|register|auth|products|get_products|orders|update_profile|verify_payment|admin_.*|super_.*|get_slider|check_user_status|wallet|delete_account|coupons|notifications|reviews|wishlist|cart_sync|track_order|social_auth|logout|get_notifications|batch)\.php$">
+    Order Allow,Deny
+    Allow from all
+</FilesMatch>
+
+# Allow access to social_auth_exchange endpoint
+<FilesMatch "social_auth_exchange\.php$">
+    Order Allow,Deny
+    Allow from all
+</FilesMatch>
