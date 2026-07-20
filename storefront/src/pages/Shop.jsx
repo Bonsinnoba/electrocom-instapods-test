@@ -14,7 +14,7 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 export default function Shop({ products, onProductClick, searchQuery, loading }) {
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [visibleCount, setVisibleCount] = useState(9);
-  const [sortBy, setSortBy] = useState('featured');
+  const [sortBy, setSortBy] = useState('new');
   const [categories, setCategories] = useState([]);
   const [localPrice, setLocalPrice] = useState(2000); // Local state for responsive slider
   const [filters, setFilters] = useState({

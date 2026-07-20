@@ -1,13 +1,38 @@
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
+// Global token store for API calls (set by AuthContext)
+let globalAccessToken = null;
+let refreshPromise = null;
+
+export const setGlobalAccessToken = (token) => {
+    globalAccessToken = token;
+};
+
+export const getGlobalAccessToken = () => {
+    return globalAccessToken;
+};
+
 /**
- * Helper to decode HTML entities like &gt; to >
+ * Safe HTML entity decoder - prevents XSS by not using innerHTML
+ * Decodes common HTML entities to their character equivalents
  */
 const decodeHtml = (html) => {
     if (!html) return html;
-    const txt = document.createElement("textarea");
-    txt.innerHTML = html;
-    return txt.value;
+    const entityMap = {
+        '&amp;': '&',
+        '&lt;': '<',
+        '&gt;': '>',
+        '&quot;': '"',
+        '&#039;': "'",
+        '&#39;': "'",
+        '&apos;': "'",
+        '&nbsp;': ' ',
+        '&copy;': '©',
+        '&reg;': '®',
+        '&trade;': '™'
+    };
+    
+    return html.replace(/&[#\w]+;/g, (match) => entityMap[match] || match);
 };
 
 /**
@@ -35,14 +60,11 @@ export const formatImageUrl = (url) => {
     return `${API_BASE_URL}/${url.startsWith('/') ? url.slice(1) : url}`;
 };
 
-/**
- * Helper to get authentication headers
- */
-const getAuthHeaders = (contentType = 'application/json') => {
-    const token = localStorage.getItem('ehub_token');
+const getAuthHeaders = (token, contentType = 'application/json') => {
+    const authToken = (token === undefined || token === null) ? globalAccessToken : token;
     const headers = {
         'X-App-ID': 'admin',
-        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
     };
     if (contentType) {
         headers['Content-Type'] = contentType;
@@ -52,12 +74,11 @@ const getAuthHeaders = (contentType = 'application/json') => {
 
 /**
  * Helper to fetch with auth headers and global interceptor
+ * Uses global token and implements automatic refresh on 401
  */
-const authFetch = async (url, options = {}) => {
-    const authHeaders = getAuthHeaders();
-    if (!authHeaders.Authorization) {
-        return { success: false, message: 'Authentication token missing.' };
-    }
+const authFetch = async (url, options = {}, token = null) => {
+    const authToken = token || globalAccessToken;
+    const authHeaders = getAuthHeaders(authToken);
 
     try {
         const response = await fetch(`${API_BASE_URL}${url}`, {
@@ -557,89 +578,38 @@ export const deletePartner = async (id) => {
 // ─── Super User Endpoints ─────────────────────────────────────────────────────
 
 export const fetchSuperDashboard = async () => {
-    try {
-        const response = await fetch(`${API_BASE_URL}/super_dashboard.php`, {
-            headers: getAuthHeaders()
-        });
-        return await response.json();
-    } catch (error) {
-        console.error('Error fetching super dashboard:', error);
-        throw error;
-    }
+    return authFetch('/super_dashboard.php');
 };
 
 export const fetchLogs = async () => {
-    try {
-        const response = await fetch(`${API_BASE_URL}/super_logs.php`, {
-            headers: getAuthHeaders()
-        });
-        return await response.json();
-    } catch (error) {
-        console.error('Error fetching logs:', error);
-        throw error;
-    }
+    return authFetch('/super_logs.php');
 };
 
 export const clearLogs = async () => {
-    try {
-        const response = await fetch(`${API_BASE_URL}/super_logs.php`, {
-            method: 'POST',
-            headers: getAuthHeaders(),
-            body: JSON.stringify({ action: 'clear' }),
-        });
-        return await response.json();
-    } catch (error) {
-        console.error('Error clearing logs:', error);
-        throw error;
-    }
+    return authFetch('/super_logs.php', {
+        method: 'POST',
+        body: JSON.stringify({ action: 'clear' }),
+    });
 };
 
 export const deleteLogDay = async (dateStr) => {
-    try {
-        const response = await fetch(`${API_BASE_URL}/super_logs.php`, {
-            method: 'POST',
-            headers: getAuthHeaders(),
-            body: JSON.stringify({ action: 'delete_day', date: dateStr }),
-        });
-        return await response.json();
-    } catch (error) {
-        console.error('Error deleting log day:', error);
-        throw error;
-    }
+    return authFetch('/super_logs.php', {
+        method: 'POST',
+        body: JSON.stringify({ action: 'delete_day', date: dateStr }),
+    });
 };
 
 export const fetchSuperSettings = async () => {
-    try {
-        const response = await fetch(`${API_BASE_URL}/super_settings.php?_t=${Date.now()}`, {
-            headers: getAuthHeaders(),
-            cache: 'no-store',
-        });
-        return await response.json();
-    } catch (error) {
-        console.error('Error fetching super settings:', error);
-        throw error;
-    }
+    return authFetch(`/super_settings.php?_t=${Date.now()}`, {
+        cache: 'no-store',
+    });
 };
 
 export const saveSuperSettings = async (payload) => {
-    try {
-        const response = await fetch(`${API_BASE_URL}/super_settings.php`, {
-            method: 'POST',
-            headers: getAuthHeaders(),
-            body: JSON.stringify(payload),
-        });
-        const text = await response.text();
-        console.log('saveSuperSettings response:', text);
-        try {
-            return JSON.parse(text);
-        } catch (e) {
-            console.error('Invalid JSON response from server:', text);
-            return { success: false, message: 'Server returned an invalid response.', raw: text };
-        }
-    } catch (error) {
-        console.error('Error saving super settings:', error);
-        throw error;
-    }
+    return authFetch('/super_settings.php', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+    });
 };
 
 export const uploadBrandingAsset = async (file, type, oldPath = '') => {
@@ -672,7 +642,7 @@ export const uploadBrandingAsset = async (file, type, oldPath = '') => {
 
         const response = await fetch(`${API_BASE_URL}/upload_branding.php`, {
             method: 'POST',
-            headers: getAuthHeaders(null),
+            headers: getAuthHeaders(null, null),
             body: formData,
         });
         return await response.json();
@@ -868,3 +838,10 @@ export const deletePickupLocation = async (id) => authFetch('/admin_pickup_locat
     body: JSON.stringify({ action: 'delete', id })
 });
 
+// --- Flash Sale Banner Settings ---
+export const fetchFlashSaleBannerSettings = async () => authFetch('/flash_sale_banner_settings.php?admin=true');
+
+export const updateFlashSaleBannerSettings = async (settings) => authFetch('/flash_sale_banner_settings.php?admin=true', {
+    method: 'POST',
+    body: JSON.stringify(settings)
+});

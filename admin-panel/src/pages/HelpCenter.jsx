@@ -105,7 +105,7 @@ export default function HelpCenter() {
     ...(isManager ? [{ id: 'cms', label: 'Content Management' }] : []),
     { id: 'alerts', label: 'Alerts' },
     ...(!isMarketing ? [{ id: 'settings', label: 'Settings' }] : []),
-    ...(isSuper ? [{ id: 'super', label: 'Super admin' }] : []),
+    ...(isSuper ? [{ id: 'env-config', label: 'Environment Configuration' }, { id: 'super', label: 'Super admin' }] : []),
     { id: 'new-features', label: 'New Features (Phases 3-6)' },
   ];
 
@@ -776,7 +776,7 @@ export default function HelpCenter() {
                 ]}
               />
               <Callout type="note">
-                Settings here apply to your admin panel only, not the storefront. To change the storefront logo, site name, or customer-facing colours, go to Super Settings (super admin access required).
+                Settings here apply to your admin panel only, not the storefront. Store-wide branding (logo, site name, colours) is now configured via environment variables (.env) for better security and separation of concerns.
               </Callout>
               <Callout type="tip">
                 On shared or public workstations, set the session timeout to 5–10 minutes. On dedicated personal machines, 60 minutes is a comfortable default that avoids constant re-logins during a shift.
@@ -797,6 +797,54 @@ export default function HelpCenter() {
           )}
 
           {isSuper && (
+            <Section id="env-config" icon={<FileText size={22} />} title="Environment Configuration">
+              <p className="help-lead">
+                Environment configuration manages infrastructure-level settings that should not be stored in the database. These are configured via the <code>.env</code> file in the API directory and include store identity, assets, and email provider settings.
+              </p>
+              
+              <h3 style={{ fontSize: 15, fontWeight: 800, margin: '20px 0 8px', color: 'var(--text-main)' }}>Required environment variables</h3>
+              <StepList
+                items={[
+                  'SITE_NAME: Your store/business name displayed in the browser tab and email communications.',
+                  'SITE_EMAIL: Contact email for system notifications and alerts.',
+                  'PHONE1: Primary contact number shown on the storefront.',
+                  'PHONE2: Secondary contact number.',
+                  'WHATSAPP: WhatsApp contact number (international format, e.g. 233536683393).',
+                  'SITE_LOGO_URL: URL to your store logo (can be hosted externally or in uploads/branding/).',
+                  'FAVICON_URL: URL to your browser tab icon (favicon).',
+                ]}
+              />
+              
+              <h3 style={{ fontSize: 15, fontWeight: 800, margin: '20px 0 8px', color: 'var(--text-main)' }}>Email provider configuration</h3>
+              <p style={{ fontSize: 13, lineHeight: 1.65, color: 'var(--text-main)' }}>
+                Email provider settings (SMTP, Mailgun, Sendgrid) are now configured entirely through environment variables. The admin panel no longer displays email provider configuration options.
+              </p>
+              <StepList
+                items={[
+                  'EMAIL_PROVIDER: Choose between smtp, mailgun, or sendgrid.',
+                  'EMAIL_SMTP_ENABLED: Enable/disable SMTP email sending.',
+                  'EMAIL_MAILGUN_ENABLED: Enable/disable Mailgun email sending.',
+                  'EMAIL_SENDGRID_ENABLED: Enable/disable Sendgrid email sending.',
+                  'SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS: SMTP server credentials.',
+                  'MAILGUN_API_KEY, MAILGUN_DOMAIN: Mailgun API credentials.',
+                  'SENDGRID_API_KEY: Sendgrid API key.',
+                  'MAIL_FROM_NAME, MAIL_FROM: Default sender name and email address.',
+                ]}
+              />
+              
+              <Callout type="warning">
+                Environment variables are loaded when the API server starts. After modifying the .env file, you must restart the API server for changes to take effect.
+              </Callout>
+              <Callout type="note">
+                Hover colors (buttonPrimaryHover, buttonSecondaryHover, etc.) are no longer configured manually. They are automatically calculated from your theme presets (primary color, accent color, header background) using color manipulation algorithms.
+              </Callout>
+              <Callout type="tip">
+                Keep your .env file secure and never commit it to version control. Use .env.example as a template for required variables, and add .env to your .gitignore file.
+              </Callout>
+            </Section>
+          )}
+
+          {isSuper && (
             <Section id="super" icon={<ShieldAlert size={22} />} title="Super admin (Root Control)">
               <p className="help-lead">
                 Root Control is the super admin command centre. Every change here affects the <strong>entire store and all users</strong>.
@@ -812,9 +860,12 @@ export default function HelpCenter() {
                   'Pickup Locations: add, edit, or remove physical pickup points that customers can choose during checkout — changes reflect instantly on the storefront.',
                   'System Logs: a timestamped audit trail of all admin actions, API errors, and backend events. Use it to trace who changed what and when.',
                   'Traffic Control: monitor live request patterns, identify unusual spikes (potential scraping or DDoS), and manage IP-level blocks if needed.',
-                  'Super Settings: configure storefront branding (logo, site name, primary colour), email provider credentials (SMTP/API keys), maintenance mode, and session policies.',
+                  'Super Settings: configure storefront branding colours, SEO metadata, business hours, social media links, and operational policies. Identity (site name, email, phones), assets (logo, favicon), and email provider settings are now configured via environment variables (.env) for better security.',
                 ]}
               />
+              <Callout type="note">
+                Store identity (site name, contact email, phone numbers), assets (logo, favicon), and email provider configuration are now managed through environment variables in the API .env file. This improves security by keeping sensitive infrastructure configuration separate from the database. Hover colors are automatically calculated from theme presets.
+              </Callout>
               <Callout type="warning">
                 Enabling Maintenance Mode in Super Settings immediately locks out all non-super users from the admin panel and shows a maintenance message on the storefront. Always notify your team before activating it, and deactivate it as soon as the work is done.
               </Callout>

@@ -233,7 +233,7 @@ try {
         'domain' => '', // Current domain
         'secure' => $isProd ? true : (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on'),
         'httponly' => true,
-        'samesite' => 'Strict'
+        'samesite' => $isProd ? 'Strict' : 'Lax'
     ]);
     $frontend = $config['FRONTEND_URL'] ?? '';
     if ($frontend) {

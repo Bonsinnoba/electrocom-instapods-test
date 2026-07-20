@@ -118,7 +118,7 @@ try {
         'domain' => '',
         'secure' => $isProd ? true : (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on'),
         'httponly' => true,
-        'samesite' => 'Strict'
+        'samesite' => $isProd ? 'Strict' : 'Lax'
     ]);
 
     logger('ok', 'AUTH', "User {$user['email']} recovered their account and logged in successfully.");

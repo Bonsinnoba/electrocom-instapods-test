@@ -29,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' || $_SERVER['REQUEST_METHOD'] === 'POST
     try {
         // Query order and verify email matches the user who placed it
         $stmt = $pdo->prepare("
-            SELECT o.id, o.payment_reference, o.order_number, o.total_amount, o.status, o.created_at, o.updated_at, o.shipping_address, o.payment_method, u.email, u.name as customer_name
+            SELECT o.id, o.payment_reference, o.order_number, o.total_amount, o.status, o.created_at, o.updated_at, o.shipping_address, o.payment_method, o.delivery_method, o.pickup_location_id, u.email, u.name as customer_name
             FROM orders o
             JOIN users u ON o.user_id = u.id
             WHERE (o.payment_reference = ? OR o.order_number = ? OR o.id = ?) AND u.email = ?
@@ -95,6 +95,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' || $_SERVER['REQUEST_METHOD'] === 'POST
         }
 
         $order['timeline'] = $timeline;
+
+        // Add pickup location details if applicable and within deadline
+        if ($order['delivery_method'] === 'pickup' && $order['pickup_location_id']) {
+            $pickupStmt = $pdo->prepare("SELECT name, address, city, contact_person, contact_phone, pickup_instructions, what_to_bring, id_requirements, pickup_deadline_days FROM pickup_locations WHERE id = ?");
+            $pickupStmt->execute([$order['pickup_location_id']]);
+            $pickupData = $pickupStmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($pickupData) {
+                // Calculate pickup deadline
+                $orderDate = new DateTime($order['created_at']);
+                $deadlineDate = clone $orderDate;
+                $deadlineDate->modify('+' . ($pickupData['pickup_deadline_days'] ?? 7) . ' days');
+                $now = new DateTime();
+                
+                // Only include contact info if within deadline
+                if ($now <= $deadlineDate) {
+                    $order['pickup_location'] = [
+                        'name' => $pickupData['name'],
+                        'address' => $pickupData['address'],
+                        'city' => $pickupData['city'],
+                        'contact_person' => $pickupData['contact_person'],
+                        'contact_phone' => $pickupData['contact_phone'],
+                        'pickup_instructions' => $pickupData['pickup_instructions'],
+                        'what_to_bring' => $pickupData['what_to_bring'],
+                        'id_requirements' => $pickupData['id_requirements'],
+                        'pickup_deadline' => $deadlineDate->format('Y-m-d H:i:s')
+                    ];
+                } else {
+                    // Only show basic info if past deadline
+                    $order['pickup_location'] = [
+                        'name' => $pickupData['name'],
+                        'address' => $pickupData['address'],
+                        'city' => $pickupData['city'],
+                        'pickup_deadline' => $deadlineDate->format('Y-m-d H:i:s'),
+                        'deadline_passed' => true
+                    ];
+                }
+            }
+        }
 
         echo json_encode(['success' => true, 'data' => $order]);
     } catch (Exception $e) {

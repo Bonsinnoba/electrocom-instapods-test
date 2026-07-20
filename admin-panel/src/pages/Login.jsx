@@ -30,7 +30,8 @@ export default function Login() {
                 setError('Access denied: Unauthorized role.');
             } else {
                 // Use the login function from context to update state reactively
-                login(result.data.token, user);
+                // Access token is stored in memory, refresh token in HttpOnly cookie
+                login(result.data.access_token, user);
 
                 fetchAnalytics().catch(() => {});
                 fetchProducts().catch(() => {});

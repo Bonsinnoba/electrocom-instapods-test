@@ -115,15 +115,113 @@ const getFetchOptions = (options = {}) => {
 };
 
 /**
+ * Retry helper with exponential backoff
+ */
+const fetchWithRetry = async (url, options, maxRetries = 3, baseDelay = 1000) => {
+    let lastError;
+    
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+            const response = await fetch(url, options);
+            
+            // Don't retry on client errors (4xx) except 408 (Request Timeout) and 429 (Too Many Requests)
+            if (response.status >= 400 && response.status < 500 && 
+                response.status !== 408 && response.status !== 429) {
+                return response;
+            }
+            
+            // Don't retry on successful responses
+            if (response.ok) {
+                return response;
+            }
+            
+            // Retry on server errors (5xx) and network issues
+            lastError = new Error(`HTTP ${response.status}`);
+            
+            // If this is the last attempt, return the response
+            if (attempt === maxRetries) {
+                return response;
+            }
+            
+            // Exponential backoff: delay = baseDelay * 2^attempt
+            const delay = baseDelay * Math.pow(2, attempt);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            
+        } catch (error) {
+            lastError = error;
+            
+            // If this is the last attempt, throw the error
+            if (attempt === maxRetries) {
+                throw error;
+            }
+            
+            // Exponential backoff for network errors
+            const delay = baseDelay * Math.pow(2, attempt);
+            await new Promise(resolve => setTimeout(resolve, delay));
+        }
+    }
+    
+    throw lastError || new Error('Max retries exceeded');
+};
+
+/**
  * Global fetch wrapper that passively intercepts 401 Unauthorized responses
  * and triggers a global logout event instead of relying on wasteful 10-second background polling.
+ * Includes retry mechanism for network failures and server errors.
  */
 const apiFetch = async (url, options = {}) => {
-    const response = await fetch(url, options);
+    const response = await fetchWithRetry(url, options, 3, 1000);
+    
+    // Check for HTTP 401 status
     if (response.status === 401) {
-        window.dispatchEvent(new Event('auth_unauthorized'));
+        handleTokenExpiration();
+        return response;
     }
+    
+    // Check response body for token expiration errors
+    // Only parse JSON for non-401 responses to avoid double-handling
+    if (response.ok) {
+        try {
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                const clonedResponse = response.clone();
+                const data = await clonedResponse.json();
+                
+                // Check for specific error structure indicating token expiration
+                if (data.status === 'error' && 
+                    (data.message?.toLowerCase().includes('token') || 
+                     data.message?.toLowerCase().includes('unauthorized') ||
+                     data.message?.toLowerCase().includes('expired'))) {
+                    handleTokenExpiration();
+                }
+            }
+        } catch (e) {
+            // If JSON parsing fails, ignore and continue
+        }
+    }
+    
     return response;
+};
+
+/**
+ * Centralized token expiration handler
+ * Clears all auth tokens and dispatches global logout event
+ */
+const handleTokenExpiration = () => {
+    // Clear expired token from storage
+    try {
+        localStorage.removeItem('token');
+        sessionStorage.removeItem('token');
+        sessionStorage.removeItem('csrf_token');
+        // Also clear from secureStorage if available
+        if (typeof secureStorage !== 'undefined') {
+            secureStorage.removeItem('token', 'shared');
+        }
+    } catch (e) {
+        // Ignore storage errors
+    }
+    // Dispatch global logout event
+    window.dispatchEvent(new Event('auth_unauthorized'));
 };
 
 export const fetchProducts = async (category = null) => {
@@ -286,9 +384,17 @@ export const fetchOrderDetails = async (orderId) => {
 
 // Promise deduplication cache for in-flight requests
 const pendingRequests = new Map();
+const requestCache = new Map(); // Cache completed requests with TTL
 
 export const checkUserStatus = async () => {
     const requestKey = 'checkUserStatus';
+    const cacheTTL = 2000; // 2 seconds cache TTL
+    
+    // Check if we have a cached result that's still valid
+    const cached = requestCache.get(requestKey);
+    if (cached && Date.now() - cached.timestamp < cacheTTL) {
+        return cached.result;
+    }
     
     // Return existing in-flight promise if available
     if (pendingRequests.has(requestKey)) {
@@ -305,12 +411,17 @@ export const checkUserStatus = async () => {
                 if (response.status === 401) return { success: false, unauthorized: true };
                 return { success: false };
             }
-            return await response.json();
+            const result = await response.json();
+            
+            // Cache the result
+            requestCache.set(requestKey, { result, timestamp: Date.now() });
+            
+            return result;
         } catch (error) {
             console.error('Error checking user status:', error);
             return { success: false };
         } finally {
-            // Remove from cache when complete (success or failure)
+            // Remove from pending cache when complete
             pendingRequests.delete(requestKey);
         }
     })();
@@ -578,5 +689,20 @@ export const socialAuthExchange = async (code) => {
         console.error('API_BASE_URL:', API_BASE_URL);
         console.error('Code being sent:', code ? code.substring(0, 8) + '...' : 'none');
         return { success: false, message: 'Network error during social exchange.' };
+    }
+};
+
+export const fetchFlashSaleBannerSettings = async () => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/flash_sale_banner_settings.php`);
+        const result = await response.json();
+        if (result.success) {
+            return result.data;
+        }
+        console.error('API returned error:', result.message);
+        return null;
+    } catch (error) {
+        console.error('Error fetching flash sale banner settings:', error);
+        return null;
     }
 };

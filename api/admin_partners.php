@@ -19,6 +19,16 @@ try {
     exit;
 }
 
+// Validate CSRF token for state-changing requests
+if ($_SERVER['REQUEST_METHOD'] === 'POST' || $_SERVER['REQUEST_METHOD'] === 'PUT' || $_SERVER['REQUEST_METHOD'] === 'DELETE') {
+    $csrfToken = getCSRFTokenFromRequest();
+    if (!validateCSRFToken($csrfToken)) {
+        http_response_code(403);
+        echo json_encode(['success' => false, 'message' => 'Invalid or expired CSRF token.']);
+        exit;
+    }
+}
+
 // Self-healing: Ensure table exists
 try {
     $pdo->exec("CREATE TABLE IF NOT EXISTS partners (
@@ -34,6 +44,46 @@ try {
 }
 
 /**
+ * Helper to validate file type using magic numbers
+ */
+if (!function_exists('validateFileTypeByMagicNumber')) {
+    function validateFileTypeByMagicNumber(string $filePath, array $allowedTypes): bool
+    {
+        if (!file_exists($filePath) || !is_readable($filePath)) {
+            return false;
+        }
+
+        $handle = fopen($filePath, 'rb');
+        if (!$handle) {
+            return false;
+        }
+
+        $bytes = fread($handle, 12);
+        fclose($handle);
+
+        if (strlen($bytes) < 4) {
+            return false;
+        }
+
+        // Magic number signatures
+        $signatures = [
+            'image/jpeg' => "\xFF\xD8\xFF",
+            'image/png' => "\x89\x50\x4E\x47",
+            'image/gif' => "\x47\x49\x46",
+            'image/webp' => "\x52\x49\x46\x46"
+        ];
+
+        foreach ($allowedTypes as $type) {
+            if (isset($signatures[$type]) && strpos($bytes, $signatures[$type]) === 0) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}
+
+/**
  * Helper to save base64 image string as a partner logo file
  */
 if (!function_exists('saveBase64PartnerLogo')) {
@@ -45,7 +95,7 @@ if (!function_exists('saveBase64PartnerLogo')) {
 
         $dir = 'uploads/partners/';
         if (!file_exists($dir)) {
-            mkdir($dir, 0777, true);
+            mkdir($dir, 0755, true);
         }
 
         $parts = explode(',', $base64String);
@@ -54,14 +104,27 @@ if (!function_exists('saveBase64PartnerLogo')) {
         $header = $parts[0];
         $data = base64_decode($parts[1]);
 
-        preg_match('/image\/([a-z+]+);/', $header, $matches);
+        // Validate MIME type from header
+        preg_match('/image\/([a-z0-9+-]+)/', $header, $matches);
+        $mimeType = $matches[0] ?? '';
         $ext = $matches[1] ?? 'png';
         $ext = ($ext === 'jpeg') ? 'jpg' : $ext;
+
+        // Only allow specific MIME types
+        $allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        if (!in_array($mimeType, $allowedMimeTypes)) {
+            return normalizeLocalPath($base64String);
+        }
 
         $filename = 'logo_' . uniqid() . '.' . $ext;
         $filepath = $dir . $filename;
 
         if (file_put_contents($filepath, $data)) {
+            // Validate the saved file using magic numbers
+            if (!validateFileTypeByMagicNumber($filepath, $allowedMimeTypes)) {
+                unlink($filepath);
+                return normalizeLocalPath($base64String);
+            }
             return $filepath;
         }
 
@@ -144,7 +207,7 @@ try {
 
             $file = $_FILES['logo'];
             $uploadDir = __DIR__ . '/uploads/partners/';
-            if (!file_exists($uploadDir)) mkdir($uploadDir, 0777, true);
+            if (!file_exists($uploadDir)) mkdir($uploadDir, 0755, true);
 
             $filename = uniqid('logo_') . '.' . pathinfo($file['name'], PATHINFO_EXTENSION);
             $targetPath = $uploadDir . $filename;

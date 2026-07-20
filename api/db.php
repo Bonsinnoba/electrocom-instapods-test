@@ -12,7 +12,6 @@ if (!isset($config) || !is_array($config)) {
 require_once 'cors_middleware.php';
 
 $host = $config['DB_HOST'];
-$port = $config['DB_PORT'] ?? 3306;
 $user = $config['DB_USER'];
 $pass = $config['DB_PASS'];
 $db   = $config['DB_NAME'];
@@ -26,13 +25,7 @@ $options = [
     PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true,
 ];
 
-// Add SSL if configured (required for Aiven)
-if ($config['DB_SSL'] ?? false) {
-    $options[PDO::MYSQL_ATTR_SSL_CA] = '/etc/ssl/certs/ca-certificates.crt'; // Linux CA bundle
-    $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false; // For testing
-}
-
-$dsn = "mysql:host=$host;port=$port;dbname=$db;charset=$charset";
+$dsn = "mysql:host=$host;dbname=$db;charset=$charset";
 
 try {
     $pdo = new PDO($dsn, $user, $pass, $options);
@@ -97,22 +90,24 @@ try {
     }
 } catch (\Throwable $e) {
     // SECURITY: Don't expose database credentials/paths in production
-    // UNLESS Debug Mode is explicitly enabled
+    // UNLESS Debug Mode is explicitly enabled and we're in development environment
     $message = 'Internal Server Error: Service Unavailable.';
 
     // Check debug status if security.php was loaded, otherwise check file directly
     $debug = false;
+    $isDev = ($config['APP_ENV'] ?? 'production') === 'development';
+    
     if (function_exists('isDebugEnabled')) {
-        $debug = isDebugEnabled();
+        $debug = isDebugEnabled() && $isDev;
     } else {
         $sf = __DIR__ . '/data/super_settings.json';
         if (file_exists($sf)) {
             $s = json_decode(file_get_contents($sf), true);
-            $debug = isset($s['debugMode']) && $s['debugMode'] === true;
+            $debug = isset($s['debugMode']) && $s['debugMode'] === true && $isDev;
         }
     }
 
-    if ($debug) {
+    if ($debug && $isDev) {
         $message = "DATABASE CONNECTION ERROR: " . $e->getMessage();
     } else {
         error_log("Database connection failed: " . $e->getMessage());
@@ -123,7 +118,7 @@ try {
     echo json_encode([
         'success' => false,
         'message' => $message,
-        'debug_info' => $debug ? [
+        'debug_info' => ($debug && $isDev) ? [
             'file' => $e->getFile(),
             'line' => $e->getLine(),
             'trace' => explode("\n", $e->getTraceAsString())

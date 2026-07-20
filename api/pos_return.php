@@ -1,6 +1,6 @@
 <?php
 /**
- * POS in-store returns: only orders with order_type = 'pos', within 48 hours of order created_at.
+ * POS in-store returns: handles both POS orders (within 48 hours) and online orders (within 7 days)
  */
 require_once 'db.php';
 require_once 'security.php';
@@ -72,28 +72,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             exit;
         }
 
-        if (($order['order_type'] ?? '') !== 'pos') {
-            http_response_code(400);
-            echo json_encode(['success' => false, 'message' => 'Returns at POS are only for in-store (POS) sales. Use Returns Management for other orders.']);
-            exit;
-        }
+        $orderType = $order['order_type'] ?? '';
+        $isPosOrder = $orderType === 'pos';
+        $returnWindowHours = $isPosOrder ? 48 : 168; // 48 hours for POS, 7 days (168 hours) for online orders
 
         $winStmt = $pdo->prepare("
             SELECT id FROM orders
             WHERE id = ?
-              AND order_type = 'pos'
-              AND created_at >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 48 HOUR)
+              AND created_at >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL ? HOUR)
         ");
-        $winStmt->execute([$orderId]);
+        $winStmt->execute([$orderId, $returnWindowHours]);
         if (!$winStmt->fetchColumn()) {
             $ageStmt = $pdo->prepare('SELECT TIMESTAMPDIFF(MINUTE, created_at, UTC_TIMESTAMP()) FROM orders WHERE id = ?');
             $ageStmt->execute([$orderId]);
             $ageMinutes = (int)$ageStmt->fetchColumn();
+            $windowDesc = $isPosOrder ? '48-hour POS return window' : '7-day in-store return window for online orders';
             echo json_encode([
                 'success' => false,
-                'message' => 'This sale is outside the 48-hour POS return window.',
+                'message' => "This sale is outside the {$windowDesc}.",
                 'eligible' => false,
                 'hours_since_sale' => round($ageMinutes / 60, 2),
+                'return_window_hours' => $returnWindowHours
             ]);
             exit;
         }
@@ -172,28 +171,31 @@ try {
     ensure_returns_table($pdo);
     $pdo->beginTransaction();
 
+    // First get order details to determine type and return window
+    $chk = $pdo->prepare("SELECT id, order_type, created_at FROM orders WHERE id = ?");
+    $chk->execute([$orderId]);
+    $row = $chk->fetch(PDO::FETCH_ASSOC);
+    if (!$row) {
+        throw new Exception('Order not found');
+    }
+
+    $orderType = $row['order_type'] ?? '';
+    $isPosOrder = $orderType === 'pos';
+    $returnWindowHours = $isPosOrder ? 48 : 168; // 48 hours for POS, 7 days for online
+
     $oStmt = $pdo->prepare("
         SELECT id, order_type, created_at
         FROM orders
         WHERE id = ?
-          AND order_type = 'pos'
-          AND created_at >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 48 HOUR)
+          AND created_at >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL ? HOUR)
         FOR UPDATE
     ");
-    $oStmt->execute([$orderId]);
+    $oStmt->execute([$orderId, $returnWindowHours]);
     $order = $oStmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$order) {
-        $chk = $pdo->prepare("SELECT id, order_type FROM orders WHERE id = ?");
-        $chk->execute([$orderId]);
-        $row = $chk->fetch(PDO::FETCH_ASSOC);
-        if (!$row) {
-            throw new Exception('Order not found');
-        }
-        if (($row['order_type'] ?? '') !== 'pos') {
-            throw new Exception('Not a POS order');
-        }
-        throw new Exception('Return window expired (48 hours from sale).');
+        $windowDesc = $isPosOrder ? '48 hours from sale' : '7 days from sale';
+        throw new Exception("Return window expired ({$windowDesc}).");
     }
 
     $insReturn = $pdo->prepare('INSERT INTO order_returns (order_id, product_id, quantity, reason, processed_by) VALUES (?, ?, ?, ?, ?)');

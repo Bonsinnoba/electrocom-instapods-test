@@ -393,11 +393,6 @@ export default function GlobalSettings() {
       primaryColor: preset.primaryColor,
       accentColor: preset.accentColor,
       headerBg: preset.headerBg,
-      buttonPrimaryHover: preset.buttonPrimaryHover,
-      buttonSecondaryHover: preset.buttonSecondaryHover,
-      buttonAccentHover: preset.buttonAccentHover,
-      linkHover: preset.linkHover,
-      cardHover: preset.cardHover,
     };
     setSettings(updated);
     setSelectedPreset(presetKey);
@@ -509,48 +504,13 @@ export default function GlobalSettings() {
         {/* ── GENERAL ─────────────────────────────────────────────────────── */}
         {tab === 'general' && (
           <>
-            <SectionHeader title="Identity" />
-            <Field label="Site Name" description="Displayed in the browser tab and email communications." icon={<Globe size={14} />}>
-              <input style={inputStyle} value={settings.siteName || ''} onChange={setVal('siteName')} />
-            </Field>
-            <Field label="Contact Email" description="System notifications and alerts are sent from this address." icon={<Mail size={14} />}>
-              <input style={inputStyle} type="email" value={settings.siteEmail || ''} onChange={setVal('siteEmail')} />
-            </Field>
-            <Field label="Site tagline" description="Shown after the site name in the browser tab (e.g. “My Store | Shop online”)." icon={<Type size={14} />}>
+            <SectionHeader title="SEO" />
+            <Field label="Site tagline" description="Shown after the site name in the browser tab (e.g. &quot;My Store | Shop online&quot;)." icon={<Type size={14} />}>
               <input style={inputStyle} value={settings.siteTagline || ''} onChange={setVal('siteTagline')} placeholder="e.g. Shop online" />
             </Field>
             <Field label="Meta description (SEO)" description="Short summary for search engines; applied to the storefront on load." icon={<Globe size={14} />}>
               <textarea style={textareaStyle} rows={2} value={settings.metaDescription || ''} onChange={setVal('metaDescription')} placeholder="A brief description of your store for search results." />
             </Field>
-            <Field label="Phone Number 1" description="Primary contact number shown on the storefront." icon={<Smartphone size={14} />}>
-              <input style={inputStyle} value={settings.phone1 || ''} onChange={setVal('phone1')} />
-            </Field>
-            <Field label="Phone Number 2" description="Secondary contact number." icon={<Smartphone size={14} />}>
-              <input style={inputStyle} value={settings.phone2 || ''} onChange={setVal('phone2')} />
-            </Field>
-            <Field label="WhatsApp Number" description="Use international format, e.g. 233536683393." icon={<Smartphone size={14} />}>
-              <input style={inputStyle} value={settings.whatsapp || ''} onChange={setVal('whatsapp')} />
-            </Field>
-
-            <SectionHeader title="Assets" />
-            <FileUploadField 
-              label="Site Logo" 
-              description="Upload your official logo. Displayed in header and emails." 
-              icon={<Image size={14} />}
-              type="logo"
-              value={settings.siteLogoUrl}
-              oldPath={settings.siteLogoUrl}
-              onChange={set('siteLogoUrl')}
-            />
-            <FileUploadField 
-              label="Favicon" 
-              description="Browser tab icon. Recommended: 32x32 .ico or .png" 
-              icon={<Eye size={14} />}
-              type="favicon"
-              value={settings.faviconUrl}
-              oldPath={settings.faviconUrl}
-              onChange={set('faviconUrl')}
-            />
 
             <SectionHeader title="Location & Hours" />
             <Field label="Store Address" description="Physical address shown in the footer and contact page." icon={<MapPin size={14} />}>
@@ -631,38 +591,6 @@ export default function GlobalSettings() {
               description="Background colour of the storefront navigation bar."
               value={settings.headerBg}
               onChange={setColor('headerBg')}
-            />
-
-            <SectionHeader title="Hover Colours (Storefront)" />
-            <ColorField
-              label="Primary Button Hover"
-              description="Colour when hovering over primary action buttons."
-              value={settings.buttonPrimaryHover}
-              onChange={setColor('buttonPrimaryHover')}
-            />
-            <ColorField
-              label="Secondary Button Hover"
-              description="Colour when hovering over secondary buttons."
-              value={settings.buttonSecondaryHover}
-              onChange={setColor('buttonSecondaryHover')}
-            />
-            <ColorField
-              label="Accent Button Hover"
-              description="Colour when hovering over accent/gold buttons."
-              value={settings.buttonAccentHover}
-              onChange={setColor('buttonAccentHover')}
-            />
-            <ColorField
-              label="Link Hover"
-              description="Colour when hovering over links."
-              value={settings.linkHover}
-              onChange={setColor('linkHover')}
-            />
-            <ColorField
-              label="Card Hover"
-              description="Background colour when hovering over product cards."
-              value={settings.cardHover}
-              onChange={setColor('cardHover')}
             />
 
             <SectionHeader title="Typography" />

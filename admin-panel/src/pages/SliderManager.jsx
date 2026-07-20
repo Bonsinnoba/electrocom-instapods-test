@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { 
+import {
   fetchAdminSlides, createSlide, updateSlide, deleteSlide, formatImageUrl,
-  fetchAdminPartners, createPartner, updatePartner, deletePartner
+  fetchAdminPartners, createPartner, updatePartner, deletePartner,
+  fetchFlashSaleBannerSettings, updateFlashSaleBannerSettings
 } from '../services/api';
 import { useNotifications } from '../context/NotificationContext';
 import { useConfirm } from '../context/ConfirmContext';
@@ -10,6 +11,74 @@ import { compressImageAuto } from '../utils/imageCompression';
 const isVideo = (url) => url && (url.match(/\.(mp4|webm)$/i) || url.startsWith('data:video'));
 
 import { Plus, Edit2, Trash2, CheckCircle, XCircle, Upload, Shield } from 'lucide-react';
+
+/**
+ * Sanitize user input to prevent XSS attacks
+ * Removes dangerous HTML tags and attributes
+ */
+const sanitizeInput = (input) => {
+  if (typeof input !== 'string') return input;
+  
+  // Remove script tags and event handlers
+  return input
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/on\w+="[^"]*"/gi, '')
+    .replace(/on\w+='[^']*'/gi, '')
+    .replace(/javascript:/gi, '')
+    .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '');
+};
+
+/**
+ * Validate and sanitize content blocks
+ */
+const sanitizeContentBlocks = (blocks) => {
+  if (!Array.isArray(blocks)) return [];
+  
+  return blocks.map(block => ({
+    ...block,
+    text: sanitizeInput(block.text || ''),
+    link: sanitizeInput(block.link || ''),
+    // Only allow safe CSS properties
+    color: block.color && /^#[0-9A-Fa-f]{6}$/.test(block.color) ? block.color : '#ffffff',
+    fontSize: block.fontSize || '16px',
+    textAlign: ['left', 'center', 'right'].includes(block.textAlign) ? block.textAlign : 'center',
+    type: ['paragraph', 'heading', 'subheading', 'cta'].includes(block.type) ? block.type : 'paragraph'
+  }));
+};
+
+/**
+ * Validate slider form data
+ */
+const validateSliderData = (formData) => {
+  const errors = {};
+  
+  if (formData.title && formData.title.length > 255) {
+    errors.title = 'Title must be less than 255 characters';
+  }
+  
+  if (formData.subtitle && formData.subtitle.length > 500) {
+    errors.subtitle = 'Subtitle must be less than 500 characters';
+  }
+  
+  if (formData.button_text && formData.button_text.length > 100) {
+    errors.button_text = 'Button text must be less than 100 characters';
+  }
+  
+  if (formData.button_link && formData.button_link.length > 255) {
+    errors.button_link = 'Button link must be less than 255 characters';
+  }
+  
+  // Validate URL format for button_link
+  if (formData.button_link && !formData.button_link.startsWith('/')) {
+    try {
+      new URL(formData.button_link);
+    } catch {
+      errors.button_link = 'Button link must be a valid URL or relative path';
+    }
+  }
+  
+  return errors;
+};
 
 const PREDEFINED_LINKS = [
   { value: '/shop', label: 'Shop Homepage' },
@@ -27,15 +96,39 @@ const PREDEFINED_LINKS = [
 export default function SliderManager() {
   const { addToast } = useNotifications();
   const { confirm } = useConfirm();
-  
+
   // Tab State
   const [activeTab, setActiveTab] = useState('hero');
-  
+
   // Data States
   const [slides, setSlides] = useState([]);
   const [partners, setPartners] = useState([]);
+  const [bannerSettings, setBannerSettings] = useState({
+    is_enabled: 1,
+    new_arrivals_enabled: 1,
+    new_arrivals_days: 7,
+    new_arrivals_title: 'Just Arrived',
+    new_arrivals_subtitle: '{count} new products added this week',
+    new_arrivals_cta: 'Explore New',
+    low_stock_enabled: 1,
+    low_stock_threshold: 5,
+    low_stock_title: 'Low Stock Alert',
+    low_stock_subtitle: '{count} items running low - grab them before they\'re gone',
+    low_stock_cta: 'Shop Now',
+    popular_enabled: 1,
+    popular_title: 'Trending Now',
+    popular_subtitle: 'Most popular items based on customer purchases',
+    popular_cta: 'View Popular',
+    promotion_enabled: 1,
+    promotion_title: 'Free Shipping',
+    promotion_subtitle: 'On orders over GHS 500',
+    promotion_cta: 'Start Shopping',
+    flash_sale_title: 'Limited Time Flash Sale',
+    flash_sale_subtitle: 'Spotlight Deal: {product_name}',
+    flash_sale_cta: 'Shop Deal'
+  });
   const [loading, setLoading] = useState(true);
-  
+
   // Modal & Edit States
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSlide, setEditingSlide] = useState(null);
@@ -75,6 +168,23 @@ export default function SliderManager() {
     setLoading(false);
   };
 
+  const loadBannerSettings = async () => {
+    setLoading(true);
+    try {
+      const response = await fetchFlashSaleBannerSettings();
+      if (response.success) {
+        setBannerSettings(response.data);
+      } else {
+        console.error('Failed to load banner settings:', response.message);
+        addToast('Failed to load banner settings', 'error');
+      }
+    } catch (error) {
+      console.error('Error loading banner settings:', error);
+      addToast('Error loading banner settings', 'error');
+    }
+    setLoading(false);
+  };
+
   const user = JSON.parse(localStorage.getItem('ehub_user') || '{}');
   const isAccountant = user.role === 'accountant';
 
@@ -82,8 +192,10 @@ export default function SliderManager() {
     if (!isAccountant) {
       if (activeTab === 'hero') {
         loadSlides();
-      } else {
+      } else if (activeTab === 'partners') {
         loadPartners();
+      } else if (activeTab === 'flash_sale_banner') {
+        loadBannerSettings();
       }
     }
   }, [activeTab]);
@@ -258,11 +370,28 @@ export default function SliderManager() {
   const handleSave = async (e) => {
     e.preventDefault();
     if (activeTab === 'hero') {
+      // Validate form data
+      const validationErrors = validateSliderData(formData);
+      if (Object.keys(validationErrors).length > 0) {
+        Object.values(validationErrors).forEach(error => addToast(error, 'error'));
+        return;
+      }
+
+      // Sanitize content blocks
+      const sanitizedFormData = {
+        ...formData,
+        title: sanitizeInput(formData.title || ''),
+        subtitle: sanitizeInput(formData.subtitle || ''),
+        button_text: sanitizeInput(formData.button_text || ''),
+        button_link: sanitizeInput(formData.button_link || ''),
+        content_blocks: sanitizeContentBlocks(formData.content_blocks)
+      };
+
       try {
         if (editingSlide) {
-          await updateSlide(editingSlide.id, formData);
+          await updateSlide(editingSlide.id, sanitizedFormData);
         } else {
-          await createSlide(formData);
+          await createSlide(sanitizedFormData);
         }
         addToast(editingSlide ? 'Slide updated successfully' : 'Slide created successfully', 'success');
         closeModal();
@@ -271,11 +400,22 @@ export default function SliderManager() {
         addToast(err.message || 'Error saving slide', 'error');
       }
     } else {
+      // Validate partner data
+      if (partnerFormData.name && partnerFormData.name.length > 255) {
+        addToast('Partner name must be less than 255 characters', 'error');
+        return;
+      }
+
+      const sanitizedPartnerData = {
+        ...partnerFormData,
+        name: sanitizeInput(partnerFormData.name || '')
+      };
+
       try {
         if (editingPartner) {
-          await updatePartner(editingPartner.id, partnerFormData);
+          await updatePartner(editingPartner.id, sanitizedPartnerData);
         } else {
-          await createPartner(partnerFormData);
+          await createPartner(sanitizedPartnerData);
         }
         addToast(editingPartner ? 'Partner updated successfully' : 'Partner created successfully', 'success');
         closeModal();
@@ -330,36 +470,40 @@ export default function SliderManager() {
     <div className="page-container animate-fade-in">
       <div className="page-header">
         <div>
-           <h1 className="page-title">{activeTab === 'hero' ? 'Hero Slider' : 'Partners Slider'}</h1>
+           <h1 className="page-title">{activeTab === 'hero' ? 'Hero Slider' : activeTab === 'partners' ? 'Partners Slider' : 'Flash Sale Banner'}</h1>
            <p className="page-subtitle">
-             {activeTab === 'hero' 
-               ? 'Manage the promotional banner slides displayed at the top of your homepage.' 
-               : 'Manage the scrolling partner logo list shown at the bottom of the store.'}
+             {activeTab === 'hero'
+               ? 'Manage the promotional banner slides displayed at the top of your homepage.'
+               : activeTab === 'partners'
+               ? 'Manage the scrolling partner logo list shown at the bottom of the store.'
+               : 'Configure the flash sale banner that appears on the homepage.'}
            </p>
         </div>
-        <button onClick={() => openModal()} className="btn-primary">
-          <Plus size={20} />
-          {activeTab === 'hero' ? 'Add Slide' : 'Add Partner'}
-        </button>
+        {activeTab !== 'flash_sale_banner' && (
+          <button onClick={() => openModal()} className="btn-primary">
+            <Plus size={20} />
+            {activeTab === 'hero' ? 'Add Slide' : 'Add Partner'}
+          </button>
+        )}
       </div>
 
       {/* Tab Switcher */}
-      <div style={{ 
-        display: 'flex', 
-        gap: '12px', 
-        marginBottom: '32px', 
-        borderBottom: '1px solid var(--border-light)', 
-        paddingBottom: '12px' 
+      <div style={{
+        display: 'flex',
+        gap: '12px',
+        marginBottom: '32px',
+        borderBottom: '1px solid var(--border-light)',
+        paddingBottom: '12px'
       }}>
-        <button 
-          onClick={() => setActiveTab('hero')} 
-          style={{ 
-            padding: '10px 24px', 
-            borderRadius: '12px', 
-            background: activeTab === 'hero' ? 'var(--primary-blue)' : 'transparent', 
-            color: activeTab === 'hero' ? '#white' : 'var(--text-muted)', 
-            border: 'none', 
-            fontWeight: 700, 
+        <button
+          onClick={() => setActiveTab('hero')}
+          style={{
+            padding: '10px 24px',
+            borderRadius: '12px',
+            background: activeTab === 'hero' ? 'var(--primary-blue)' : 'transparent',
+            color: activeTab === 'hero' ? '#white' : 'var(--text-muted)',
+            border: 'none',
+            fontWeight: 700,
             cursor: 'pointer',
             transition: 'all 0.2s',
             boxShadow: activeTab === 'hero' ? '0 4px 15px rgba(59, 130, 246, 0.2)' : 'none'
@@ -367,15 +511,15 @@ export default function SliderManager() {
         >
           Hero Slides
         </button>
-        <button 
-          onClick={() => setActiveTab('partners')} 
-          style={{ 
-            padding: '10px 24px', 
-            borderRadius: '12px', 
-            background: activeTab === 'partners' ? 'var(--primary-blue)' : 'transparent', 
-            color: activeTab === 'partners' ? 'white' : 'var(--text-muted)', 
-            border: 'none', 
-            fontWeight: 700, 
+        <button
+          onClick={() => setActiveTab('partners')}
+          style={{
+            padding: '10px 24px',
+            borderRadius: '12px',
+            background: activeTab === 'partners' ? 'var(--primary-blue)' : 'transparent',
+            color: activeTab === 'partners' ? 'white' : 'var(--text-muted)',
+            border: 'none',
+            fontWeight: 700,
             cursor: 'pointer',
             transition: 'all 0.2s',
             boxShadow: activeTab === 'partners' ? '0 4px 15px rgba(59, 130, 246, 0.2)' : 'none'
@@ -383,10 +527,305 @@ export default function SliderManager() {
         >
           Partner Logos
         </button>
+        <button
+          onClick={() => setActiveTab('flash_sale_banner')}
+          style={{
+            padding: '10px 24px',
+            borderRadius: '12px',
+            background: activeTab === 'flash_sale_banner' ? 'var(--primary-blue)' : 'transparent',
+            color: activeTab === 'flash_sale_banner' ? 'white' : 'var(--text-muted)',
+            border: 'none',
+            fontWeight: 700,
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+            boxShadow: activeTab === 'flash_sale_banner' ? '0 4px 15px rgba(59, 130, 246, 0.2)' : 'none'
+          }}
+        >
+          Flash Sale Banner
+        </button>
       </div>
 
       {loading ? (
         <div className="loading-state">Loading data...</div>
+      ) : activeTab === 'flash_sale_banner' ? (
+        /* FLASH SALE BANNER SETTINGS */
+        <div className="card glass" style={{ padding: '32px' }}>
+          <h2 style={{ marginTop: 0, marginBottom: '24px', fontWeight: 800 }}>Flash Sale Banner Settings</h2>
+          <p style={{ color: 'var(--text-muted)', marginBottom: '32px' }}>
+            Configure the flash sale banner that appears on the homepage. Customize messages, thresholds, and enable/disable different content types.
+          </p>
+
+          <form onSubmit={async (e) => {
+            e.preventDefault();
+            try {
+              await updateFlashSaleBannerSettings(bannerSettings);
+              addToast('Banner settings updated successfully', 'success');
+            } catch (err) {
+              addToast(err.message || 'Error updating settings', 'error');
+            }
+          }} style={{ display: 'grid', gap: '32px' }}>
+              {/* General Settings */}
+              <div style={{ border: '1px solid var(--border-light)', borderRadius: '16px', padding: '24px', background: 'var(--bg-surface-secondary)' }}>
+                <h3 style={{ marginTop: 0, marginBottom: '20px', fontSize: '18px', fontWeight: 800 }}>General Settings</h3>
+                <div className="form-group" style={{ marginBottom: '16px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={bannerSettings.is_enabled}
+                      onChange={(e) => setBannerSettings({ ...bannerSettings, is_enabled: e.target.checked ? 1 : 0 })}
+                      style={{ width: '20px', height: '20px' }}
+                    />
+                    <span style={{ fontWeight: 600 }}>Enable Flash Sale Banner</span>
+                  </label>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '8px', marginLeft: '32px' }}>
+                    When disabled, the banner will not show on the homepage
+                  </p>
+                </div>
+              </div>
+
+              {/* Flash Sale Settings */}
+              <div style={{ border: '1px solid var(--border-light)', borderRadius: '16px', padding: '24px', background: 'var(--bg-surface-secondary)' }}>
+                <h3 style={{ marginTop: 0, marginBottom: '20px', fontSize: '18px', fontWeight: 800 }}>Flash Sale Content</h3>
+                <div style={{ display: 'grid', gap: '16px' }}>
+                  <div className="form-group">
+                    <label>Title</label>
+                    <input
+                      type="text"
+                      value={bannerSettings.flash_sale_title}
+                      onChange={(e) => setBannerSettings({ ...bannerSettings, flash_sale_title: e.target.value })}
+                      className="input-field"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Subtitle (use {'{product_name}'} for product name)</label>
+                    <input
+                      type="text"
+                      value={bannerSettings.flash_sale_subtitle}
+                      onChange={(e) => setBannerSettings({ ...bannerSettings, flash_sale_subtitle: e.target.value })}
+                      className="input-field"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>CTA Button Text</label>
+                    <input
+                      type="text"
+                      value={bannerSettings.flash_sale_cta}
+                      onChange={(e) => setBannerSettings({ ...bannerSettings, flash_sale_cta: e.target.value })}
+                      className="input-field"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* New Arrivals Settings */}
+              <div style={{ border: '1px solid var(--border-light)', borderRadius: '16px', padding: '24px', background: 'var(--bg-surface-secondary)' }}>
+                <h3 style={{ marginTop: 0, marginBottom: '20px', fontSize: '18px', fontWeight: 800 }}>New Arrivals Fallback</h3>
+                <div style={{ display: 'grid', gap: '16px' }}>
+                  <div className="form-group">
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        checked={bannerSettings.new_arrivals_enabled}
+                        onChange={(e) => setBannerSettings({ ...bannerSettings, new_arrivals_enabled: e.target.checked ? 1 : 0 })}
+                        style={{ width: '20px', height: '20px' }}
+                      />
+                      <span style={{ fontWeight: 600 }}>Enable New Arrivals</span>
+                    </label>
+                  </div>
+                  <div className="form-group">
+                    <label>Days Threshold (products added within X days)</label>
+                    <input
+                      type="number"
+                      value={bannerSettings.new_arrivals_days}
+                      onChange={(e) => setBannerSettings({ ...bannerSettings, new_arrivals_days: parseInt(e.target.value) || 7 })}
+                      className="input-field"
+                      min="1"
+                      max="30"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Title</label>
+                    <input
+                      type="text"
+                      value={bannerSettings.new_arrivals_title}
+                      onChange={(e) => setBannerSettings({ ...bannerSettings, new_arrivals_title: e.target.value })}
+                      className="input-field"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Subtitle (use {'{count}'} for number of products)</label>
+                    <input
+                      type="text"
+                      value={bannerSettings.new_arrivals_subtitle}
+                      onChange={(e) => setBannerSettings({ ...bannerSettings, new_arrivals_subtitle: e.target.value })}
+                      className="input-field"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>CTA Button Text</label>
+                    <input
+                      type="text"
+                      value={bannerSettings.new_arrivals_cta}
+                      onChange={(e) => setBannerSettings({ ...bannerSettings, new_arrivals_cta: e.target.value })}
+                      className="input-field"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Low Stock Settings */}
+              <div style={{ border: '1px solid var(--border-light)', borderRadius: '16px', padding: '24px', background: 'var(--bg-surface-secondary)' }}>
+                <h3 style={{ marginTop: 0, marginBottom: '20px', fontSize: '18px', fontWeight: 800 }}>Low Stock Alert Fallback</h3>
+                <div style={{ display: 'grid', gap: '16px' }}>
+                  <div className="form-group">
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        checked={bannerSettings.low_stock_enabled}
+                        onChange={(e) => setBannerSettings({ ...bannerSettings, low_stock_enabled: e.target.checked ? 1 : 0 })}
+                        style={{ width: '20px', height: '20px' }}
+                      />
+                      <span style={{ fontWeight: 600 }}>Enable Low Stock Alerts</span>
+                    </label>
+                  </div>
+                  <div className="form-group">
+                    <label>Stock Threshold (show items with less than X in stock)</label>
+                    <input
+                      type="number"
+                      value={bannerSettings.low_stock_threshold}
+                      onChange={(e) => setBannerSettings({ ...bannerSettings, low_stock_threshold: parseInt(e.target.value) || 5 })}
+                      className="input-field"
+                      min="1"
+                      max="20"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Title</label>
+                    <input
+                      type="text"
+                      value={bannerSettings.low_stock_title}
+                      onChange={(e) => setBannerSettings({ ...bannerSettings, low_stock_title: e.target.value })}
+                      className="input-field"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Subtitle (use {'{count}'} for number of items)</label>
+                    <input
+                      type="text"
+                      value={bannerSettings.low_stock_subtitle}
+                      onChange={(e) => setBannerSettings({ ...bannerSettings, low_stock_subtitle: e.target.value })}
+                      className="input-field"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>CTA Button Text</label>
+                    <input
+                      type="text"
+                      value={bannerSettings.low_stock_cta}
+                      onChange={(e) => setBannerSettings({ ...bannerSettings, low_stock_cta: e.target.value })}
+                      className="input-field"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Popular Products Settings */}
+              <div style={{ border: '1px solid var(--border-light)', borderRadius: '16px', padding: '24px', background: 'var(--bg-surface-secondary)' }}>
+                <h3 style={{ marginTop: 0, marginBottom: '20px', fontSize: '18px', fontWeight: 800 }}>Trending Products Fallback</h3>
+                <div style={{ display: 'grid', gap: '16px' }}>
+                  <div className="form-group">
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        checked={bannerSettings.popular_enabled}
+                        onChange={(e) => setBannerSettings({ ...bannerSettings, popular_enabled: e.target.checked ? 1 : 0 })}
+                        style={{ width: '20px', height: '20px' }}
+                      />
+                      <span style={{ fontWeight: 600 }}>Enable Trending Products</span>
+                    </label>
+                  </div>
+                  <div className="form-group">
+                    <label>Title</label>
+                    <input
+                      type="text"
+                      value={bannerSettings.popular_title}
+                      onChange={(e) => setBannerSettings({ ...bannerSettings, popular_title: e.target.value })}
+                      className="input-field"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Subtitle</label>
+                    <input
+                      type="text"
+                      value={bannerSettings.popular_subtitle}
+                      onChange={(e) => setBannerSettings({ ...bannerSettings, popular_subtitle: e.target.value })}
+                      className="input-field"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>CTA Button Text</label>
+                    <input
+                      type="text"
+                      value={bannerSettings.popular_cta}
+                      onChange={(e) => setBannerSettings({ ...bannerSettings, popular_cta: e.target.value })}
+                      className="input-field"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Promotion Settings */}
+              <div style={{ border: '1px solid var(--border-light)', borderRadius: '16px', padding: '24px', background: 'var(--bg-surface-secondary)' }}>
+                <h3 style={{ marginTop: 0, marginBottom: '20px', fontSize: '18px', fontWeight: 800 }}>General Promotion Fallback</h3>
+                <div style={{ display: 'grid', gap: '16px' }}>
+                  <div className="form-group">
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        checked={bannerSettings.promotion_enabled}
+                        onChange={(e) => setBannerSettings({ ...bannerSettings, promotion_enabled: e.target.checked ? 1 : 0 })}
+                        style={{ width: '20px', height: '20px' }}
+                      />
+                      <span style={{ fontWeight: 600 }}>Enable General Promotion</span>
+                    </label>
+                  </div>
+                  <div className="form-group">
+                    <label>Title</label>
+                    <input
+                      type="text"
+                      value={bannerSettings.promotion_title}
+                      onChange={(e) => setBannerSettings({ ...bannerSettings, promotion_title: e.target.value })}
+                      className="input-field"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Subtitle</label>
+                    <input
+                      type="text"
+                      value={bannerSettings.promotion_subtitle}
+                      onChange={(e) => setBannerSettings({ ...bannerSettings, promotion_subtitle: e.target.value })}
+                      className="input-field"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>CTA Button Text</label>
+                    <input
+                      type="text"
+                      value={bannerSettings.promotion_cta}
+                      onChange={(e) => setBannerSettings({ ...bannerSettings, promotion_cta: e.target.value })}
+                      className="input-field"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <button type="submit" className="btn-primary" style={{ padding: '12px 32px', borderRadius: '12px', fontWeight: 800 }}>
+                  Save Settings
+                </button>
+              </div>
+            </form>
+        </div>
       ) : activeTab === 'hero' ? (
         /* HERO SLIDES GRID */
         <div className="grid-responsive" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '24px' }}>

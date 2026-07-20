@@ -52,6 +52,7 @@ const TrackOrder = lazy(() => import('./pages/TrackOrder'));
 const CMSPage = lazy(() => import('./pages/CMSPage'));
 const AboutUs = lazy(() => import('./pages/AboutUs'));
 const OrderSuccess = lazy(() => import('./pages/OrderSuccess'));
+const Locations = lazy(() => import('./pages/Locations'));
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -79,8 +80,11 @@ function AppContent() {
   const { user, updateUser, login: handleContextLogin, logout, authModal, openAuthModal, closeAuthModal } = useUser();
   const { siteSettings, formatPrice } = useSettings();
   const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
-  const lastFetchRef = React.useRef(0); 
-  const processingSocialAuthRef = useRef(null); 
+  const lastFetchRef = React.useRef(0);
+  const processingSocialAuthRef = useRef(null);
+  const hasCheckedMaintenance = useRef(false);
+  const hasFetchedCSRF = useRef(false);
+  const hasLoadedProducts = useRef(false);
 
   // Check maintenance mode from backend
   useEffect(() => {
@@ -99,7 +103,10 @@ function AppContent() {
         console.warn('Failed to check maintenance mode:', error);
       }
     };
-    checkMaintenance();
+    if (!hasCheckedMaintenance.current) {
+      hasCheckedMaintenance.current = true;
+      checkMaintenance();
+    }
     const intervalId = setInterval(checkMaintenance, 300000); // re-check every 5 minutes
     return () => clearInterval(intervalId);
   }, []);
@@ -226,16 +233,51 @@ function AppContent() {
 
   // Fetch CSRF token on app initialization
   useEffect(() => {
-    fetchCSRFToken().then(token => {
-      if (token) {
-        sessionStorage.setItem('csrf_token', token);
-      }
-    });
+    if (!hasFetchedCSRF.current) {
+      hasFetchedCSRF.current = true;
+      fetchCSRFToken().then(token => {
+        if (token) {
+          sessionStorage.setItem('csrf_token', token);
+        }
+      });
+    }
   }, []);
+
+  // Helper to calculate hover colors from base colors
+  const calculateHoverColors = (primary, accent, header) => {
+    const darken = (hex, percent) => {
+      const num = parseInt(hex.replace('#', ''), 16);
+      const amt = Math.round(2.55 * percent);
+      const R = Math.max((num >> 16) - amt, 0);
+      const G = Math.max((num >> 8 & 0x00FF) - amt, 0);
+      const B = Math.max((num & 0x0000FF) - amt, 0);
+      return '#' + (0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1);
+    };
+    const lighten = (hex, percent) => {
+      const num = parseInt(hex.replace('#', ''), 16);
+      const amt = Math.round(2.55 * percent);
+      const R = Math.min((num >> 16) + amt, 255);
+      const G = Math.min((num >> 8 & 0x00FF) + amt, 255);
+      const B = Math.min((num & 0x0000FF) + amt, 255);
+      return '#' + (0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1);
+    };
+    return {
+      buttonPrimaryHover: darken(primary, 15),
+      buttonSecondaryHover: '#475569',
+      buttonAccentHover: darken(accent, 15),
+      linkHover: lighten(primary, 20),
+      cardHover: header,
+    };
+  };
 
   // Apply dynamic site branding
   useEffect(() => {
-    const { primaryColor, accentColor, headerBg, fontFamily, siteName, siteTagline, metaDescription, faviconUrl, buttonPrimaryHover, buttonSecondaryHover, buttonAccentHover, linkHover, cardHover } = siteSettings;
+    const { primaryColor, accentColor, headerBg, fontFamily, siteName, siteTagline, metaDescription, faviconUrl } = siteSettings;
+    const hoverColors = calculateHoverColors(
+      primaryColor || '#3B82F6',
+      accentColor || '#f59e0b',
+      headerBg || '#0f172a'
+    );
 
     if (primaryColor) {
       document.documentElement.style.setProperty('--primary-blue', primaryColor);
@@ -256,21 +298,11 @@ function AppContent() {
     }
 
     // Apply hover colors
-    if (buttonPrimaryHover) {
-      document.documentElement.style.setProperty('--button-primary-hover', buttonPrimaryHover);
-    }
-    if (buttonSecondaryHover) {
-      document.documentElement.style.setProperty('--button-secondary-hover', buttonSecondaryHover);
-    }
-    if (buttonAccentHover) {
-      document.documentElement.style.setProperty('--button-accent-hover', buttonAccentHover);
-    }
-    if (linkHover) {
-      document.documentElement.style.setProperty('--link-hover', linkHover);
-    }
-    if (cardHover) {
-      document.documentElement.style.setProperty('--card-hover', cardHover);
-    }
+    document.documentElement.style.setProperty('--button-primary-hover', hoverColors.buttonPrimaryHover);
+    document.documentElement.style.setProperty('--button-secondary-hover', hoverColors.buttonSecondaryHover);
+    document.documentElement.style.setProperty('--button-accent-hover', hoverColors.buttonAccentHover);
+    document.documentElement.style.setProperty('--link-hover', hoverColors.linkHover);
+    document.documentElement.style.setProperty('--card-hover', hoverColors.cardHover);
 
     if (fontFamily) {
       document.documentElement.style.setProperty('--font-main', fontFamily);
@@ -343,7 +375,10 @@ function AppContent() {
   };
 
   useEffect(() => {
-    loadProducts(); 
+    if (!hasLoadedProducts.current) {
+      hasLoadedProducts.current = true;
+      loadProducts();
+    }
     const handleFocus = () => {
         if (Date.now() - lastFetchRef.current > 30000) {
             loadProducts();
@@ -507,13 +542,11 @@ function AppContent() {
         onClose={() => setIsSidebarOpen(false)}
         onOrdersClick={() => setActiveDrawer('orders')} 
         onNotificationsClick={() => setActiveDrawer('notifications')} 
-        onMapClick={() => setActiveDrawer('map')}
       />
       
       <div className="main-wrapper">
         <Navbar 
           onLoginClick={() => openAuthModal('signin')} 
-          onMapClick={() => setActiveDrawer('map')}
           onMenuClick={toggleSidebar}
           onThemeToggle={toggleDarkMode}
           onProductClick={handleProductClick}
@@ -541,6 +574,7 @@ function AppContent() {
             <Route path="/order-success" element={<RouteLoader><OrderSuccess /></RouteLoader>} />
             <Route path="/transactions" element={<RouteLoader><Transactions /></RouteLoader>} />
             <Route path="/about" element={<RouteLoader><AboutUs /></RouteLoader>} />
+            <Route path="/locations" element={<RouteLoader><Locations /></RouteLoader>} />
 
             <Route path="/reset-password" element={<RouteLoader><ResetPassword /></RouteLoader>} />
             <Route path="/privacy-policy" element={<RouteLoader><PrivacyPolicy /></RouteLoader>} />

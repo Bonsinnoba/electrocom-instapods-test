@@ -10,11 +10,12 @@
  *                server_health, auth_origins, error_log_tail
  */
 
-require 'cors_middleware.php';
-require 'db.php';
-require 'security.php';
+require_once 'cors_middleware.php';
+require_once 'db.php';
+require_once 'security.php';
 require_once __DIR__ . '/auth_login_log.php';
 header('Content-Type: application/json');
+
 
 try {
     $userId = requireRole('super', $pdo);

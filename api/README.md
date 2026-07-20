@@ -10,7 +10,14 @@
   The application uses the **`league/oauth2-client`** library to handle the OAuth flow.  
 
 2.  **Configuration**:
-    *   Open `db.php` and update the `$user` and `$pass` variables with your MySQL credentials (default is usually `root` and empty/blank for local development).
+    *   Create a `.env` file using `.env.example` as a template.
+    *   Configure required environment variables:
+        - **Store Identity**: SITE_NAME, SITE_EMAIL, PHONE1, PHONE2, WHATSAPP
+        - **Assets**: SITE_LOGO_URL, FAVICON_URL
+        - **Email Provider**: EMAIL_PROVIDER, SMTP_* or MAILGUN_* or SENDGRID_* variables
+        - **Database**: DB_HOST, DB_USER, DB_PASS, DB_NAME
+    *   Update database credentials in `.env` (not in db.php).
+    *   Restart the PHP server after changing environment variables.
 
 3.  **Running the Server**:
     *   Ensure your PHP server (XAMPP, WAMP, or built-in) is running.

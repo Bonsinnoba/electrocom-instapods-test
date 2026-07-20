@@ -76,7 +76,7 @@ export const AdminSettingsProvider = ({ children }) => {
       siteEmail: settings?.siteEmail || 'support@electrocom.gh',
       primaryColor: settings?.primaryColor || '#3B82F6',
       fontFamily: settings?.fontFamily || 'Inter',
-      logoUrl: settings?.siteLogoUrl ? formatImageUrl(settings.siteLogoUrl) : '/logo.png'
+      logoUrl: '/logo.png'
     }}>
       {children}
     </AdminSettingsContext.Provider>

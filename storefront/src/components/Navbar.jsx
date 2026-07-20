@@ -17,7 +17,6 @@ import {
 
 export default function Navbar({
   onLoginClick,
-  onMapClick,
   onMenuClick,
   onThemeToggle,
   onProductClick,
@@ -249,9 +248,9 @@ export default function Navbar({
         </div>
         
         {/* Mobile Map Toggle - hidden on mobile; Map is in the sidebar */}
-        <div className="sidebar-icon btn nav-map-btn" onClick={onMapClick} role="button" aria-label="Open Store Locations" tabIndex={0}>
+        <Link to="/locations" className="sidebar-icon btn nav-map-btn" role="button" aria-label="Open Store Locations" tabIndex={0}>
           <Map size={20} />
-        </div>
+        </Link>
         
         {/* Notifications */}
         <div className="sidebar-icon btn nav-notif-btn" style={{ position: 'relative' }} onClick={onNotificationsClick} role="button" aria-label={`View Notifications, ${unreadCount} unread`} tabIndex={0}>

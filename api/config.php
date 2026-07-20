@@ -25,8 +25,8 @@ $config = [
     'FRONTEND_URL'        => $_ENV['FRONTEND_URL'] ?? '',
     
     // Site Identity
-    'SITE_NAME'           => $_ENV['SITE_NAME'] ?? 'ElectrCom',
-    'SITE_EMAIL'          => $_ENV['SITE_EMAIL'] ?? '',
+    'SITE_NAME'           => $_ENV['SITE_NAME'] ?? 'My Store',
+    'SITE_EMAIL'          => $_ENV['SITE_EMAIL'] ?? 'hello@example.com',
     'PHONE1'              => $_ENV['PHONE1'] ?? '',
     'PHONE2'              => $_ENV['PHONE2'] ?? '',
     'WHATSAPP'            => $_ENV['WHATSAPP'] ?? '',

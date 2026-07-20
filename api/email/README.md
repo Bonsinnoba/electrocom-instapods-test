@@ -7,9 +7,8 @@ The engine supports:
 - Mailgun (paid API)
 - SendGrid (paid API)
 
-It also supports provider switching via:
+It supports provider switching via:
 - environment variables (`.env`)
-- Super Admin settings (Global Settings page)
 
 ---
 
@@ -88,29 +87,13 @@ SENDGRID_API_KEY=SG.xxxxxxxxxxxxxxxx
 
 ---
 
-## 4) Admin panel controls
-
-Go to:
-- **Admin Panel** -> **Super User** -> **Global Settings** -> **Notifications**
-
-Available controls:
-- `Active Email Provider` (`smtp`, `mailgun`, `sendgrid`)
-- `Enable SMTP Provider`
-- `Enable Mailgun Provider`
-- `Enable SendGrid Provider`
-
-These settings are persisted in `api/data/super_settings.json`.
-
----
-
-## 5) Provider resolution rules (important)
+## 4) Provider resolution rules (important)
 
 The engine resolves the active provider in this order:
 
-1. Admin-selected provider (`emailProvider`) if enabled in admin toggle.
-2. `.env` `EMAIL_PROVIDER` if enabled in env toggle.
-3. First enabled provider fallback: `smtp` -> `mailgun` -> `sendgrid`.
-4. If all toggles are disabled, fallback to `smtp`.
+1. `.env` `EMAIL_PROVIDER` if enabled in env toggle.
+2. First enabled provider fallback: `smtp` -> `mailgun` -> `sendgrid`.
+3. If all toggles are disabled, fallback to `smtp`.
 
 This allows safe switching without code changes.
 
@@ -156,7 +139,7 @@ Template files live in:
 ### Emails not sending
 - Check cron is running `cron_process_emails.php`.
 - Check SMTP/API credentials in `.env`.
-- Check provider toggles (env + admin settings).
+- Check provider toggles in `.env`.
 - Check `email_queue.status` and `last_error`.
 - Check `email_log.error_message`.
 
@@ -166,8 +149,8 @@ Template files live in:
 - Ensure sender address in `MAIL_FROM` is allowed/verified.
 
 ### Wrong provider used
-- Check admin `emailProvider` and provider toggles first.
-- Remember admin toggle can override `.env` selection.
+- Check `.env` `EMAIL_PROVIDER` and provider toggles.
+- Ensure at least one provider toggle is enabled.
 
 ---
 
@@ -185,7 +168,7 @@ Template files live in:
 - [ ] `019_email_engine.sql` migrated
 - [ ] `.env` has sender + provider credentials
 - [ ] At least one provider toggle enabled
-- [ ] Active provider selected (admin or env)
+- [ ] Active provider selected in `.env`
 - [ ] Cron worker running every minute
 - [ ] Test forgot-password and order-confirmation emails
 

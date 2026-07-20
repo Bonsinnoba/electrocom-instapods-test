@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Suspense, lazy } from 'react';
+import React, { useState, useEffect, Suspense, lazy, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   DollarSign,
@@ -102,6 +102,7 @@ export default function Dashboard() {
   const [error, setError] = useState(null);
   const [chartRange, setChartRange] = useState(365);
   const [chartMode, setChartMode] = useState('area');
+  const hasLoadedAnalytics = useRef(false);
   
   const exportFinancialReport = () => {
     if (!data) return;
@@ -462,9 +463,12 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    loadAnalytics(true);
-    const interval = setInterval(() => loadAnalytics(false), 30000);
-    return () => clearInterval(interval);
+    if (!hasLoadedAnalytics.current) {
+      hasLoadedAnalytics.current = true;
+      loadAnalytics(true);
+      const interval = setInterval(() => loadAnalytics(false), 30000);
+      return () => clearInterval(interval);
+    }
   }, []);
 
   if (loading) {

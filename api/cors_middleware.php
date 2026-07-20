@@ -15,7 +15,8 @@ $isLocalhost = $origin && preg_match('/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+
 if ($appEnv === 'development') {
     // In development, be permissive to all origins if one is sent,
     // otherwise fallback to a default local origin.
-    header("Access-Control-Allow-Origin: " . ($rawOrigin ?: $frontendUrl));
+    $allowedOrigin = $rawOrigin ?: $frontendUrl;
+    header("Access-Control-Allow-Origin: $allowedOrigin");
 } else {
     // Production: Strict allowlist - only allow explicitly configured origins
     if ($origin && in_array($origin, $allowedOrigins)) {

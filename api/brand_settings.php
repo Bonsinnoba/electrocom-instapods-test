@@ -18,18 +18,14 @@ if (!function_exists('eh_critical_db_settings_keys')) {
     function eh_critical_db_settings_keys(): array
     {
         return [
-            // Identity (branding)
-            'siteName', 'siteEmail', 'phone1', 'phone2', 'whatsapp', 'siteTagline', 'metaDescription',
-            // Assets (branding)
-            'siteLogoUrl', 'faviconUrl',
+            // SEO (branding)
+            'siteTagline', 'metaDescription',
             // Location (branding)
             'storeAddress', 'businessHours',
             // Social (branding)
             'socialInstagram', 'socialTwitter', 'socialFacebook', 'socialTikTok', 'socialYoutube',
             // Branding colors
             'primaryColor', 'accentColor', 'headerBg', 'fontFamily', 'selectedTheme',
-            // Hover colors
-            'buttonPrimaryHover', 'buttonSecondaryHover', 'buttonAccentHover', 'linkHover', 'cardHover',
             // Hero banner
             'heroBannerTagline', 'heroBannerSubtext', 'heroCTAText', 'heroCTAUrl',
             // Flash sale banner
@@ -50,8 +46,6 @@ if (!function_exists('eh_critical_db_settings_keys')) {
             'insightsShipWarnHours', 'insightsShipCriticalHours', 'insightsLowStockWarnCount',
             'insightsLowStockCriticalCount', 'insightsOnlineRevenueMinPct', 'insightsRepeatOrderMin',
             'insightsWeightShip', 'insightsWeightStock', 'insightsWeightOnline', 'insightsWeightRepeat',
-            // Email providers
-            'emailProvider', 'emailProviderSmtpEnabled', 'emailProviderMailgunEnabled', 'emailProviderSendgridEnabled',
             // Availability
             'maintenanceMode',
         ];
@@ -64,9 +58,7 @@ if (!function_exists('eh_always_load_settings_keys')) {
     {
         return [
             // Branding (every page)
-            'siteName', 'siteLogoUrl', 'faviconUrl', 'primaryColor', 'accentColor', 'headerBg', 'fontFamily',
-            // Contact (every page)
-            'siteEmail', 'phone1', 'phone2', 'whatsapp', 'storeAddress', 'businessHours',
+            'primaryColor', 'accentColor', 'headerBg', 'fontFamily',
             // Social (every page)
             'socialInstagram', 'socialTwitter', 'socialFacebook', 'socialTikTok', 'socialYoutube',
             // Hero (homepage)
@@ -77,8 +69,6 @@ if (!function_exists('eh_always_load_settings_keys')) {
             'siteTagline', 'metaDescription',
             // Availability (every page)
             'maintenanceMode', 'allowRegistration', 'allowCardPayment', 'allowDoorToDoorDelivery', 'doorToDoorThreshold',
-            // Email providers (checkout)
-            'emailProvider', 'emailProviderSmtpEnabled', 'emailProviderMailgunEnabled', 'emailProviderSendgridEnabled',
             // Storefront operational (every page)
             'defaultItemsPerPage', 'homepageSectionTitle', 'homepageFeaturedCategory', 'vatRate', 'orderReceiptFooterNote',
             // Loyalty (storefront)
@@ -110,17 +100,24 @@ if (!function_exists('eh_occasional_settings_keys')) {
 }
 
 if (!function_exists('eh_get_db_settings')) {
-    /** Fetch critical settings from database with caching */
+    /** Fetch critical settings from database with file + in-memory caching */
     function eh_get_db_settings(bool $forceRefresh = false): ?array
     {
+        // In-memory cache: avoids file I/O on repeated calls within the same request
+        static $memCache = null;
+        if (!$forceRefresh && $memCache !== null) {
+            return $memCache;
+        }
+
         $cacheKey = 'db_settings';
         $cacheGroup = 'settings';
 
-        // Try to get from cache first
+        // Try file/Redis cache before hitting the DB
         if (!$forceRefresh) {
             $cached = eh_cache_get($cacheKey, $cacheGroup);
             if ($cached !== false) {
-                return $cached;
+                $memCache = $cached;
+                return $memCache;
             }
         }
 
@@ -135,7 +132,6 @@ if (!function_exists('eh_get_db_settings')) {
             $dbSettings = [];
             foreach ($results as $row) {
                 $value = $row['setting_value'];
-                // Convert based on type
                 switch ($row['value_type']) {
                     case 'integer':
                         $value = (int) $value;
@@ -153,13 +149,12 @@ if (!function_exists('eh_get_db_settings')) {
                 $dbSettings[$row['setting_key']] = $value;
             }
 
-            // Cache for 5 minutes (300 seconds)
+            // Persist to file/Redis cache for 5 minutes
             eh_cache_set($cacheKey, $dbSettings, $cacheGroup, 300);
 
-            return $dbSettings;
+            $memCache = $dbSettings;
+            return $memCache;
         } catch (Exception $e) {
-            // Return null on actual DB failure (table doesn't exist, connection error, etc.)
-            // This allows merge logic to distinguish between failure and no data
             return null;
         }
     }
@@ -241,34 +236,64 @@ if (!function_exists('eh_theme_presets')) {
                 'primaryColor' => '#3b82f6',
                 'accentColor' => '#f59e0b',
                 'headerBg' => '#0f172a',
-                'buttonPrimaryHover' => '#2563eb',
-                'buttonSecondaryHover' => '#475569',
-                'buttonAccentHover' => '#d97706',
-                'linkHover' => '#60a5fa',
-                'cardHover' => '#1e293b',
             ],
             'emerald_green' => [
                 'name' => 'Emerald Green',
                 'primaryColor' => '#10b981',
                 'accentColor' => '#059669',
                 'headerBg' => '#064e3b',
-                'buttonPrimaryHover' => '#059669',
-                'buttonSecondaryHover' => '#475569',
-                'buttonAccentHover' => '#047857',
-                'linkHover' => '#34d399',
-                'cardHover' => '#064e3b',
             ],
             'royal_purple' => [
                 'name' => 'Royal Purple',
                 'primaryColor' => '#8b5cf6',
                 'accentColor' => '#7c3aed',
                 'headerBg' => '#4c1d95',
-                'buttonPrimaryHover' => '#7c3aed',
-                'buttonSecondaryHover' => '#475569',
-                'buttonAccentHover' => '#6d28d9',
-                'linkHover' => '#a78bfa',
-                'cardHover' => '#4c1d95',
             ],
+        ];
+    }
+}
+
+if (!function_exists('eh_calculate_hover_colors')) {
+    /**
+     * Calculate hover colors from base theme colors
+     * Uses color manipulation to create darker/lighter variants
+     */
+    function eh_calculate_hover_colors(string $primaryColor, string $accentColor, string $headerBg): array
+    {
+        // Helper to darken a hex color
+        $darken = function(string $hex, int $percent): string {
+            $hex = ltrim($hex, '#');
+            $r = hexdec(substr($hex, 0, 2));
+            $g = hexdec(substr($hex, 2, 2));
+            $b = hexdec(substr($hex, 4, 2));
+            
+            $r = max(0, (int)($r * (100 - $percent) / 100));
+            $g = max(0, (int)($g * (100 - $percent) / 100));
+            $b = max(0, (int)($b * (100 - $percent) / 100));
+            
+            return sprintf('#%02x%02x%02x', $r, $g, $b);
+        };
+        
+        // Helper to lighten a hex color
+        $lighten = function(string $hex, int $percent): string {
+            $hex = ltrim($hex, '#');
+            $r = hexdec(substr($hex, 0, 2));
+            $g = hexdec(substr($hex, 2, 2));
+            $b = hexdec(substr($hex, 4, 2));
+            
+            $r = min(255, (int)($r + (255 - $r) * $percent / 100));
+            $g = min(255, (int)($g + (255 - $g) * $percent / 100));
+            $b = min(255, (int)($b + (255 - $b) * $percent / 100));
+            
+            return sprintf('#%02x%02x%02x', $r, $g, $b);
+        };
+        
+        return [
+            'buttonPrimaryHover' => $darken($primaryColor, 15),
+            'buttonSecondaryHover' => '#475569', // Fixed slate color
+            'buttonAccentHover' => $darken($accentColor, 15),
+            'linkHover' => $lighten($primaryColor, 20),
+            'cardHover' => $headerBg,
         ];
     }
 }
@@ -279,10 +304,9 @@ if (!function_exists('eh_storefront_public_setting_keys')) {
     {
         return [
             'siteName', 'siteEmail', 'phone1', 'phone2', 'whatsapp', 'maintenanceMode',
-            'siteLogoUrl', 'faviconUrl', 'storeAddress', 'businessHours',
+            'siteLogoUrl', 'faviconUrl',
             'socialInstagram', 'socialTwitter', 'socialFacebook', 'socialTikTok', 'socialYoutube',
             'primaryColor', 'accentColor', 'headerBg', 'fontFamily',
-            'buttonPrimaryHover', 'buttonSecondaryHover', 'buttonAccentHover', 'linkHover', 'cardHover',
             'heroBannerTagline', 'heroBannerSubtext', 'heroCTAText', 'heroCTAUrl',
             'flashSaleBannerEnabled',
             'siteTagline', 'metaDescription',
@@ -294,35 +318,52 @@ if (!function_exists('eh_storefront_public_setting_keys')) {
 }
 
 if (!function_exists('eh_merged_super_settings')) {
-    /** Merge all settings with caching - all settings stored in database */
+    /** Merge all settings with in-memory + file caching */
     function eh_merged_super_settings(bool $forceRefresh = false): array
     {
+        // In-memory cache: free after the first call within the same request
+        static $memCache = null;
+        if (!$forceRefresh && $memCache !== null) {
+            return $memCache;
+        }
+
         $cacheKey = 'merged_settings';
         $cacheGroup = 'settings';
 
-        // Try to get from cache first
         if (!$forceRefresh) {
             $cached = eh_cache_get($cacheKey, $cacheGroup);
             if ($cached !== false && $cached !== null) {
-                return $cached;
+                $memCache = $cached;
+                return $memCache;
             }
         }
 
         $dbStored = eh_get_db_settings($forceRefresh);
 
-        // Only use database settings - no defaults
-        if ($dbStored === null || empty($dbStored)) {
-            // Database failed or has no data - return empty array
-            $merged = [];
-        } else {
-            // Database succeeded - use only DB values
-            $merged = $dbStored;
-        }
+        $merged = ($dbStored === null || empty($dbStored)) ? [] : $dbStored;
 
-        // Cache for 10 minutes (600 seconds)
+        // Overlay .env-backed settings so they always win over DB values
+        // (avoids DB storing duplicates of infrastructure config)
+        $envOverrides = array_filter([
+            'debugMode'   => ($v = getenv('APP_DEBUG'))   !== false ? filter_var($v, FILTER_VALIDATE_BOOLEAN) : null,
+            'apiRateLimit'=> ($v = getenv('API_RATE_LIMIT')) !== false ? (int)$v : null,
+            // Identity from .env
+            'siteName'    => ($v = getenv('SITE_NAME'))    !== false ? $v : null,
+            'siteEmail'   => ($v = getenv('SITE_EMAIL'))   !== false ? $v : null,
+            'phone1'      => ($v = getenv('PHONE1'))      !== false ? $v : null,
+            'phone2'      => ($v = getenv('PHONE2'))      !== false ? $v : null,
+            'whatsapp'    => ($v = getenv('WHATSAPP'))    !== false ? $v : null,
+            // Assets from .env
+            'siteLogoUrl' => ($v = getenv('SITE_LOGO_URL')) !== false ? $v : null,
+            'faviconUrl'  => ($v = getenv('FAVICON_URL'))   !== false ? $v : null,
+        ], fn($v) => $v !== null);
+        $merged = array_merge($merged, $envOverrides);
+
+        // Persist to file/Redis cache for 10 minutes
         eh_cache_set($cacheKey, $merged, $cacheGroup, 600);
 
-        return $merged;
+        $memCache = $merged;
+        return $memCache;
     }
 }
 

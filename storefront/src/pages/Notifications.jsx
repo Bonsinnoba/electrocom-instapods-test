@@ -4,6 +4,7 @@ import { Bell, Clock, Trash2, Check, CheckCircle, Mail, ShieldCheck, Filter } fr
 import { useSettings } from '../context/SettingsContext';
 import { useNotifications } from '../context/NotificationContext';
 import { useConfirm } from '../context/ConfirmContext';
+import { useUser } from '../context/UserContext';
 import { formatRelativeTime } from '../utils/dateFormatter';
 import { fetchMissingItemConfirmations, submitMissingItemConfirmation } from '../services/api';
 
@@ -21,19 +22,21 @@ export default function Notifications({ searchQuery }) {
   const siteName = siteSettings.siteName || 'your store';
   const { notifications, markAsRead, markAllAsRead, deleteNotification, clearAllNotifications, unreadCount } = useNotifications();
   const { confirm } = useConfirm();
+  const { user } = useUser();
   const [filter, setFilter] = useState('all');
   const [pendingConfirmations, setPendingConfirmations] = useState([]);
   const [confirmingId, setConfirmingId] = useState(null);
 
   useEffect(() => {
     const loadPendingConfirmations = async () => {
+      if (!user) return;
       const res = await fetchMissingItemConfirmations();
       if (res.success) {
         setPendingConfirmations(Array.isArray(res.data) ? res.data : []);
       }
     };
     loadPendingConfirmations();
-  }, []);
+  }, [user]);
 
   const handleDecision = async (item, choice) => {
     const labels = {

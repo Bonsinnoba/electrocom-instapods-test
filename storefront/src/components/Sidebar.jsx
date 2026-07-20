@@ -1,11 +1,11 @@
-import { Home, ShoppingBag, Heart, Receipt, Package, Bell, Settings, HelpCircle, User, MapPin, ShoppingCart, X, LogOut, LayoutGrid } from 'lucide-react';
+import { Home, Store, Heart, Receipt, Package, Bell, Settings, HelpCircle, User, MapPin, ShoppingCart, X, LogOut, LayoutGrid } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useWishlist } from '../context/WishlistContext';
 import { useNotifications } from '../context/NotificationContext';
 import { useUser } from '../context/UserContext';
 
 
-export default function Sidebar({ isOpen, onClose, onOrdersClick, onNotificationsClick, onMapClick }) {
+export default function Sidebar({ isOpen, onClose, onOrdersClick, onNotificationsClick }) {
   const { user, logout } = useUser();
   const { wishlistItems } = useWishlist();
   const { unreadCount } = useNotifications();
@@ -22,9 +22,9 @@ export default function Sidebar({ isOpen, onClose, onOrdersClick, onNotification
 
   const navItems = [
     { to: "/", icon: <Home size={24} />, label: "Home", tooltip: "Home" },
+    { to: "/shop", icon: <Store size={24} />, label: "Shop", tooltip: "Shop" },
     { to: "/cart", icon: <ShoppingCart size={24} />, label: "Cart", tooltip: "Cart" },
-    { type: 'map', icon: <MapPin size={24} />, label: "Location", tooltip: "Location" },
-    { to: "/shop", icon: <ShoppingBag size={24} />, label: "Shop", tooltip: "Shop" },
+    { to: "/locations", icon: <MapPin size={24} />, label: "Location", tooltip: "Location" },
     { to: "/favorites", icon: <Heart size={24} />, label: "Favorites", tooltip: "Favorites", badge: user && wishlistItems.length > 0 },
     { to: "/transactions", icon: <Receipt size={24} />, label: "Transactions", tooltip: "Transactions" },
     { to: "/orders", icon: <Package size={24} />, label: "Orders", tooltip: "Orders" },
@@ -55,42 +55,30 @@ export default function Sidebar({ isOpen, onClose, onOrdersClick, onNotification
                 justifyContent: 'center'
               }}
             >
-              {item.type === 'map' ? (
-                <div 
-                  className="sidebar-icon" 
-                  data-tooltip={item.tooltip} 
-                  data-tooltip-pos="right"
-                  onClick={() => { onMapClick(); onClose(); }}
-                >
-                  {item.icon}
-                  <span className="sidebar-label">{item.label}</span>
-                </div>
-              ) : (
-                <Link 
-                  to={item.to} 
-                  className={`sidebar-icon ${isActive(item.to) ? 'active' : ''} ${item.badge ? 'heart-active' : ''}`} 
-                  data-tooltip={item.tooltip} 
-                  data-tooltip-pos="right" 
-                  style={{ position: 'relative' }}
-                  onClick={onClose}
-                >
-                  {item.icon}
-                  {item.badge && <span className="favorites-badge"></span>}
-                  {item.notificationDot && (
-                    <span style={{ 
-                      position: 'absolute', 
-                      top: '12px', 
-                      right: '12px', 
-                      background: 'var(--primary-blue)', 
-                      width: '10px', 
-                      height: '10px', 
-                      borderRadius: '50%',
-                      border: '2px solid var(--bg-surface)'
-                    }}></span>
-                  )}
-                  <span className="sidebar-label">{item.label}</span>
-                </Link>
-              )}
+              <Link 
+                to={item.to} 
+                className={`sidebar-icon ${isActive(item.to) ? 'active' : ''} ${item.badge ? 'heart-active' : ''}`} 
+                data-tooltip={item.tooltip} 
+                data-tooltip-pos="right" 
+                style={{ position: 'relative' }}
+                onClick={onClose}
+              >
+                {item.icon}
+                {item.badge && <span className="favorites-badge"></span>}
+                {item.notificationDot && (
+                  <span style={{ 
+                    position: 'absolute', 
+                    top: '12px', 
+                    right: '12px', 
+                    background: 'var(--primary-blue)', 
+                    width: '10px', 
+                    height: '10px', 
+                    borderRadius: '50%',
+                    border: '2px solid var(--bg-surface)'
+                  }}></span>
+                )}
+                <span className="sidebar-label">{item.label}</span>
+              </Link>
             </div>
           ))}
         </div>

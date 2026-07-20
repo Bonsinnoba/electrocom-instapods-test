@@ -111,13 +111,11 @@ if ($method === 'GET') {
                                   'passwordMinLength', 'requireEmailVerification', 'requireNumberInPassword',
                                   'apiRateLimit', 'emailNotify', 'securityAlerts', 'debugMode'])) {
                     $category = 'security';
-                } elseif (in_array($key, ['siteName', 'siteEmail', 'phone1', 'phone2', 'whatsapp', 'siteTagline',
-                                        'metaDescription', 'storeAddress', 'businessHours', 'socialInstagram',
+                } elseif (in_array($key, ['siteTagline', 'metaDescription', 'storeAddress', 'businessHours', 'socialInstagram',
                                         'socialTwitter', 'socialFacebook', 'socialTikTok', 'socialYoutube'])) {
                     $category = 'identity';
-                } elseif (in_array($key, ['siteLogoUrl', 'faviconUrl', 'primaryColor', 'accentColor', 'headerBg',
-                                        'fontFamily', 'selectedTheme', 'buttonPrimaryHover', 'buttonSecondaryHover',
-                                        'buttonAccentHover', 'linkHover', 'cardHover'])) {
+                } elseif (in_array($key, ['primaryColor', 'accentColor', 'headerBg',
+                                        'fontFamily', 'selectedTheme'])) {
                     $category = 'branding';
                 } elseif (in_array($key, ['heroBannerTagline', 'heroBannerSubtext', 'heroCTAText', 'heroCTAUrl'])) {
                     $category = 'content';
@@ -126,9 +124,6 @@ if ($method === 'GET') {
                     $category = 'business';
                 } elseif (in_array($key, ['allowDoorToDoorDelivery', 'doorToDoorThreshold'])) {
                     $category = 'delivery';
-                } elseif (in_array($key, ['emailProvider', 'emailProviderSmtpEnabled', 'emailProviderMailgunEnabled',
-                                        'emailProviderSendgridEnabled'])) {
-                    $category = 'email';
                 } elseif (in_array($key, ['insightsShipWarnHours', 'insightsShipCriticalHours', 'insightsLowStockWarnCount',
                                         'insightsLowStockCriticalCount', 'insightsOnlineRevenueMinPct', 'insightsRepeatOrderMin',
                                         'insightsWeightShip', 'insightsWeightStock', 'insightsWeightOnline', 'insightsWeightRepeat'])) {

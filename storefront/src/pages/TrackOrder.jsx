@@ -237,6 +237,46 @@ export default function TrackOrder() {
                     <strong>Payment Method:</strong><br/>
                     {orderData.payment_method}
                   </p>
+                  {orderData.pickup_location && (
+                    <div style={{ margin: '0 0 12px 0', padding: '12px', background: 'rgba(59, 130, 246, 0.05)', borderRadius: '8px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+                      <p style={{ margin: '0 0 8px 0', fontSize: '13px', fontWeight: 700, color: 'var(--primary-blue)' }}>
+                        Pickup Location: {orderData.pickup_location.name}
+                      </p>
+                      <p style={{ margin: '0 0 8px 0', fontSize: '12px', lineHeight: 1.5 }}>
+                        {orderData.pickup_location.address}
+                        {orderData.pickup_location.city && `, ${orderData.pickup_location.city}`}
+                      </p>
+                      {orderData.pickup_location.deadline_passed ? (
+                        <p style={{ margin: '0', fontSize: '12px', color: 'var(--danger)', fontWeight: 600 }}>
+                          Pickup deadline passed
+                        </p>
+                      ) : (
+                        <>
+                          {orderData.pickup_location.contact_person && (
+                            <p style={{ margin: '0 0 8px 0', fontSize: '12px' }}>
+                              <strong>Contact:</strong> {orderData.pickup_location.contact_person}
+                              {orderData.pickup_location.contact_phone && ` • ${orderData.pickup_location.contact_phone}`}
+                            </p>
+                          )}
+                          {orderData.pickup_location.pickup_instructions && (
+                            <p style={{ margin: '0 0 8px 0', fontSize: '12px' }}>
+                              <strong>Instructions:</strong> {orderData.pickup_location.pickup_instructions}
+                            </p>
+                          )}
+                          {orderData.pickup_location.what_to_bring && (
+                            <p style={{ margin: '0 0 8px 0', fontSize: '12px' }}>
+                              <strong>What to Bring:</strong> {orderData.pickup_location.what_to_bring}
+                            </p>
+                          )}
+                          {orderData.pickup_location.id_requirements && (
+                            <p style={{ margin: '0', fontSize: '12px' }}>
+                              <strong>ID Requirements:</strong> {orderData.pickup_location.id_requirements}
+                            </p>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  )}
                   <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border-light)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 800, fontSize: '16px' }}>
                       <span>Total</span>

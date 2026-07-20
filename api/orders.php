@@ -79,6 +79,18 @@ if ($config['DB_AUTO_REPAIR'] ?? false) {
         if (!in_array('pickup_location_id', $cols)) {
             $pdo->exec("ALTER TABLE orders ADD COLUMN pickup_location_id INT DEFAULT NULL AFTER delivery_method");
         }
+        if (!in_array('pickup_qr_code', $cols)) {
+            $pdo->exec("ALTER TABLE orders ADD COLUMN pickup_qr_code TEXT DEFAULT NULL AFTER delivery_otp");
+        }
+        if (!in_array('pickup_verified_at', $cols)) {
+            $pdo->exec("ALTER TABLE orders ADD COLUMN pickup_verified_at DATETIME DEFAULT NULL AFTER pickup_qr_code");
+        }
+        if (!in_array('pickup_verified_by', $cols)) {
+            $pdo->exec("ALTER TABLE orders ADD COLUMN pickup_verified_by INT DEFAULT NULL AFTER pickup_verified_at");
+        }
+        if (!in_array('customer_email', $cols)) {
+            $pdo->exec("ALTER TABLE orders ADD COLUMN customer_email VARCHAR(255) DEFAULT NULL AFTER payment_reference");
+        }
         $pdo->exec("CREATE TABLE IF NOT EXISTS pickup_locations (
             id INT AUTO_INCREMENT PRIMARY KEY,
             name VARCHAR(150) NOT NULL,
@@ -155,21 +167,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         exit;
     }
 
-    // Otherwise, fetch all orders for the user with pagination
+    // Otherwise, fetch all orders for the user with pagination (including POS orders)
     try {
         $page = max(1, (int)($_GET['page'] ?? 1));
         $limit = max(10, min(50, (int)($_GET['limit'] ?? 20)));
         $offset = ($page - 1) * $limit;
 
-        // Get total count for pagination metadata
-        $countStmt = $pdo->prepare("SELECT COUNT(*) FROM orders WHERE user_id = ?");
-        $countStmt->execute([$authenticatedUserId]);
+        // Get user email for POS order matching
+        $userStmt = $pdo->prepare("SELECT email FROM users WHERE id = ?");
+        $userStmt->execute([$authenticatedUserId]);
+        $userEmail = $userStmt->fetchColumn();
+
+        // Get total count for pagination metadata (including POS orders matched by email)
+        $countStmt = $pdo->prepare("
+            SELECT COUNT(*) FROM orders 
+            WHERE user_id = ? 
+               OR (customer_email = ? AND order_type = 'pos')
+        ");
+        $countStmt->execute([$authenticatedUserId, $userEmail]);
         $totalOrders = (int)$countStmt->fetchColumn();
         $totalPages = ceil($totalOrders / $limit);
 
         $stmt = $pdo->prepare("
             SELECT 
                 o.id, o.total_amount, o.status, o.delivery_method, o.pickup_location_id, o.created_at,
+                o.order_type,
                 GROUP_CONCAT(p.name SEPARATOR ', ') as items,
                 COALESCE(SUM(r.amount), 0) as refunded_amount,
                 MAX(CASE WHEN r.status = 'pending' THEN 1 ELSE 0 END) as has_pending_refund
@@ -177,12 +199,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             LEFT JOIN order_items oi ON o.id = oi.order_id
             LEFT JOIN products p ON oi.product_id = p.id
             LEFT JOIN refunds r ON o.id = r.order_id AND r.status != 'failed'
-            WHERE o.user_id = ?
+            WHERE o.user_id = ? 
+               OR (o.customer_email = ? AND o.order_type = 'pos')
             GROUP BY o.id
             ORDER BY o.created_at DESC
             LIMIT ? OFFSET ?
         ");
-        $stmt->execute([$authenticatedUserId, $limit, $offset]);
+        $stmt->execute([$authenticatedUserId, $userEmail, $limit, $offset]);
         $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         echo json_encode([
@@ -532,6 +555,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         $pdo->prepare("UPDATE orders SET order_number = ? WHERE id = ?")->execute([$paymentReference, $orderId]);
 
+        // Generate QR code for pickup orders
+        if ($deliveryMethod === 'pickup' && $pickupLocationId) {
+            $verificationToken = bin2hex(random_bytes(16));
+            $qrData = json_encode([
+                'order_id' => $orderId,
+                'order_number' => $paymentReference,
+                'token' => $verificationToken,
+                'timestamp' => time()
+            ]);
+            $pdo->prepare("UPDATE orders SET pickup_qr_code = ? WHERE id = ?")->execute([$qrData, $orderId]);
+        }
+
         $stmtItem = $pdo->prepare("INSERT INTO order_items (order_id, product_id, quantity, price_at_purchase) VALUES (?, ?, ?, ?)");
         foreach ($items as $item) {
             $stmtItem->execute([$orderId, $item['id'], $item['quantity'], $item['price']]);
@@ -569,12 +604,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!empty($authenticatedUserEmail)) {
             try {
                 $emailEngine = new EmailEngine($pdo, $config);
+                
+                // Get pickup location details if applicable
+                $pickupContactPerson = '';
+                $pickupContactPhone = '';
+                $pickupInstructions = '';
+                $whatToBring = '';
+                $idRequirements = '';
+                
+                if ($deliveryMethod === 'pickup' && $pickupLocationId) {
+                    $pickupStmt = $pdo->prepare("SELECT contact_person, contact_phone, pickup_instructions, what_to_bring, id_requirements FROM pickup_locations WHERE id = ?");
+                    $pickupStmt->execute([$pickupLocationId]);
+                    $pickupData = $pickupStmt->fetch(PDO::FETCH_ASSOC);
+                    if ($pickupData) {
+                        $pickupContactPerson = $pickupData['contact_person'] ?? '';
+                        $pickupContactPhone = $pickupData['contact_phone'] ?? '';
+                        $pickupInstructions = $pickupData['pickup_instructions'] ?? '';
+                        $whatToBring = $pickupData['what_to_bring'] ?? '';
+                        $idRequirements = $pickupData['id_requirements'] ?? '';
+                    }
+                }
+                
                 $emailEngine->queueTemplate($authenticatedUserEmail, 'order_confirmation', [
                     'name' => $authenticatedUserName,
                     'order_reference' => $paymentReference,
                     'order_total' => number_format($totalAmount, 2, '.', ''),
                     'delivery_method' => $deliveryMethod,
                     'delivery_address' => $shippingAddress,
+                    'pickup_contact_person' => $pickupContactPerson,
+                    'pickup_contact_phone' => $pickupContactPhone,
+                    'pickup_instructions' => $pickupInstructions,
+                    'what_to_bring' => $whatToBring,
+                    'id_requirements' => $idRequirements,
                 ]);
             } catch (Throwable $e) {
                 logger('error', 'ORDER_EMAIL', 'Failed to queue order confirmation email: ' . $e->getMessage());

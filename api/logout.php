@@ -1,69 +1,45 @@
+require_once 'cors_middleware.php';
 require_once 'security.php';
 require_once 'db.php';
-
-// Simple CORS headers for development
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization, X-App-ID, X-Session-Token');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit;
 }
 
-// Get the current token before clearing session
-$token = null;
-$headers = function_exists('getallheaders') ? getallheaders() : [];
-$appId = $headers['X-App-ID'] ?? $headers['x-app-id'] ?? null;
-
-// Try to get token from headers
-$authHeader = $headers['Authorization'] ?? $headers['authorization'] ?? null;
-if ($authHeader && preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
-    $token = $matches[1];
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    echo json_encode(['success' => false, 'message' => 'Method Not Allowed']);
+    exit;
 }
 
-if (!$token) {
-    $token = $headers['X-Session-Token'] ?? $headers['x-session-token'] ?? null;
-}
+// Get the refresh token from cookie
+$refreshToken = $_COOKIE['ehub_refresh_token'] ?? null;
 
-// Try to get token from cookies
-if (!$token) {
-    if ($appId === 'admin') {
-        $token = $_COOKIE['ehub_admin_session'] ?? null;
-    } elseif ($appId === 'storefront') {
-        $token = $_COOKIE['ehub_store_session'] ?? null;
-    }
-    if (!$token) {
-        $token = $_COOKIE['ehub_session'] ?? null;
-    }
-}
-
-// If we have a token, blacklist it
-if ($token) {
+// Revoke refresh token from database
+if ($refreshToken) {
     try {
-        $parts = explode('.', $token);
-        if (count($parts) === 3) {
-            // Get token signature (the third part)
-            $tokenSignature = $parts[2];
-            
-            // Decode payload to get user_id and expiration
-            $payload = json_decode(base64_decode($parts[1]), true);
-            if ($payload && isset($payload['user_id']) && isset($payload['exp'])) {
-                $userId = $payload['user_id'];
-                $expiresAt = date('Y-m-d H:i:s', $payload['exp']);
-                
-                // Insert into revoked_tokens table
-                $stmt = $pdo->prepare("INSERT INTO revoked_tokens (token_signature, user_id, expires_at) VALUES (?, ?, ?)");
-                $stmt->execute([$tokenSignature, $userId, $expiresAt]);
-            }
-        }
+        revokeRefreshToken($pdo, $refreshToken);
     } catch (Exception $e) {
-        error_log("Token revocation error: " . $e->getMessage());
+        error_log("Refresh token revocation error: " . $e->getMessage());
         // Continue with logout even if revocation fails
     }
 }
 
-// Clear the HttpOnly session cookie
+// Clear the refresh token cookie — SameSite must match the one used when it was set
+$isProd = ($config['APP_ENV'] ?? 'production') === 'production';
+// Use null for domain to allow browser default behavior (fixes cross-port cookie issues in dev)
+$cookieDomain = $isProd ? '' : null;
+setcookie('ehub_refresh_token', '', [
+    'expires'  => time() - 3600,
+    'path'     => '/',
+    'domain'   => $cookieDomain,
+    'secure'   => $isProd ? true : (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on'),
+    'httponly' => true,
+    'samesite' => $isProd ? 'Strict' : 'Lax'
+]);
+
+// Clear the HttpOnly session cookie (legacy)
 clearSession();
 
 header('Content-Type: application/json');

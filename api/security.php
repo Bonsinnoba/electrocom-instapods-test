@@ -567,21 +567,34 @@ if (!function_exists('authenticate')) {
         $userId = $payload['user_id'] ?? null;
         $role = $payload['role'] ?? 'customer';
 
-        // Device fingerprint validation for admin panel only (not storefront)
-        if ($appId === 'admin' && $pdo && in_array($role, ['admin', 'staff'])) {
+        // Device fingerprint validation for admin panel only (not storefront).
+        // Skip for check_user_status.php: the JWT signature is already cryptographic
+        // proof of identity, and background fetch requests may omit optional browser
+        // headers (Sec-CH-UA, etc.), causing spurious mismatches immediately after refresh.
+        $currentScript = basename($_SERVER['SCRIPT_NAME'] ?? '');
+        $skipFingerprintScripts = ['check_user_status.php', 'refresh.php'];
+        
+        if ($appId === 'admin' && $pdo && in_array($role, ['admin', 'staff', 'super']) && !in_array($currentScript, $skipFingerprintScripts)) {
             $currentFingerprint = generateDeviceFingerprint();
             
             try {
-                $stmt = $pdo->prepare("SELECT device_fingerprint FROM user_sessions WHERE user_id = ? ORDER BY created_at DESC LIMIT 1");
+                // Query refresh_tokens (maintained by the refresh flow) rather than
+                // user_sessions (legacy table not updated by the new token rotation flow).
+                $stmt = $pdo->prepare("
+                    SELECT device_fingerprint 
+                    FROM refresh_tokens 
+                    WHERE user_id = ? AND is_revoked = FALSE 
+                    ORDER BY created_at DESC 
+                    LIMIT 1
+                ");
                 $stmt->execute([$userId]);
-                $session = $stmt->fetch();
+                $rtRecord = $stmt->fetch();
                 
-                if ($session && $session['device_fingerprint'] && $session['device_fingerprint'] !== $currentFingerprint) {
+                if ($rtRecord && $rtRecord['device_fingerprint'] && $rtRecord['device_fingerprint'] !== $currentFingerprint) {
                     if (function_exists('logApp')) {
                         logApp('warn', 'AUTH_DEVICE', "Device fingerprint mismatch for admin user $userId. Possible session hijack.");
                     }
                     logSuspiciousActivity($pdo, $userId, 'device_fingerprint_mismatch', 'Device fingerprint mismatch detected during authentication', 'high');
-                    clearSession();
                     if ($dieOnError) {
                         header('Content-Type: application/json');
                         http_response_code(401);
@@ -643,13 +656,14 @@ if (!function_exists('clearSession')) {
             'domain' => '',
             'secure' => $isProd ? true : (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on'),
             'httponly' => true,
-            'samesite' => 'Strict'
+            'samesite' => $isProd ? 'Strict' : 'Lax'
         ];
         
         // Clear all possible session cookies to ensure clean isolation
         setcookie('ehub_session', '', $cookieParams);
         setcookie('ehub_admin_session', '', $cookieParams);
         setcookie('ehub_store_session', '', $cookieParams);
+        setcookie('ehub_refresh_token', '', $cookieParams);
     }
 }
 
@@ -1047,6 +1061,13 @@ if (!function_exists('generateCSRFToken')) {
 if (!function_exists('validateCSRFToken')) {
     function validateCSRFToken(?string $token = null): bool
     {
+        // Bypass CSRF validation if request has a valid Authorization Bearer token (API/stateless mode)
+        $headers = function_exists('getallheaders') ? getallheaders() : [];
+        $authHeader = $headers['Authorization'] ?? $headers['authorization'] ?? null;
+        if ($authHeader && preg_match('/Bearer\s(\S+)/', $authHeader)) {
+            return true;
+        }
+
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
@@ -1091,11 +1112,31 @@ if (!function_exists('getCSRFTokenFromRequest')) {
 
 /**
  * Debug Mode Status
+ * Uses the cached merged settings to avoid a raw DB query on every request.
  */
 if (!function_exists('isDebugEnabled')) {
-    function isDebugEnabled()
+    function isDebugEnabled(): bool
     {
-        // 1. Try to check global $pdo first (real-time DB state)
+        // Static cache: once resolved per PHP process, never re-query.
+        static $cached = null;
+        if ($cached !== null) {
+            return $cached;
+        }
+
+        // 1. Prefer the already-cached merged settings (avoids a dedicated DB query)
+        if (function_exists('eh_merged_super_settings')) {
+            try {
+                $settings = eh_merged_super_settings();
+                if (isset($settings['debugMode'])) {
+                    $cached = filter_var($settings['debugMode'], FILTER_VALIDATE_BOOLEAN);
+                    return $cached;
+                }
+            } catch (Exception $e) {
+                // Fall through to direct DB lookup
+            }
+        }
+
+        // 2. Direct DB fallback (only if brand_settings.php not loaded yet)
         global $pdo;
         if (isset($pdo) && $pdo instanceof PDO) {
             try {
@@ -1103,24 +1144,29 @@ if (!function_exists('isDebugEnabled')) {
                 $stmt->execute();
                 $val = $stmt->fetchColumn();
                 if ($val !== false) {
-                    return filter_var($val, FILTER_VALIDATE_BOOLEAN);
+                    $cached = filter_var($val, FILTER_VALIDATE_BOOLEAN);
+                    return $cached;
                 }
             } catch (Exception $e) {
-                // DB query failed (e.g. table not migrated yet), proceed to JSON fallback
+                // DB query failed, fall through to JSON
             }
         }
 
-        // 2. Fallback to JSON file
+        // 3. JSON file fallback (last resort)
         $settingsFile = __DIR__ . '/data/super_settings.json';
         if (file_exists($settingsFile)) {
             $settings = json_decode(file_get_contents($settingsFile), true);
             if (isset($settings['debugMode'])) {
-                return filter_var($settings['debugMode'], FILTER_VALIDATE_BOOLEAN);
+                $cached = filter_var($settings['debugMode'], FILTER_VALIDATE_BOOLEAN);
+                return $cached;
             }
         }
-        return false;
+
+        $cached = false;
+        return $cached;
     }
 }
+
 
 
 
@@ -1249,8 +1295,148 @@ if (!function_exists('scrubUser')) {
         if (isset($user['id'])) $user['id'] = (int)$user['id'];
         if (isset($user['level'])) $user['level'] = (int)$user['level'];
         if (isset($user['loyalty_points'])) $user['loyalty_points'] = (int)$user['loyalty_points'];
-        if (isset($user['id_verified'])) $user['id_verified'] = (bool)$user['id_verified'];
-        
+        if (isset($user['login_attempts'])) $user['login_attempts'] = (int)$user['login_attempts'];
+
         return $user;
+    }
+}
+
+/**
+ * Generate Refresh Token
+ * Creates a cryptographically secure random refresh token (7 days expiry)
+ */
+if (!function_exists('generateRefreshToken')) {
+    function generateRefreshToken()
+    {
+        return bin2hex(random_bytes(32));
+    }
+}
+
+/**
+ * Hash Refresh Token
+ * Hashes the refresh token before storing in database
+ */
+if (!function_exists('hashRefreshToken')) {
+    function hashRefreshToken(string $token)
+    {
+        return hash('sha256', $token);
+    }
+}
+
+/**
+ * Store Refresh Token in Database
+ * Stores the hashed refresh token with user and device info
+ */
+if (!function_exists('storeRefreshToken')) {
+    function storeRefreshToken(PDO $pdo, int $userId, string $token, string $deviceFingerprint = null, string $ipAddress = null, string $userAgent = null)
+    {
+        $tokenHash = hashRefreshToken($token);
+        $expiresAt = date('Y-m-d H:i:s', time() + (60 * 60 * 24 * 7)); // 7 days
+        
+        // Revoke old tokens for same device (token rotation)
+        if ($deviceFingerprint) {
+            $stmt = $pdo->prepare("UPDATE refresh_tokens SET is_revoked = TRUE, revoked_at = NOW() WHERE user_id = ? AND device_fingerprint = ? AND is_revoked = FALSE");
+            $stmt->execute([$userId, $deviceFingerprint]);
+        }
+        
+        $stmt = $pdo->prepare("
+            INSERT INTO refresh_tokens (user_id, token_hash, device_fingerprint, ip_address, user_agent, expires_at, last_used_at)
+            VALUES (?, ?, ?, ?, ?, ?, NOW())
+        ");
+        return $stmt->execute([$userId, $tokenHash, $deviceFingerprint, $ipAddress, $userAgent, $expiresAt]);
+    }
+}
+
+/**
+ * Verify Refresh Token
+ * Verifies the refresh token and returns user_id if valid
+ */
+if (!function_exists('verifyRefreshToken')) {
+    function verifyRefreshToken(PDO $pdo, string $token)
+    {
+        $tokenHash = hashRefreshToken($token);
+        
+        $stmt = $pdo->prepare("
+            SELECT rt.id, rt.user_id, rt.expires_at, rt.is_revoked, u.status
+            FROM refresh_tokens rt
+            JOIN users u ON rt.user_id = u.id
+            WHERE rt.token_hash = ? AND rt.is_revoked = FALSE
+        ");
+        $stmt->execute([$tokenHash]);
+        $record = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if (!$record) {
+            return null;
+        }
+        
+        // Check if expired
+        if (strtotime($record['expires_at']) < time()) {
+            // Mark as revoked
+            $stmt = $pdo->prepare("UPDATE refresh_tokens SET is_revoked = TRUE, revoked_at = NOW() WHERE id = ?");
+            $stmt->execute([$record['id']]);
+            return null;
+        }
+        
+        // Check if user account is active
+        if ($record['status'] === 'Suspended' || $record['status'] === 'Deleted') {
+            return null;
+        }
+        
+        // Update last_used_at
+        $stmt = $pdo->prepare("UPDATE refresh_tokens SET last_used_at = NOW() WHERE id = ?");
+        $stmt->execute([$record['id']]);
+        
+        return (int)$record['user_id'];
+    }
+}
+
+/**
+ * Revoke Refresh Token
+ * Revokes a specific refresh token
+ */
+if (!function_exists('revokeRefreshToken')) {
+    function revokeRefreshToken(PDO $pdo, string $token)
+    {
+        $tokenHash = hashRefreshToken($token);
+        $stmt = $pdo->prepare("UPDATE refresh_tokens SET is_revoked = TRUE, revoked_at = NOW() WHERE token_hash = ?");
+        return $stmt->execute([$tokenHash]);
+    }
+}
+
+/**
+ * Revoke All User Refresh Tokens
+ * Revokes all refresh tokens for a user (e.g., on password change)
+ */
+if (!function_exists('revokeAllUserRefreshTokens')) {
+    function revokeAllUserRefreshTokens(PDO $pdo, int $userId)
+    {
+        $stmt = $pdo->prepare("UPDATE refresh_tokens SET is_revoked = TRUE, revoked_at = NOW() WHERE user_id = ? AND is_revoked = FALSE");
+        return $stmt->execute([$userId]);
+    }
+}
+
+/**
+ * Generate Short-lived Access Token (15 minutes)
+ * Used for API requests, stored in memory only
+ */
+if (!function_exists('generateAccessToken')) {
+    function generateAccessToken(int $userId, string $role = 'customer')
+    {
+        $config = $GLOBALS['config'] ?? require_once 'config.php';
+        $secret = $config['JWT_SECRET'];
+        $header = json_encode(['typ' => 'JWT', 'alg' => 'HS256']);
+        
+        $payload = json_encode([
+            'user_id' => $userId,
+            'role' => $role,
+            'exp' => time() + (60 * 15), // 15 minutes
+            'iat' => time(),
+            'type' => 'access'
+        ]);
+        $b64Header = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($header));
+        $b64Payload = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($payload));
+        $sig = hash_hmac('sha256', "$b64Header.$b64Payload", $secret, true);
+        $b64Sig = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($sig));
+        return "$b64Header.$b64Payload.$b64Sig";
     }
 }

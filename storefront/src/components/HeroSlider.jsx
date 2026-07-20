@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, memo } from 'react';
+import React, { useState, useEffect, useCallback, memo, useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { fetchSlides } from '../services/api';
@@ -6,10 +6,46 @@ import { useSettings } from '../context/SettingsContext';
 
 const isVideo = (url) => url && (url.match(/\.(mp4|webm)$/i) || url.startsWith('data:video'));
 
+/**
+ * Sanitize user input to prevent XSS attacks
+ * Removes dangerous HTML tags and attributes
+ */
+const sanitizeInput = (input) => {
+  if (typeof input !== 'string') return input;
+  
+  return input
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/on\w+="[^"]*"/gi, '')
+    .replace(/on\w+='[^']*'/gi, '')
+    .replace(/javascript:/gi, '')
+    .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '');
+};
+
+/**
+ * Validate and sanitize content blocks for safe rendering
+ */
+const sanitizeContentBlock = (block) => {
+  if (!block || typeof block !== 'object') return null;
+  
+  return {
+    ...block,
+    text: sanitizeInput(block.text || ''),
+    link: sanitizeInput(block.link || ''),
+    // Only allow safe CSS values
+    color: block.color && /^#[0-9A-Fa-f]{6}$/.test(block.color) ? block.color : '#ffffff',
+    fontSize: typeof block.fontSize === 'string' ? block.fontSize : '16px',
+    textAlign: ['left', 'center', 'right'].includes(block.textAlign) ? block.textAlign : 'center',
+    type: ['paragraph', 'heading', 'subheading', 'cta'].includes(block.type) ? block.type : 'paragraph',
+    top: typeof block.top === 'string' || typeof block.top === 'number' ? block.top : '50',
+    left: typeof block.left === 'string' || typeof block.left === 'number' ? block.left : '50'
+  };
+};
+
 function HeroSlider() {
   const { siteSettings } = useSettings();
   const [slides, setSlides] = useState([]);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const hasFetched = useRef(false);
 
   const loadSlides = useCallback(async () => {
       try {
@@ -25,7 +61,10 @@ function HeroSlider() {
   }, []);
 
   useEffect(() => {
-    loadSlides();
+    if (!hasFetched.current) {
+      hasFetched.current = true;
+      loadSlides();
+    }
 
     const handleFocus = () => {
         loadSlides();
@@ -193,8 +232,11 @@ function HeroSlider() {
                     }
                     
                     if (!Array.isArray(blocks)) return null;
+
+                    // Sanitize all blocks before rendering
+                    const sanitizedBlocks = blocks.map(sanitizeContentBlock).filter(Boolean);
   
-                    return blocks.map((block, i) => {
+                    return sanitizedBlocks.map((block, i) => {
                         if (!block.text && block.type !== 'cta') return null;
  
                         const top = parseFloat(block.top) || 50;
@@ -216,7 +258,7 @@ function HeroSlider() {
                             textShadow: '0 2px 15px rgba(0,0,0,0.6)',
                             transition: `all 0.8s cubic-bezier(0.16, 1, 0.3, 1) ${0.3 + i * 0.1}s`
                         };
-  
+ 
                         if (block.type === 'heading') return <h3 key={i} style={{ ...blockStyle, fontSize: block.fontSize || '38px', marginBottom: '0.4em' }}>{block.text}</h3>;
                         if (block.type === 'subheading') return <h4 key={i} style={{ ...blockStyle, fontSize: block.fontSize || '20px' }}>{block.text}</h4>;
                         if (block.type === 'cta') return (

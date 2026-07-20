@@ -21,6 +21,14 @@ $pdo->exec("CREATE TABLE IF NOT EXISTS pickup_locations (
     address TEXT NOT NULL,
     city VARCHAR(100) DEFAULT NULL,
     fee DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    latitude DECIMAL(10, 8) DEFAULT NULL,
+    longitude DECIMAL(11, 8) DEFAULT NULL,
+    contact_person VARCHAR(150) DEFAULT NULL,
+    contact_phone VARCHAR(20) DEFAULT NULL,
+    pickup_instructions TEXT DEFAULT NULL,
+    what_to_bring TEXT DEFAULT NULL,
+    id_requirements TEXT DEFAULT NULL,
+    pickup_deadline_days INT DEFAULT 7,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -43,6 +51,15 @@ try {
         $address = sanitizeInput($payload['address'] ?? '');
         $city = sanitizeInput($payload['city'] ?? '');
         $fee = (float)($payload['fee'] ?? 0);
+        $latitude = isset($payload['latitude']) && $payload['latitude'] !== '' ? (float)$payload['latitude'] : null;
+        $longitude = isset($payload['longitude']) && $payload['longitude'] !== '' ? (float)$payload['longitude'] : null;
+        $contact_person = sanitizeInput($payload['contact_person'] ?? '');
+        $contact_phone = sanitizeInput($payload['contact_phone'] ?? '');
+        $pickup_instructions = sanitizeInput($payload['pickup_instructions'] ?? '');
+        $what_to_bring = sanitizeInput($payload['what_to_bring'] ?? '');
+        $id_requirements = sanitizeInput($payload['id_requirements'] ?? '');
+        $pickup_deadline_days = (int)($payload['pickup_deadline_days'] ?? 7);
+        
         if ($name === '' || $address === '') {
             http_response_code(400);
             echo json_encode(['success' => false, 'message' => 'Name and address are required']);
@@ -54,12 +71,20 @@ try {
             exit;
         }
 
-        $stmt = $pdo->prepare("INSERT INTO pickup_locations (name, address, city, fee, is_active) VALUES (?, ?, ?, ?, ?)");
+        $stmt = $pdo->prepare("INSERT INTO pickup_locations (name, address, city, fee, latitude, longitude, contact_person, contact_phone, pickup_instructions, what_to_bring, id_requirements, pickup_deadline_days, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         $stmt->execute([
             $name,
             $address,
             $city,
             $fee,
+            $latitude,
+            $longitude,
+            $contact_person,
+            $contact_phone,
+            $pickup_instructions,
+            $what_to_bring,
+            $id_requirements,
+            $pickup_deadline_days,
             isset($payload['is_active']) ? (int)(bool)$payload['is_active'] : 1
         ]);
         echo json_encode(['success' => true]);
@@ -72,6 +97,15 @@ try {
         $address = sanitizeInput($payload['address'] ?? '');
         $city = sanitizeInput($payload['city'] ?? '');
         $fee = (float)($payload['fee'] ?? 0);
+        $latitude = isset($payload['latitude']) && $payload['latitude'] !== '' ? (float)$payload['latitude'] : null;
+        $longitude = isset($payload['longitude']) && $payload['longitude'] !== '' ? (float)$payload['longitude'] : null;
+        $contact_person = sanitizeInput($payload['contact_person'] ?? '');
+        $contact_phone = sanitizeInput($payload['contact_phone'] ?? '');
+        $pickup_instructions = sanitizeInput($payload['pickup_instructions'] ?? '');
+        $what_to_bring = sanitizeInput($payload['what_to_bring'] ?? '');
+        $id_requirements = sanitizeInput($payload['id_requirements'] ?? '');
+        $pickup_deadline_days = (int)($payload['pickup_deadline_days'] ?? 7);
+        
         if ($id <= 0 || $name === '' || $address === '') {
             http_response_code(400);
             echo json_encode(['success' => false, 'message' => 'Valid id, name and address are required']);
@@ -83,12 +117,20 @@ try {
             exit;
         }
 
-        $stmt = $pdo->prepare("UPDATE pickup_locations SET name = ?, address = ?, city = ?, fee = ?, is_active = ? WHERE id = ?");
+        $stmt = $pdo->prepare("UPDATE pickup_locations SET name = ?, address = ?, city = ?, fee = ?, latitude = ?, longitude = ?, contact_person = ?, contact_phone = ?, pickup_instructions = ?, what_to_bring = ?, id_requirements = ?, pickup_deadline_days = ?, is_active = ? WHERE id = ?");
         $stmt->execute([
             $name,
             $address,
             $city,
             $fee,
+            $latitude,
+            $longitude,
+            $contact_person,
+            $contact_phone,
+            $pickup_instructions,
+            $what_to_bring,
+            $id_requirements,
+            $pickup_deadline_days,
             isset($payload['is_active']) ? (int)(bool)$payload['is_active'] : 1,
             $id
         ]);

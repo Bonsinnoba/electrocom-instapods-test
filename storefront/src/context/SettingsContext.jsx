@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { updateProfile, formatImageUrl } from '../services/api';
 import { useUser } from './UserContext';
 
@@ -14,6 +14,7 @@ export const useSettings = () => {
 
 export const SettingsProvider = ({ children }) => {
   const { user, updateUser } = useUser();
+  const hasFetchedSiteSettings = useRef(false);
   const [siteSettings, setSiteSettings] = useState({
     // Identity (overridden by get_site_settings.php)
     siteName:     'ElectroCom',
@@ -41,12 +42,6 @@ export const SettingsProvider = ({ children }) => {
     accentColor:       '#f59e0b',
     headerBg:          '#0f172a',
     fontFamily:        'Inter',
-    // Hover colors
-    buttonPrimaryHover:   '#2563eb',
-    buttonSecondaryHover: '#475569',
-    buttonAccentHover:    '#d97706',
-    linkHover:            '#60a5fa',
-    cardHover:            '#1e293b',
     heroBannerTagline: '',
     heroBannerSubtext: '',
     heroCTAText:       'Explore Now',
@@ -92,7 +87,7 @@ export const SettingsProvider = ({ children }) => {
     const loadSiteSettings = async () => {
       try {
         const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
-        const response = await fetch(`${base}/get_site_settings.php?_t=${Date.now()}`);
+        const response = await fetch(`${base}/get_site_settings.php`);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const text = await response.text();
         let result;
@@ -119,12 +114,47 @@ export const SettingsProvider = ({ children }) => {
         console.error('Error loading site settings:', error);
       }
     };
-    loadSiteSettings();
+    if (!hasFetchedSiteSettings.current) {
+      hasFetchedSiteSettings.current = true;
+      loadSiteSettings();
+    }
   }, []);
+
+  // Helper to calculate hover colors from base colors
+  const calculateHoverColors = (primary, accent, header) => {
+    const darken = (hex, percent) => {
+      const num = parseInt(hex.replace('#', ''), 16);
+      const amt = Math.round(2.55 * percent);
+      const R = Math.max((num >> 16) - amt, 0);
+      const G = Math.max((num >> 8 & 0x00FF) - amt, 0);
+      const B = Math.max((num & 0x0000FF) - amt, 0);
+      return '#' + (0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1);
+    };
+    const lighten = (hex, percent) => {
+      const num = parseInt(hex.replace('#', ''), 16);
+      const amt = Math.round(2.55 * percent);
+      const R = Math.min((num >> 16) + amt, 255);
+      const G = Math.min((num >> 8 & 0x00FF) + amt, 255);
+      const B = Math.min((num & 0x0000FF) + amt, 255);
+      return '#' + (0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1);
+    };
+    return {
+      buttonPrimaryHover: darken(primary, 15),
+      buttonSecondaryHover: '#475569',
+      buttonAccentHover: darken(accent, 15),
+      linkHover: lighten(primary, 20),
+      cardHover: header,
+    };
+  };
 
   // Apply theme colors to CSS variables
   useEffect(() => {
     const root = document.documentElement;
+    const hoverColors = calculateHoverColors(
+      siteSettings.primaryColor || '#3B82F6',
+      siteSettings.accentColor || '#f59e0b',
+      siteSettings.headerBg || '#0f172a'
+    );
     if (siteSettings.primaryColor) {
       root.style.setProperty('--primary-blue', siteSettings.primaryColor);
       // Calculate RGB value for rgba usage
@@ -140,21 +170,11 @@ export const SettingsProvider = ({ children }) => {
     if (siteSettings.headerBg) {
       root.style.setProperty('--header-bg', siteSettings.headerBg);
     }
-    if (siteSettings.buttonPrimaryHover) {
-      root.style.setProperty('--button-primary-hover', siteSettings.buttonPrimaryHover);
-    }
-    if (siteSettings.buttonSecondaryHover) {
-      root.style.setProperty('--button-secondary-hover', siteSettings.buttonSecondaryHover);
-    }
-    if (siteSettings.buttonAccentHover) {
-      root.style.setProperty('--button-accent-hover', siteSettings.buttonAccentHover);
-    }
-    if (siteSettings.linkHover) {
-      root.style.setProperty('--link-hover', siteSettings.linkHover);
-    }
-    if (siteSettings.cardHover) {
-      root.style.setProperty('--card-hover', siteSettings.cardHover);
-    }
+    root.style.setProperty('--button-primary-hover', hoverColors.buttonPrimaryHover);
+    root.style.setProperty('--button-secondary-hover', hoverColors.buttonSecondaryHover);
+    root.style.setProperty('--button-accent-hover', hoverColors.buttonAccentHover);
+    root.style.setProperty('--link-hover', hoverColors.linkHover);
+    root.style.setProperty('--card-hover', hoverColors.cardHover);
     if (siteSettings.fontFamily) {
       root.style.setProperty('--font-family', siteSettings.fontFamily);
     }

@@ -237,19 +237,25 @@ try {
         exit;
     }
 
-    // Generate token
-    $token = generateToken($user['id'], $user['role']);
-
+    // Generate short-lived access token (15 minutes)
+    $accessToken = generateAccessToken($user['id'], $user['role']);
+    
+    // Generate long-lived refresh token (7 days)
+    $refreshToken = generateRefreshToken();
+    
     // Identify target application for cookie naming
     $headers = function_exists('getallheaders') ? getallheaders() : [];
     $appId = $headers['X-App-ID'] ?? $headers['x-app-id'] ?? ($data['app_source'] ?? 'storefront');
-    $cookieName = ($appId === 'admin') ? 'ehub_admin_session' : 'ehub_store_session';
+    $cookieName = ($appId === 'admin') ? 'ehub_refresh_token' : 'ehub_refresh_token';
 
+    // Get device info for refresh token storage
+    $deviceFingerprint = null;
+    $ipAddress = getClientIP();
+    $userAgent = $headers['User-Agent'] ?? $_SERVER['HTTP_USER_AGENT'] ?? '';
+    
     // Store device fingerprint for admin/staff users
     if (in_array($user['role'], ['admin', 'staff']) && function_exists('generateDeviceFingerprint')) {
         $deviceFingerprint = generateDeviceFingerprint();
-        $ipAddress = getClientIP();
-        $userAgent = $headers['User-Agent'] ?? $_SERVER['HTTP_USER_AGENT'] ?? '';
         
         try {
             $stmt = $pdo->prepare("INSERT INTO user_sessions (user_id, device_fingerprint, ip_address, user_agent) VALUES (?, ?, ?, ?)");
@@ -259,15 +265,25 @@ try {
         }
     }
 
-    // Set HttpOnly Cookie for security
+    // Store refresh token in database
+    try {
+        storeRefreshToken($pdo, $user['id'], $refreshToken, $deviceFingerprint, $ipAddress, $userAgent);
+    } catch (Exception $e) {
+        error_log("Failed to store refresh token: " . $e->getMessage());
+        // Continue anyway - login should still work
+    }
+
+    // Set HttpOnly Cookie for refresh token (7 days)
     $isProd = ($config['APP_ENV'] ?? 'production') === 'production';
-    setcookie($cookieName, $token, [
-        'expires' => time() + (60 * 60 * 24), // 24 hours
+    // Use null for domain to allow browser default behavior (fixes cross-port cookie issues in dev)
+    $cookieDomain = $isProd ? '' : null;
+    setcookie($cookieName, $refreshToken, [
+        'expires' => time() + (60 * 60 * 24 * 7), // 7 days
         'path' => '/',
-        'domain' => '',
+        'domain' => $cookieDomain,
         'secure' => $isProd ? true : (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on'),
         'httponly' => true,
-        'samesite' => 'Strict'
+        'samesite' => $isProd ? 'Strict' : 'Lax'
     ]);
 
     logger('ok', 'AUTH', "User {$user['email']} logged in successfully as " . strtoupper($user['role']));
@@ -280,7 +296,7 @@ try {
         'success' => true,
         'message' => 'Login successful!',
         'data' => [
-            'token' => $token,
+            'access_token' => $accessToken, // Short-lived token for memory storage
             'user' => scrubUser($user)
         ]
     ]);

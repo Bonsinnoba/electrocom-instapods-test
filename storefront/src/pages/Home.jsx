@@ -43,6 +43,12 @@ export default function Home({ products, onProductClick, searchQuery, loading })
 
     const recentSet = new Set(recentViews);
     const maxPrice = Math.max(...products.map((p) => parseFloat(p.price) || 0), 1);
+    const now = Date.now();
+    const maxAge = Math.max(...products.map((p) => {
+      const created = new Date(p.created_at || p.created_at || 0).getTime();
+      return now - created;
+    }), 1);
+    
     return [...products]
       .map((p, idx) => {
         const views = Number(viewHistory[p.id] || 0);
@@ -53,13 +59,20 @@ export default function Home({ products, onProductClick, searchQuery, loading })
         const popularity = Number(p.total_sold || p.sold || 0);
         const priceNorm = (parseFloat(p.price) || 0) / maxPrice;
         const recentlyViewedBoost = recentSet.has(p.id) ? -2 : 0;
+        
+        // Calculate new arrival score (higher for newer products)
+        const created = new Date(p.created_at || p.created_at || 0).getTime();
+        const age = now - created;
+        const newnessScore = (1 - age / maxAge) * 10; // Significant weight for new arrivals
+        
         const score =
-          views * 4 +
-          affinity * 2.5 +
-          rating * 3 +
-          Math.min(stock, 30) * 0.15 +
+          newnessScore + // Prioritize new arrivals
+          views * 2 + // Reduced weight for views
+          affinity * 1.5 + // Reduced weight for category affinity
+          rating * 2 + // Reduced weight for rating
+          Math.min(stock, 30) * 0.1 +
           popularity * 0.05 +
-          (1 - priceNorm) * 0.4 +
+          (1 - priceNorm) * 0.3 +
           recentlyViewedBoost;
         return { p, idx, score };
       })

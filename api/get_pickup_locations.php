@@ -5,7 +5,7 @@ require_once 'security.php';
 header('Content-Type: application/json');
 
 try {
-    $stmt = $pdo->query("SELECT id, name, address, city, fee FROM pickup_locations WHERE is_active = 1 ORDER BY name ASC");
+    $stmt = $pdo->query("SELECT id, name, address, city, fee, latitude, longitude, pickup_deadline_days FROM pickup_locations WHERE is_active = 1 ORDER BY name ASC");
     $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
     echo json_encode(['success' => true, 'data' => $rows]);
 } catch (Exception $e) {

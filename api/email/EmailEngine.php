@@ -165,17 +165,12 @@ class EmailEngine
     private function resolveProvider()
     {
         $envSelected = strtolower(trim((string)($this->config['EMAIL_PROVIDER'] ?? 'smtp')));
-        $adminSelected = strtolower(trim((string)($this->superSettings['emailProvider'] ?? '')));
 
         $enabled = [
             'smtp' => $this->resolveEnabledFlag('smtp'),
             'mailgun' => $this->resolveEnabledFlag('mailgun'),
             'sendgrid' => $this->resolveEnabledFlag('sendgrid'),
         ];
-
-        if ($adminSelected !== '' && isset($enabled[$adminSelected]) && $enabled[$adminSelected]) {
-            return $adminSelected;
-        }
 
         if ($envSelected !== '' && isset($enabled[$envSelected]) && $enabled[$envSelected]) {
             return $envSelected;
@@ -199,18 +194,8 @@ class EmailEngine
             'mailgun' => 'EMAIL_MAILGUN_ENABLED',
             'sendgrid' => 'EMAIL_SENDGRID_ENABLED',
         ];
-        $settingsMap = [
-            'smtp' => 'emailProviderSmtpEnabled',
-            'mailgun' => 'emailProviderMailgunEnabled',
-            'sendgrid' => 'emailProviderSendgridEnabled',
-        ];
 
-        $envEnabled = (bool)($this->config[$envMap[$provider]] ?? false);
-        if (array_key_exists($settingsMap[$provider], $this->superSettings)) {
-            return (bool)$this->superSettings[$settingsMap[$provider]];
-        }
-
-        return $envEnabled;
+        return (bool)($this->config[$envMap[$provider]] ?? false);
     }
 
     private function sendViaSmtp($toEmail, $subject, $htmlBody, $textBody = '')

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 const formatImageUrl = (url) => {
   if (!url) return '';
@@ -12,6 +12,7 @@ const formatImageUrl = (url) => {
 export default function PartnersMarquee() {
   const [partners, setPartners] = useState([]);
   const [loading, setLoading] = useState(true);
+  const hasFetched = useRef(false);
 
   useEffect(() => {
     const fetchPartners = async () => {
@@ -29,7 +30,10 @@ export default function PartnersMarquee() {
       }
     };
 
-    fetchPartners();
+    if (!hasFetched.current) {
+      hasFetched.current = true;
+      fetchPartners();
+    }
   }, []);
 
   if (loading || partners.length === 0) {

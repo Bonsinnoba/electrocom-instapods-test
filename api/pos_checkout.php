@@ -66,10 +66,10 @@ try {
     $stmt = $pdo->prepare("
         INSERT INTO orders (
             user_id, total_amount, status, payment_method, 
-            order_type, cashier_id
-        ) VALUES (?, ?, 'delivered', ?, 'pos', ?)
+            order_type, cashier_id, customer_email
+        ) VALUES (?, ?, 'delivered', ?, 'pos', ?, ?)
     ");
-    $stmt->execute([$customerId, $totalAmount, $paymentMethod, $cashierId]);
+    $stmt->execute([$customerId, $totalAmount, $paymentMethod, $cashierId, $customerEmail]);
     $orderId = $pdo->lastInsertId();
 
     // 4. Process Items & Deduct Stock

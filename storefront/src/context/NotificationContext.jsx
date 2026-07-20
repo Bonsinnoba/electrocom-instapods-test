@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useUser } from './UserContext';
 import { secureStorage } from '../utils/secureStorage';
 
@@ -19,6 +19,8 @@ export const NotificationProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
   const [toasts, setToasts] = useState([]);
   const [loading, setLoading] = useState(false);
+  const pollingIntervalRef = useRef(null);
+  const isPollingActiveRef = useRef(false);
 
   const addToast = (text, type = 'info') => {
     const id = Date.now();
@@ -33,8 +35,21 @@ export const NotificationProvider = ({ children }) => {
     setToasts(prev => prev.filter(t => t.id !== id));
   };
 
+  const stopPolling = useCallback(() => {
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
+    isPollingActiveRef.current = false;
+  }, []);
+
   const fetchServerNotifications = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+      stopPolling();
+      return;
+    }
+    if (!isPollingActiveRef.current) return;
+
     try {
       const token = secureStorage.getItem('token', 'shared');
       const response = await fetch(`${API_BASE_URL}/get_notifications.php`, {
@@ -44,6 +59,14 @@ export const NotificationProvider = ({ children }) => {
           ...(token ? { 'X-Session-Token': token } : {})
         }
       });
+
+      // Stop polling on 401 Unauthorized
+      if (response.status === 401) {
+        stopPolling();
+        setNotifications([]);
+        return;
+      }
+
       const result = await response.json();
       if (result.success) {
         // Map server notifications to local format
@@ -59,18 +82,36 @@ export const NotificationProvider = ({ children }) => {
       }
     } catch (error) {
       console.error("Failed to fetch notifications", error);
+      // Stop polling on network errors to prevent spam
+      stopPolling();
     }
-  }, [user]);
+  }, [user, stopPolling]);
 
   useEffect(() => {
     if (user) {
+      isPollingActiveRef.current = true;
       fetchServerNotifications();
-      const interval = setInterval(fetchServerNotifications, 30000); // 30s poll
-      return () => clearInterval(interval);
+      pollingIntervalRef.current = setInterval(fetchServerNotifications, 30000); // 30s poll
     } else {
+      stopPolling();
       setNotifications([]);
     }
-  }, [user, fetchServerNotifications]);
+    return () => {
+      stopPolling();
+    };
+  }, [user, fetchServerNotifications, stopPolling]);
+
+  // Immediately stop polling on global auth_unauthorized event
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      stopPolling();
+      setNotifications([]);
+    };
+    window.addEventListener('auth_unauthorized', handleUnauthorized);
+    return () => {
+      window.removeEventListener('auth_unauthorized', handleUnauthorized);
+    };
+  }, [stopPolling]);
 
   const addNotification = (text, type = 'info') => {
     // This adds a temporary local notification, usually for UI actions

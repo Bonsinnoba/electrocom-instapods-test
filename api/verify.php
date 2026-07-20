@@ -57,7 +57,7 @@ try {
         'domain' => '',
         'secure' => $isProd ? true : (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on'),
         'httponly' => true,
-        'samesite' => 'Strict'
+        'samesite' => $isProd ? 'Strict' : 'Lax'
     ]);
 
     logger('ok', 'AUTH_VERIFY', "User {$verifiedUser['email']} verified account successfully.");
