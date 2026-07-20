@@ -24,6 +24,13 @@ $config = [
     'APP_URL'             => $_ENV['APP_URL'] ?? '',
     'FRONTEND_URL'        => $_ENV['FRONTEND_URL'] ?? '',
     
+    // Site Identity
+    'SITE_NAME'           => $_ENV['SITE_NAME'] ?? 'ElectrCom',
+    'SITE_DESCRIPTION'    => $_ENV['SITE_DESCRIPTION'] ?? '',
+    'CONTACT_EMAIL'       => $_ENV['CONTACT_EMAIL'] ?? '',
+    'CONTACT_PHONE'       => $_ENV['CONTACT_PHONE'] ?? '',
+    'SUPPORT_EMAIL'       => $_ENV['SUPPORT_EMAIL'] ?? '',
+    
     // Database
     'DB_HOST'             => $_ENV['DB_HOST'] ?? 'localhost',
     'DB_PORT'             => $_ENV['DB_PORT'] ?? 3306,
