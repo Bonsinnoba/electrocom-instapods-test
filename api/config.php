@@ -26,10 +26,14 @@ $config = [
     
     // Site Identity
     'SITE_NAME'           => $_ENV['SITE_NAME'] ?? 'ElectrCom',
-    'SITE_DESCRIPTION'    => $_ENV['SITE_DESCRIPTION'] ?? '',
-    'CONTACT_EMAIL'       => $_ENV['CONTACT_EMAIL'] ?? '',
-    'CONTACT_PHONE'       => $_ENV['CONTACT_PHONE'] ?? '',
-    'SUPPORT_EMAIL'       => $_ENV['SUPPORT_EMAIL'] ?? '',
+    'SITE_EMAIL'          => $_ENV['SITE_EMAIL'] ?? '',
+    'PHONE1'              => $_ENV['PHONE1'] ?? '',
+    'PHONE2'              => $_ENV['PHONE2'] ?? '',
+    'WHATSAPP'            => $_ENV['WHATSAPP'] ?? '',
+    
+    // Site Assets
+    'SITE_LOGO_URL'       => $_ENV['SITE_LOGO_URL'] ?? '',
+    'FAVICON_URL'         => $_ENV['FAVICON_URL'] ?? '',
     
     // Database
     'DB_HOST'             => $_ENV['DB_HOST'] ?? 'localhost',
