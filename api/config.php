@@ -14,8 +14,10 @@ use Dotenv\Dotenv;
 
 // Initialize Dotenv
 // In production, environment variables are set on the pod and should take precedence
-// Only load from files if critical variables are not already set
-if (!isset($_ENV['DB_HOST']) || !isset($_ENV['DB_PASS'])) {
+// Only load from files if critical variables are not already set with meaningful values
+$dbHost = $_ENV['DB_HOST'] ?? '';
+$dbPass = $_ENV['DB_PASS'] ?? '';
+if (empty($dbHost) || empty($dbPass) || $dbHost === 'localhost') {
     try {
         // Try .env first
         $dotenv = Dotenv::createImmutable(__DIR__, '.env');
@@ -48,13 +50,13 @@ $config = [
     'SITE_LOGO_URL'       => $_ENV['SITE_LOGO_URL'] ?? '',
     'FAVICON_URL'         => $_ENV['FAVICON_URL'] ?? '',
     
-    // Database
-    'DB_HOST'             => $_ENV['DB_HOST'] ?? 'localhost',
-    'DB_PORT'             => $_ENV['DB_PORT'] ?? 3306,
-    'DB_USER'             => $_ENV['DB_USER'] ?? '',
+    // Database - Aiven MySQL defaults for production
+    'DB_HOST'             => $_ENV['DB_HOST'] ?? 'electrocom-test-db-ivenbalika123-0bee.h.aivencloud.com',
+    'DB_PORT'             => $_ENV['DB_PORT'] ?? 16052,
+    'DB_USER'             => $_ENV['DB_USER'] ?? 'avnadmin',
     'DB_PASS'             => $_ENV['DB_PASS'] ?? '',
-    'DB_NAME'             => $_ENV['DB_NAME'] ?? '',
-    'DB_SSL'              => filter_var($_ENV['DB_SSL'] ?? false, FILTER_VALIDATE_BOOLEAN),
+    'DB_NAME'             => $_ENV['DB_NAME'] ?? 'defaultdb',
+    'DB_SSL'              => filter_var($_ENV['DB_SSL'] ?? true, FILTER_VALIDATE_BOOLEAN),
     'DB_AUTO_REPAIR'      => filter_var($_ENV['DB_AUTO_REPAIR'] ?? false, FILTER_VALIDATE_BOOLEAN),
     
     // Security & Encryption
