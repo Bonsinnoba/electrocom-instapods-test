@@ -16,6 +16,16 @@ $db   = $config['DB_NAME'];
 $charset = 'utf8mb4';
 $ssl = $config['DB_SSL'] ?? false;
 
+// Debug: Show connection parameters (without password)
+echo "=== Connection Parameters ===\n";
+echo "Host: $host\n";
+echo "Port: $port\n";
+echo "User: $user\n";
+echo "Database: $db\n";
+echo "SSL: " . ($ssl ? 'enabled' : 'disabled') . "\n";
+echo "Password length: " . strlen($pass) . " characters\n";
+echo "\n";
+
 $options = [
     PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
