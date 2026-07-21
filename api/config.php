@@ -10,12 +10,22 @@ require_once __DIR__ . '/vendor/autoload.php';
 use Dotenv\Dotenv;
 
 // Initialize Dotenv
-try {
-    $dotenv = Dotenv::createImmutable(__DIR__);
-    $dotenv->load();
-} catch (Exception $e) {
-    // If .env is missing in production, we might rely on actual environment variables
-    // so we don't necessarily want to halt, but in this project context .env is expected.
+// In production, environment variables are set on the pod and should take precedence
+// Only load from files if critical variables are not already set
+if (!isset($_ENV['DB_HOST']) || !isset($_ENV['DB_PASS'])) {
+    try {
+        // Try .env first
+        $dotenv = Dotenv::createImmutable(__DIR__, '.env');
+        $dotenv->load();
+    } catch (Exception $e) {
+        try {
+            // Fallback to .env.production
+            $dotenv = Dotenv::createImmutable(__DIR__, '.env.production');
+            $dotenv->load();
+        } catch (Exception $e2) {
+            // If both are missing, rely on environment variables set on the pod
+        }
+    }
 }
 
 // Map environment variables to the $config array
