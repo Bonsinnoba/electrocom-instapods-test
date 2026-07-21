@@ -3,6 +3,8 @@
  * Diagnostic script to list all tables with exact case
  * Run this to check table name case sensitivity issues
  */
+// Skip CORS for diagnostic script
+require_once 'config.php';
 require_once 'db.php';
 
 try {
