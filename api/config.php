@@ -8,7 +8,7 @@ error_reporting(E_ALL);
  * provides a unified $config array for backward compatibility.
  */
 
-require_once __DIR__ . '/vendor/autoload.php';
+require_once __DIR__ . '/../vendor/autoload.php';
 
 use Dotenv\Dotenv;
 
