@@ -55,6 +55,8 @@ if ($ssl) {
         $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
     } else {
         // Fallback: Enable SSL without certificate verification
+        // Setting MYSQL_ATTR_SSL_CA to empty string still enables SSL mode
+        $options[PDO::MYSQL_ATTR_SSL_CA] = '';
         $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
     }
 }
