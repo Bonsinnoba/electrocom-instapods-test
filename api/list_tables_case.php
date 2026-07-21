@@ -3,9 +3,58 @@
  * Diagnostic script to list all tables with exact case
  * Run this to check table name case sensitivity issues
  */
-// Skip CORS for diagnostic script
-require_once 'config.php';
-require_once 'db.php';
+// Skip CORS for diagnostic script - load config and create direct DB connection
+require_once __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/config.php';
+
+// Create direct PDO connection without CORS middleware
+$host = $config['DB_HOST'];
+$port = $config['DB_PORT'] ?? 3306;
+$user = $config['DB_USER'];
+$pass = $config['DB_PASS'];
+$db   = $config['DB_NAME'];
+$charset = 'utf8mb4';
+$ssl = $config['DB_SSL'] ?? false;
+
+$options = [
+    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    PDO::ATTR_EMULATE_PREPARES   => false,
+];
+
+$dsn = "mysql:host=$host;port=$port;dbname=$db;charset=$charset";
+
+// Add SSL options for Aiven MySQL
+if ($ssl) {
+    $sslCaPaths = [
+        '/etc/ssl/certs/ca-certificates.crt',
+        '/etc/ssl/certs/ca-bundle.crt',
+        '/etc/pki/tls/certs/ca-bundle.crt',
+        '/usr/local/ssl/certs/ca-bundle.crt',
+    ];
+    
+    $sslCaPath = null;
+    foreach ($sslCaPaths as $path) {
+        if (file_exists($path)) {
+            $sslCaPath = $path;
+            break;
+        }
+    }
+    
+    if ($sslCaPath) {
+        $options[PDO::MYSQL_ATTR_SSL_CA] = $sslCaPath;
+        $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
+    } else {
+        $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
+    }
+}
+
+try {
+    $pdo = new PDO($dsn, $user, $pass, $options);
+} catch (PDOException $e) {
+    echo "Database connection failed: " . $e->getMessage() . "\n";
+    exit(1);
+}
 
 try {
     // Get all table names with exact case
