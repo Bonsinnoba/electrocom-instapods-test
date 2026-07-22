@@ -145,7 +145,7 @@ export default function Orders() {
           console.warn('Storage quota exceeded when getting token');
         }
       }
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}/api/orders.php?order_id=${cancelModalOrder.id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}/orders.php?order_id=${cancelModalOrder.id}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',

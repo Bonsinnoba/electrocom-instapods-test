@@ -188,7 +188,7 @@ function ProductModal({ product, products = [], isOpen, onClose, onAddToCart, on
           console.warn('Storage quota exceeded when getting token');
         }
       }
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}/api/stock_notifications.php`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}/stock_notifications.php`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

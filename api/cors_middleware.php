@@ -19,7 +19,10 @@ if ($appEnv === 'development') {
     header("Access-Control-Allow-Origin: $allowedOrigin");
 } else {
     // Production: Strict allowlist - only allow explicitly configured origins
-    if ($origin && in_array($origin, $allowedOrigins)) {
+    if (!$origin) {
+        // Same-origin requests and non-browser clients may omit Origin entirely.
+        // Do not emit ACAO when there is no cross-origin request to authorize.
+    } elseif (in_array($origin, $allowedOrigins, true)) {
         header("Access-Control-Allow-Origin: $rawOrigin");
     } else {
         // In production, if origin is not in allowlist, reject the request
