@@ -42,8 +42,13 @@ export const formatImageUrl = (url) => {
         url = url.replaceAll(base, '');
     });
 
+    const relativePath = url.startsWith('/') ? url.slice(1) : url;
+    if (relativePath.startsWith('uploads/')) {
+        return `${API_BASE_URL}/media.php?path=${encodeURIComponent(relativePath)}`;
+    }
+
     // Prepend the API base URL
-    return `${API_BASE_URL}/${url.startsWith('/') ? url.slice(1) : url}`;
+    return `${API_BASE_URL}/${relativePath}`;
 };
 
 /**

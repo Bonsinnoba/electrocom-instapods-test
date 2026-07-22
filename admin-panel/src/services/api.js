@@ -57,7 +57,11 @@ export const formatImageUrl = (url) => {
     });
     
     if (url.startsWith('http')) return url;
-    return `${API_BASE_URL}/${url.startsWith('/') ? url.slice(1) : url}`;
+    const relativePath = url.startsWith('/') ? url.slice(1) : url;
+    if (relativePath.startsWith('uploads/')) {
+        return `${API_BASE_URL}/media.php?path=${encodeURIComponent(relativePath)}`;
+    }
+    return `${API_BASE_URL}/${relativePath}`;
 };
 
 const getAuthHeaders = (token, contentType = 'application/json') => {
