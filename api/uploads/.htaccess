@@ -1,0 +1,7 @@
+# Disable PHP execution in uploads folder
+<Files *.php>
+    Order Deny,Allow
+    Deny from all
+</Files>
+SetHandler default-handler
+Options -ExecCGI

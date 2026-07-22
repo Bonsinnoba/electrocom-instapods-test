@@ -2,9 +2,6 @@
 api/.env.php
 api/.env
 api/vendor/
-api/logs/
-api/uploads/
-api/backups/
 api/cache/
 
 # Node dependencies
