@@ -13,10 +13,23 @@ require_once __DIR__ . '/../vendor/autoload.php';
 use Dotenv\Dotenv;
 
 // Initialize Dotenv
-// In production, environment variables are set on the pod and should take precedence
-// Only load from files if critical variables are not already set with meaningful values
-$dbHost = $_ENV['DB_HOST'] ?? '';
-$dbPass = $_ENV['DB_PASS'] ?? '';
+// In production, environment variables are set on the pod and should take precedence.
+// Select the matching file when deployment variables are not available.
+$runtimeEnv = $_ENV['APP_ENV'] ?? $_SERVER['APP_ENV'] ?? getenv('APP_ENV') ?: '';
+$dbHost = $_ENV['DB_HOST'] ?? $_SERVER['DB_HOST'] ?? getenv('DB_HOST') ?: '';
+$dbPass = $_ENV['DB_PASS'] ?? $_SERVER['DB_PASS'] ?? getenv('DB_PASS') ?: '';
+
+// Keep process-level deployment variables available to the existing config map.
+foreach (['APP_ENV', 'DB_HOST', 'DB_PORT', 'DB_USER', 'DB_PASS', 'DB_NAME', 'DB_SSL', 'DB_AUTO_REPAIR'] as $key) {
+    if (array_key_exists($key, $_ENV)) {
+        continue;
+    }
+
+    $value = $_SERVER[$key] ?? getenv($key);
+    if ($value !== false && $value !== null) {
+        $_ENV[$key] = $value;
+    }
+}
 
 // Debug: Show initial $_ENV state
 error_log("=== Config Debug ===");
@@ -25,20 +38,22 @@ error_log("Initial DB_PASS from \$_ENV: " . ($dbPass ? 'length=' . strlen($dbPas
 
 if (empty($dbHost) || empty($dbPass) || $dbHost === 'localhost') {
     error_log("Loading from dotenv files...");
-    try {
-        // Try .env first
-        $dotenv = Dotenv::createImmutable(__DIR__, '.env');
-        $dotenv->load();
-        error_log("Loaded from .env");
-    } catch (Exception $e) {
+    $envFiles = strtolower((string)$runtimeEnv) === 'production'
+        ? ['.env.production', '.env']
+        : ['.env', '.env.production'];
+
+    foreach ($envFiles as $envFile) {
+        if (!is_file(__DIR__ . '/' . $envFile)) {
+            continue;
+        }
+
         try {
-            // Fallback to .env.production
-            $dotenv = Dotenv::createImmutable(__DIR__, '.env.production');
+            $dotenv = Dotenv::createImmutable(__DIR__, $envFile);
             $dotenv->load();
-            error_log("Loaded from .env.production");
-        } catch (Exception $e2) {
-            // If both are missing, rely on environment variables set on the pod
-            error_log("No dotenv files found, using pod env vars");
+            error_log("Loaded from $envFile");
+            break;
+        } catch (Exception $e) {
+            error_log("Unable to load $envFile");
         }
     }
 } else {

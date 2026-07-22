@@ -15,7 +15,7 @@ if (!isset($config) || !is_array($config)) {
 require_once 'cors_middleware.php';
 
 $host = $config['DB_HOST'];
-$port = $config['DB_PORT'] ?? 3306;
+$port = $config['DB_PORT'] ?? 16052;
 $user = $config['DB_USER'];
 $pass = $config['DB_PASS'];
 $db   = $config['DB_NAME'];
