@@ -34,31 +34,8 @@ $dsn = "mysql:host=$host;port=$port;dbname=$db;charset=$charset";
 
 // Add SSL options for Aiven MySQL
 if ($ssl) {
-    // Try common SSL certificate paths
-    $sslCaPaths = [
-        '/etc/ssl/certs/ca-certificates.crt',
-        '/etc/ssl/certs/ca-bundle.crt',
-        '/etc/pki/tls/certs/ca-bundle.crt',
-        '/usr/local/ssl/certs/ca-bundle.crt',
-    ];
-    
-    $sslCaPath = null;
-    foreach ($sslCaPaths as $path) {
-        if (file_exists($path)) {
-            $sslCaPath = $path;
-            break;
-        }
-    }
-    
-    if ($sslCaPath) {
-        $options[PDO::MYSQL_ATTR_SSL_CA] = $sslCaPath;
-        $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
-    } else {
-        // Fallback: Enable SSL without certificate verification
-        // Setting MYSQL_ATTR_SSL_CA to empty string still enables SSL mode
-        $options[PDO::MYSQL_ATTR_SSL_CA] = '';
-        $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
-    }
+    // Simplified SSL configuration - only disable cert verification
+    $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
 }
 
 try {

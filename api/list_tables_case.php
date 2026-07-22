@@ -16,16 +16,6 @@ $db   = $config['DB_NAME'];
 $charset = 'utf8mb4';
 $ssl = $config['DB_SSL'] ?? false;
 
-// Debug: Show connection parameters (without password)
-echo "=== Connection Parameters ===\n";
-echo "Host: $host\n";
-echo "Port: $port\n";
-echo "User: $user\n";
-echo "Database: $db\n";
-echo "SSL: " . ($ssl ? 'enabled' : 'disabled') . "\n";
-echo "Password length: " . strlen($pass) . " characters\n";
-echo "\n";
-
 $options = [
     PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
@@ -36,30 +26,8 @@ $dsn = "mysql:host=$host;port=$port;dbname=$db;charset=$charset";
 
 // Add SSL options for Aiven MySQL
 if ($ssl) {
-    $sslCaPaths = [
-        '/etc/ssl/certs/ca-certificates.crt',
-        '/etc/ssl/certs/ca-bundle.crt',
-        '/etc/pki/tls/certs/ca-bundle.crt',
-        '/usr/local/ssl/certs/ca-bundle.crt',
-    ];
-    
-    $sslCaPath = null;
-    foreach ($sslCaPaths as $path) {
-        if (file_exists($path)) {
-            $sslCaPath = $path;
-            break;
-        }
-    }
-    
-    if ($sslCaPath) {
-        $options[PDO::MYSQL_ATTR_SSL_CA] = $sslCaPath;
-        $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
-    } else {
-        // Fallback: Enable SSL without certificate verification
-        // Setting MYSQL_ATTR_SSL_CA to empty string still enables SSL mode
-        $options[PDO::MYSQL_ATTR_SSL_CA] = '';
-        $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
-    }
+    // Simplified SSL configuration - only disable cert verification
+    $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
 }
 
 try {
