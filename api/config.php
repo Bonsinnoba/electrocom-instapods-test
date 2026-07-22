@@ -17,21 +17,37 @@ use Dotenv\Dotenv;
 // Only load from files if critical variables are not already set with meaningful values
 $dbHost = $_ENV['DB_HOST'] ?? '';
 $dbPass = $_ENV['DB_PASS'] ?? '';
+
+// Debug: Show initial $_ENV state
+error_log("=== Config Debug ===");
+error_log("Initial DB_HOST from \$_ENV: " . ($dbHost ?: 'empty'));
+error_log("Initial DB_PASS from \$_ENV: " . ($dbPass ? 'length=' . strlen($dbPass) : 'empty'));
+
 if (empty($dbHost) || empty($dbPass) || $dbHost === 'localhost') {
+    error_log("Loading from dotenv files...");
     try {
         // Try .env first
         $dotenv = Dotenv::createImmutable(__DIR__, '.env');
         $dotenv->load();
+        error_log("Loaded from .env");
     } catch (Exception $e) {
         try {
             // Fallback to .env.production
             $dotenv = Dotenv::createImmutable(__DIR__, '.env.production');
             $dotenv->load();
+            error_log("Loaded from .env.production");
         } catch (Exception $e2) {
             // If both are missing, rely on environment variables set on the pod
+            error_log("No dotenv files found, using pod env vars");
         }
     }
+} else {
+    error_log("Using pod environment variables (skipping dotenv)");
 }
+
+// Debug: Show final values
+error_log("Final DB_HOST: " . ($_ENV['DB_HOST'] ?? 'empty'));
+error_log("Final DB_PASS: " . (isset($_ENV['DB_PASS']) ? 'length=' . strlen($_ENV['DB_PASS']) : 'empty'));
 
 // Map environment variables to the $config array
 $config = [
