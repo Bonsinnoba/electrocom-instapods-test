@@ -59,7 +59,7 @@ function monitorTraffic()
     } else {
         // Simple file-based cache to avoid hitting API limits too hard
         $cacheDir = __DIR__ . '/cache/geoip';
-        if (!is_dir($cacheDir)) mkdir($cacheDir, 0755, true);
+        if (!is_dir($cacheDir)) @mkdir($cacheDir, 0755, true);
         $cacheFile = $cacheDir . '/' . md5($ip) . '.json';
 
         if (file_exists($cacheFile) && (time() - filemtime($cacheFile) < 86400)) {
@@ -72,7 +72,7 @@ function monitorTraffic()
                 $geoData = json_decode($response, true);
                 if ($geoData && $geoData['status'] === 'success') {
                     $country = $geoData['country'];
-                    file_put_contents($cacheFile, $response);
+                    @file_put_contents($cacheFile, $response);
                 }
             }
         }

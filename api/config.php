@@ -1,6 +1,6 @@
 <?php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
+ini_set('display_errors', 0);
+ini_set('display_startup_errors', 0);
 error_reporting(E_ALL);
 /**
  * Configuration Loader
@@ -58,6 +58,12 @@ if (empty($dbHost) || empty($dbPass) || $dbHost === 'localhost') {
     }
 } else {
     error_log("Using pod environment variables (skipping dotenv)");
+}
+
+// Never prepend PHP warnings/notices to JSON responses in production.
+if (strtolower((string)($_ENV['APP_ENV'] ?? $runtimeEnv)) === 'production') {
+    ini_set('display_errors', 0);
+    ini_set('display_startup_errors', 0);
 }
 
 // Debug: Show final values

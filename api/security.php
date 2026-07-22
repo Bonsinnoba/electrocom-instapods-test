@@ -441,10 +441,10 @@ if (!function_exists('authenticate')) {
         // EMERGENCY DEBUG LOG - Log raw request data to catch hidden session drops
         // Only enabled in development mode to prevent exposing sensitive tokens in production
         if (function_exists('isDebugEnabled') && isDebugEnabled()) {
-            if (!is_dir(__DIR__ . '/logs')) mkdir(__DIR__ . '/logs', 0755, true);
+            if (!is_dir(__DIR__ . '/logs')) @mkdir(__DIR__ . '/logs', 0755, true);
             $debugHeaders = function_exists('getallheaders') ? getallheaders() : [];
             $debugLog = date('Y-m-d H:i:s') . " | AUTH_REQ | " . $_SERVER['REQUEST_METHOD'] . " " . $_SERVER['REQUEST_URI'] . " | IP: " . getClientIP() . " | AuthHeader: " . ($debugHeaders['Authorization'] ?? $debugHeaders['authorization'] ?? 'NONE') . " | Cookie: " . ($_COOKIE['ehub_session'] ?? 'NONE') . "\n";
-            file_put_contents(__DIR__ . '/logs/debug_auth.log', $debugLog, FILE_APPEND);
+            @file_put_contents(__DIR__ . '/logs/debug_auth.log', $debugLog, FILE_APPEND);
         }
 
         $token = null;
@@ -826,7 +826,7 @@ if (!function_exists('logger')) {
         }
 
         $logDir = __DIR__ . '/logs';
-        if (!is_dir($logDir)) mkdir($logDir, 0755, true);
+        if (!is_dir($logDir)) @mkdir($logDir, 0755, true);
         
         // 1. Context Extraction
         $userIdCtx = '';
@@ -862,7 +862,7 @@ if (!function_exists('logger')) {
 
         // 3. Reliable Write with Locking
         $dailyFile = $logDir . '/app-' . date('Y-m-d') . '.log';
-        file_put_contents($dailyFile, $line, FILE_APPEND | LOCK_EX);
+        @file_put_contents($dailyFile, $line, FILE_APPEND | LOCK_EX);
         
         $isLogging = false;
     }
