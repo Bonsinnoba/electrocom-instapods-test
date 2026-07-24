@@ -1,7 +1,7 @@
 import React from 'react';
 import { useCart } from '../context/CartContext';
 import { Trash2, Plus, Minus, ShoppingBag, Tag } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import TransitionLink from './TransitionLink';
 import { useSettings } from '../context/SettingsContext';
 
 
@@ -140,10 +140,10 @@ export default function CartPreview() {
             <span>Total</span>
             <span>{formatPrice(subtotal - (appliedCoupon ? appliedCoupon.discountAmount : 0))}</span>
           </div>
-          <Link to="/cart" className="btn-primary" style={{ width: '100%', textAlign: 'center', display: 'flex', textDecoration: 'none' }}>
+          <TransitionLink to="/cart" className="btn-primary" style={{ width: '100%', textAlign: 'center', display: 'flex', textDecoration: 'none' }}>
             <ShoppingBag size={18} style={{ marginRight: '8px' }} />
             Checkout Now
-          </Link>
+          </TransitionLink>
         </div>
       )}
     </div>
