@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, startTransition } from 'react';
 import { Menu, Search, Map, ShoppingCart, Moon, Sun, X, ExternalLink, ArrowRight, Bell } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useNotifications } from '../context/NotificationContext';
 import { useUser } from '../context/UserContext';
 import { useSettings } from '../context/SettingsContext';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import TransitionLink from './TransitionLink';
 import { formatImageUrl } from '../services/api';
 import {
   applySynonymsToQuery,
@@ -104,8 +105,22 @@ export default function Navbar({
         <Menu size={20} />
       </div>
       
-      <Link to="/" style={{ display: 'flex', alignItems: 'center' }}>
-        {siteSettings.siteLogoUrl ? (
+      <TransitionLink to="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}>
+        {siteSettings.faviconUrl ? (
+          <>
+            <img
+              src={formatImageUrl(siteSettings.faviconUrl)}
+              className={`nav-favicon ${isSearchOpen ? 'hidden-mobile' : ''}`}
+              alt={siteSettings.siteName}
+              width="32"
+              height="32"
+              style={{ maxHeight: '32px', objectFit: 'contain', borderRadius: '6px' }}
+            />
+            <div className={`nav-logo-text ${isSearchOpen ? 'hidden-mobile' : ''}`} style={{ fontWeight: 900, fontSize: '20px', color: 'var(--primary-blue)' }}>
+              {siteSettings.siteName}
+            </div>
+          </>
+        ) : siteSettings.siteLogoUrl ? (
           <img
             src={formatImageUrl(siteSettings.siteLogoUrl)}
             className={`nav-logo ${isSearchOpen ? 'hidden-mobile' : ''}`}
@@ -119,7 +134,7 @@ export default function Navbar({
             {siteSettings.siteName}
           </div>
         )}
-      </Link>
+      </TransitionLink>
       
       <div ref={searchRef} className={`search-container ${isSearchOpen ? 'active' : ''}`}>
         <Search className="search-icon" size={18} />
@@ -177,7 +192,7 @@ export default function Navbar({
               <div className="results-section">
                 <div className="section-label">Sections</div>
                 {results.pages.map(page => (
-                  <Link 
+                  <TransitionLink 
                     key={page.path} 
                     to={page.path} 
                     className="result-item"
@@ -193,7 +208,7 @@ export default function Navbar({
                       <span className="result-meta">Navigate to page</span>
                     </div>
                     <ArrowRight size={14} className="result-arrow" />
-                  </Link>
+                  </TransitionLink>
                 ))}
               </div>
             )}
@@ -210,7 +225,9 @@ export default function Navbar({
                       if (onProductClick) {
                         onProductClick(product);
                       } else {
-                        navigate('/shop');
+                        startTransition(() => {
+                          navigate('/shop');
+                        });
                         setSearchQuery(product.name);
                       }
                       setIsFocused(false);
@@ -248,9 +265,9 @@ export default function Navbar({
         </div>
         
         {/* Mobile Map Toggle - hidden on mobile; Map is in the sidebar */}
-        <Link to="/locations" className="sidebar-icon btn nav-map-btn" role="button" aria-label="Open Store Locations" tabIndex={0}>
+        <TransitionLink to="/locations" className="sidebar-icon btn nav-map-btn" role="button" aria-label="Open Store Locations" tabIndex={0}>
           <Map size={20} />
-        </Link>
+        </TransitionLink>
         
         {/* Notifications */}
         <div className="sidebar-icon btn nav-notif-btn" style={{ position: 'relative' }} onClick={onNotificationsClick} role="button" aria-label={`View Notifications, ${unreadCount} unread`} tabIndex={0}>
@@ -263,7 +280,7 @@ export default function Navbar({
         </div>
         
         {/* Mobile Cart Link */}
-        <Link 
+        <TransitionLink 
           to={user ? "/cart" : "#"} 
           onClick={(e) => {
             if (!user) {
@@ -280,14 +297,14 @@ export default function Navbar({
               {cartCount}
             </span>
           )}
-        </Link>
+        </TransitionLink>
         
         <div className="sidebar-icon btn" id="theme-toggle" onClick={onThemeToggle} role="button" aria-label={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"} tabIndex={0}>
           {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
         </div>
         
         {user ? (
-          <Link 
+          <TransitionLink 
             to="/profile" 
             className="profile-nav-link btn" 
             style={{ 
@@ -338,7 +355,7 @@ export default function Navbar({
             <span className="navbar-user-name" style={{ fontSize: '14px', fontWeight: 700, whiteSpace: 'nowrap' }}>
               {user.name?.split(' ')?.[0] || 'User'}
             </span>
-          </Link>
+          </TransitionLink>
         ) : (
           <button className="btn-login btn" id="btn-login" onClick={onLoginClick}>Login</button>
         )}

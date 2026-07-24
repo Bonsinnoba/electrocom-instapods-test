@@ -1,6 +1,8 @@
+import React, { startTransition } from 'react';
 import { Home, Store, Heart, Receipt, Package, Bell, Settings, HelpCircle, User, MapPin, ShoppingCart, X, LogOut, LayoutGrid } from 'lucide-react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useWishlist } from '../context/WishlistContext';
+import TransitionLink from './TransitionLink';
 import { useNotifications } from '../context/NotificationContext';
 import { useUser } from '../context/UserContext';
 
@@ -14,7 +16,9 @@ export default function Sidebar({ isOpen, onClose, onOrdersClick, onNotification
 
   const handleLogout = () => {
     logout();
-    navigate('/');
+    startTransition(() => {
+      navigate('/');
+    });
     onClose();
   };
 
@@ -55,7 +59,7 @@ export default function Sidebar({ isOpen, onClose, onOrdersClick, onNotification
                 justifyContent: 'center'
               }}
             >
-              <Link 
+              <TransitionLink 
                 to={item.to} 
                 className={`sidebar-icon ${isActive(item.to) ? 'active' : ''} ${item.badge ? 'heart-active' : ''}`} 
                 data-tooltip={item.tooltip} 
@@ -78,7 +82,7 @@ export default function Sidebar({ isOpen, onClose, onOrdersClick, onNotification
                   }}></span>
                 )}
                 <span className="sidebar-label">{item.label}</span>
-              </Link>
+              </TransitionLink>
             </div>
           ))}
         </div>
@@ -86,10 +90,10 @@ export default function Sidebar({ isOpen, onClose, onOrdersClick, onNotification
 
       <div className="sidebar-bottom">
         <div className={isOpen ? "animate-slide-in" : ""} style={{ animationDelay: '0.5s', animationFillMode: 'both', width: '100%', display: 'flex', justifyContent: 'center' }}>
-          <Link to="/settings" className={`sidebar-icon ${isActive('/settings') ? 'active' : ''}`} data-tooltip="Settings" data-tooltip-pos="right" onClick={onClose}>
+          <TransitionLink to="/settings" className={`sidebar-icon ${isActive('/settings') ? 'active' : ''}`} data-tooltip="Settings" data-tooltip-pos="right" onClick={onClose}>
             <Settings size={24} />
             <span className="sidebar-label">Settings</span>
-          </Link>
+          </TransitionLink>
         </div>
         
         {user ? (
@@ -97,7 +101,7 @@ export default function Sidebar({ isOpen, onClose, onOrdersClick, onNotification
             <div className={isOpen ? "animate-slide-in" : ""} style={{ animationDelay: '0.55s', animationFillMode: 'both', width: '100%', display: 'flex', justifyContent: 'center' }}>
               {isOpen ? (
                 /* Pill style — matches the navbar, shown when sidebar drawer is open */
-                <Link
+                <TransitionLink
                   to="/profile"
                   className="profile-nav-link btn"
                   style={{
@@ -143,10 +147,10 @@ export default function Sidebar({ isOpen, onClose, onOrdersClick, onNotification
                   <span style={{ fontSize: '14px', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {user.name?.split(' ')?.[0] || 'User'}
                   </span>
-                </Link>
+                </TransitionLink>
               ) : (
                 /* Circle only — collapsed sidebar, perfectly centered */
-                <Link
+                <TransitionLink
                   to="/profile"
                   className={`sidebar-icon profile-link ${isActive('/profile') ? 'active' : ''}`}
                   data-tooltip="Profile"
@@ -178,7 +182,7 @@ export default function Sidebar({ isOpen, onClose, onOrdersClick, onNotification
                       </span>
                     )}
                   </div>
-                </Link>
+                </TransitionLink>
               )}
             </div>
             <div className={isOpen ? "animate-slide-in" : ""} style={{ animationDelay: '0.6s', animationFillMode: 'both', width: '100%', display: 'flex', justifyContent: 'center' }}>
@@ -190,7 +194,7 @@ export default function Sidebar({ isOpen, onClose, onOrdersClick, onNotification
           </>
         ) : (
           <div className={isOpen ? "animate-slide-in" : ""} style={{ animationDelay: '0.55s', animationFillMode: 'both', width: '100%', display: 'flex', justifyContent: 'center' }}>
-            <div className="sidebar-icon" data-tooltip="Login" data-tooltip-pos="right" onClick={() => { navigate('/'); onClose(); }}>
+            <div className="sidebar-icon" data-tooltip="Login" data-tooltip-pos="right" onClick={() => { startTransition(() => { navigate('/'); }); onClose(); }}>
               <User size={24} />
               <span className="sidebar-label">Login</span>
             </div>

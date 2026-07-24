@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, Component, lazy, Suspense } from 'react'
+import React, { useState, useEffect, useRef, Component, lazy, Suspense, startTransition } from 'react'
 import Sidebar from './components/Sidebar'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
@@ -151,7 +151,9 @@ function AppContent() {
       processingSocialAuthRef.current = socialAuthCode;
 
       // Clean up the URL parameter immediately to prevent duplicate runs on render
-      navigate('/', { replace: true });
+      startTransition(() => {
+        navigate('/', { replace: true });
+      });
 
       socialAuthExchange(socialAuthCode).then(res => {
         if (res && res.success && res.data) {
@@ -205,13 +207,17 @@ function AppContent() {
         handleContextLogin(userObj, token);
         addToast("Login successful!", "success");
         // Clear the URL immediately to prevent re-processing and clean history
-        navigate('/', { replace: true });
+        startTransition(() => {
+          navigate('/', { replace: true });
+        });
       } catch (e) {
         console.error('Failed to parse social user:', e);
       }
     } else if (error) {
       addToast(decodeURIComponent(error), "error");
-      navigate('/', { replace: true });
+      startTransition(() => {
+        navigate('/', { replace: true });
+      });
     }
   }, [navigate, handleContextLogin, addToast, addNotification]);
 
@@ -505,16 +511,20 @@ function AppContent() {
 
   useEffect(() => {
     const protectedRoutes = ['/settings', '/transactions', '/profile', '/orders', '/notifications', '/cart'];
-    if (protectedRoutes.includes(location.pathname) && !user) {
-       setRedirectPath(location.pathname);
-       navigate('/');
-       openAuthModal('signin');
-    }
+     if (protectedRoutes.includes(location.pathname) && !user) {
+        setRedirectPath(location.pathname);
+        startTransition(() => {
+          navigate('/');
+        });
+        openAuthModal('signin');
+     }
   }, [location.pathname, user, navigate]);
 
   useEffect(() => {
     if (user && redirectPath) {
-      navigate(redirectPath);
+      startTransition(() => {
+        navigate(redirectPath);
+      });
       setRedirectPath(null);
     }
   }, [user, redirectPath, navigate]);

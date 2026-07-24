@@ -1,7 +1,7 @@
 import React from 'react';
 import { Twitter, Instagram, Facebook, Youtube, Mail, Phone, MapPin } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import { useSettings } from '../context/SettingsContext';
+import TransitionLink from './TransitionLink';
 
 export default function Footer() {
   const { siteSettings } = useSettings();
@@ -46,11 +46,11 @@ export default function Footer() {
           <div className="footer-column">
             <h4 className="footer-heading">Quick Links</h4>
             <ul className="footer-links">
-              <li><Link to="/">Home</Link></li>
-              <li><Link to="/shop">Shop</Link></li>
-              <li><Link to="/favorites">Favorites</Link></li>
-              <li><Link to="/transactions">Transactions</Link></li>
-              <li><Link to="/returns">Return Policy</Link></li>
+              <li><TransitionLink to="/">Home</TransitionLink></li>
+              <li><TransitionLink to="/shop">Shop</TransitionLink></li>
+              <li><TransitionLink to="/favorites">Favorites</TransitionLink></li>
+              <li><TransitionLink to="/transactions">Transactions</TransitionLink></li>
+              <li><TransitionLink to="/returns">Return Policy</TransitionLink></li>
             </ul>
           </div>
 
@@ -58,11 +58,11 @@ export default function Footer() {
           <div className="footer-column">
             <h4 className="footer-heading">Support</h4>
             <ul className="footer-links">
-              <li><Link to="/about">About Us</Link></li>
-              <li><Link to="/shop">Shop Products</Link></li>
-              <li><Link to="/faq">FAQ</Link></li>
-              <li><Link to="/track">Track Order</Link></li>
-              <li><Link to="/support">Contact Support</Link></li>
+              <li><TransitionLink to="/about">About Us</TransitionLink></li>
+              <li><TransitionLink to="/shop">Shop Products</TransitionLink></li>
+              <li><TransitionLink to="/faq">FAQ</TransitionLink></li>
+              <li><TransitionLink to="/track">Track Order</TransitionLink></li>
+              <li><TransitionLink to="/support">Contact Support</TransitionLink></li>
             </ul>
           </div>
 
@@ -98,11 +98,11 @@ export default function Footer() {
         <div className="footer-bottom">
           <p>&copy; {new Date().getFullYear()} {siteSettings.siteName}. All rights reserved.</p>
           <div className="footer-bottom-links">
-            <Link to="/privacy-policy">Privacy Policy</Link>
+            <TransitionLink to="/privacy-policy">Privacy Policy</TransitionLink>
             <span>•</span>
-            <Link to="/terms-of-service">Terms of Service</Link>
+            <TransitionLink to="/terms-of-service">Terms of Service</TransitionLink>
             <span>•</span>
-            <Link to="/cookie-policy">Cookie Policy</Link>
+            <TransitionLink to="/cookie-policy">Cookie Policy</TransitionLink>
           </div>
         </div>
 
