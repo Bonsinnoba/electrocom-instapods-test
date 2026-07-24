@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, startTransition } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, User, Lock, Mail, LogIn, UserPlus, Phone, Loader, Globe, Eye, EyeOff, Chrome, Github, ArrowLeft, MapPin } from 'lucide-react';
 import { loginUser, registerUser, verifyUser, forgotPassword, resetPassword, recoverAccount } from '../services/api';
@@ -258,7 +258,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'signin' }) {
         setFormData({ name: '', email: '', phone: '', country: 'Ghana', password: '', confirmPassword: '', verification_method: 'email' });
         setVerificationStep(false);
         setTempUser(null);
-        navigate('/profile');
+        startTransition(() => navigate('/profile'));
       } else {
         setError(response.message || "Invalid verification code.");
       }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, startTransition } from 'react';
 import { MapPin, Navigation, ExternalLink, ChevronRight, Building2, Store, ArrowRight } from 'lucide-react';
 import { fetchPickupLocations } from '../services/api';
 import { useNavigate } from 'react-router-dom';
@@ -161,7 +161,7 @@ export default function MapCard() {
 
       {/* View Full Map Button */}
       <button
-        onClick={() => navigate('/locations')}
+        onClick={() => startTransition(() => navigate('/locations'))}
         style={{
           width: '100%',
           padding: '14px',

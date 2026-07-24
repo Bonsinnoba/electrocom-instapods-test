@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, memo } from 'react';
+import React, { useState, useEffect, useMemo, memo, startTransition } from 'react';
 import { Flame, Clock, ArrowRight, Percent, Sparkles, AlertTriangle, TrendingUp, Truck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useSettings } from '../context/SettingsContext';
@@ -172,7 +172,7 @@ function FlashSaleBanner({ products, onProductClick }) {
     if (bannerContent.featuredProduct) {
       if (onProductClick) onProductClick(bannerContent.featuredProduct);
     } else {
-      navigate('/shop');
+      startTransition(() => navigate('/shop'));
     }
   };
 
