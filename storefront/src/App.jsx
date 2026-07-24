@@ -30,6 +30,7 @@ const Cart = lazy(() => import('./pages/Cart'));
 const Favorites = lazy(() => import('./pages/Favorites'));
 const Profile = lazy(() => import('./pages/Profile'));
 const Checkout = lazy(() => import('./pages/Checkout'));
+import PageLoader from './components/PageLoader';
 import { fetchOrders, fetchProducts, socialAuthExchange } from './services/api';
 import { useUser } from './context/UserContext';
 import { formatRelativeTime, formatDate } from './utils/dateFormatter';
@@ -69,7 +70,7 @@ const ScrollToTop = () => {
 };
 
 const RouteLoader = ({ children }) => (
-  <Suspense fallback={<div className="loading-state">Loading page...</div>}>
+  <Suspense fallback={<PageLoader />}> 
     {children}
   </Suspense>
 );
@@ -558,7 +559,7 @@ function AppContent() {
         <ScrollToTop />
 
         <main className="dashboard-grid full-width">
-          <Suspense fallback={<div className="loading-state">Loading page...</div>}>
+          <Suspense fallback={<PageLoader />}>
             <Routes>
               <Route path="/" element={<RouteLoader><Home products={products} onProductClick={handleProductClick} searchQuery={searchQuery} loading={loading} /></RouteLoader>} />
               <Route path="/shop" element={<RouteLoader><Shop products={products} onProductClick={handleProductClick} searchQuery={searchQuery} loading={loading} /></RouteLoader>} />
