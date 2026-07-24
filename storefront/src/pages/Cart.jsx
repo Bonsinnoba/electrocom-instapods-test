@@ -168,13 +168,13 @@ export default function Cart() {
 
             {/* Browse button */}
             <div style={{ textAlign:'center', marginTop:'20px' }}>
-              <Link to="/" className="btn-outline" style={{ display:'inline-flex', alignItems:'center', gap:'7px', padding:'10px 24px', fontSize:'13px', borderRadius:'12px' }}>
+              <TransitionLink to="/" className="btn-outline" style={{ display:'inline-flex', alignItems:'center', gap:'7px', padding:'10px 24px', fontSize:'13px', borderRadius:'12px' }}>
                 <ArrowLeft size={14} /> Browse More Products
-              </Link>
+              </TransitionLink>
             </div>
           </div>
         ) : (
-          <Link to="/" className="btn-primary cart-link-btn"><ArrowLeft size={18} /> Start Shopping</Link>
+          <TransitionLink to="/" className="btn-primary cart-link-btn"><ArrowLeft size={18} /> Start Shopping</TransitionLink>
         )}
       </div>
     );
