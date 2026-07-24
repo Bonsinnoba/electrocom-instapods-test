@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, Component, lazy, Suspense, startTransition } from 'react'
+import React, { useState, useEffect, useRef, useCallback, Component, lazy, Suspense, startTransition } from 'react'
 import Sidebar from './components/Sidebar'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
@@ -7,7 +7,6 @@ import RecentlyViewedProducts from './components/RecentlyViewedProducts'
 import CookieConsent from './components/CookieConsent'
 import { X } from 'lucide-react'
 import BackToTop from './components/BackToTop'
-import { secureStorage } from './utils/secureStorage';
 
 import { CartProvider, useCart } from './context/CartContext';
 import { WishlistProvider, useWishlist } from './context/WishlistContext';
@@ -78,7 +77,7 @@ const RouteLoader = ({ children }) => (
 function AppContent() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, updateUser, login: handleContextLogin, logout, authModal, openAuthModal, closeAuthModal } = useUser();
+  const { user, login: handleContextLogin, logout, authModal, openAuthModal, closeAuthModal } = useUser();
   const { siteSettings, formatPrice } = useSettings();
   const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
   const lastFetchRef = React.useRef(0);
@@ -336,7 +335,7 @@ function AppContent() {
       productsRef.current = products;
   }, [products]);
 
-  const loadProducts = async () => {
+  const loadProducts = useCallback(async () => {
     try {
       if (productsRef.current.length === 0) setLoading(true);
       
@@ -367,7 +366,7 @@ function AppContent() {
     } finally {
       if (productsRef.current.length === 0) setLoading(false);
     }
-  };
+  }, [addToast]);
 
   useEffect(() => {
     if (!hasLoadedProducts.current) {
@@ -383,7 +382,7 @@ function AppContent() {
     return () => {
         window.removeEventListener('focus', handleFocus);
     };
-  }, []);
+  }, [loadProducts]);
 
   const selectedProductRef = useRef(selectedProduct);
   useEffect(() => {
@@ -507,7 +506,7 @@ function AppContent() {
         });
         openAuthModal('signin');
      }
-  }, [location.pathname, user, navigate]);
+  }, [location.pathname, user, navigate, openAuthModal]);
 
   useEffect(() => {
     if (user && redirectPath) {
@@ -563,14 +562,14 @@ function AppContent() {
             <Routes>
               <Route path="/" element={<RouteLoader><Home products={products} onProductClick={handleProductClick} searchQuery={searchQuery} loading={loading} /></RouteLoader>} />
               <Route path="/shop" element={<RouteLoader><Shop products={products} onProductClick={handleProductClick} searchQuery={searchQuery} loading={loading} /></RouteLoader>} />
-              <Route path="/cart" element={<RouteLoader><Cart /></RouteLoader>} />
-              <Route path="/favorites" element={<RouteLoader><Favorites onProductClick={handleProductClick} searchQuery={searchQuery} /></RouteLoader>} />
+              <Route path="/cart" element={<Cart />} />
+              <Route path="/favorites" element={<Favorites onProductClick={handleProductClick} searchQuery={searchQuery} />} />
               <Route path="/orders" element={<RouteLoader><Orders searchQuery={searchQuery} /></RouteLoader>} />
               <Route path="/notifications" element={<RouteLoader><Notifications searchQuery={searchQuery} /></RouteLoader>} />
               <Route path="/support" element={<RouteLoader><Support searchQuery={searchQuery} /></RouteLoader>} />
               <Route path="/settings" element={<RouteLoader><Settings searchQuery={searchQuery} isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} /></RouteLoader>} />
               <Route path="/profile" element={<RouteLoader><Profile /></RouteLoader>} />
-              <Route path="/checkout" element={<RouteLoader><Checkout /></RouteLoader>} />
+              <Route path="/checkout" element={<Checkout />} />
               <Route path="/order-success" element={<RouteLoader><OrderSuccess /></RouteLoader>} />
               <Route path="/transactions" element={<RouteLoader><Transactions /></RouteLoader>} />
               <Route path="/about" element={<RouteLoader><AboutUs /></RouteLoader>} />
@@ -726,8 +725,8 @@ class ErrorBoundary extends Component {
     this.state = { hasError: false, error: null, errorInfo: null };
   }
 
-  static getDerivedStateFromError(_error) {
-    return { hasError: true };
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
   }
 
   componentDidCatch(error, errorInfo) {
