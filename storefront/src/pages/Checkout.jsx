@@ -3,6 +3,7 @@ import { useCart } from '../context/CartContext';
 import { useNotifications } from '../context/NotificationContext';
 import { useUser } from '../context/UserContext';
 import { useNavigate, Link, useLocation, Navigate } from 'react-router-dom';
+import TransitionLink from '../components/TransitionLink';
 import { CreditCard, Truck, ShieldCheck, ArrowLeft, ChevronRight, CheckCircle, Smartphone, MapPin, Tag } from 'lucide-react';
 import { useSettings } from '../context/SettingsContext';
 import { createOrder, fetchPickupLocations, getShippingFee } from '../services/api';
@@ -172,7 +173,9 @@ export default function Checkout() {
       checkoutIdempotencyKeyRef.current = '';
       setReservationDeadlineMs(null);
       setPaymentInterrupted(false);
-      navigate(`/order-success?ref=${reference.reference}`);
+      startTransition(() => {
+        navigate(`/order-success?ref=${reference.reference}`);
+      });
       setLoading(false);
       isProcessingOrder.current = false;
   }, [addToast, removeCheckedOutItems, selectedItems, navigate]);
@@ -327,21 +330,26 @@ export default function Checkout() {
 
   const [redirectTarget, setRedirectTarget] = useState(null);
   useEffect(() => {
+    if (selectedItems.length === 0) {
+      setRedirectTarget('/cart');
+      return;
+    }
     if (!user) {
       addToast('Please log in to proceed with checkout', 'info');
       setRedirectTarget('/login?redirect=/checkout');
     }
-  }, [user, addToast]);
+  }, [user, addToast, selectedItems.length]);
+
+  useEffect(() => {
+    if (!redirectTarget) return;
+    startTransition(() => {
+      navigate(redirectTarget, { replace: true });
+    });
+  }, [redirectTarget, navigate]);
 
   const [errors, setErrors] = useState({});
 
-  if (!user || selectedItems.length === 0) {
-    if (selectedItems.length === 0) {
-      return <Navigate to="/cart" replace />;
-    }
-    if (redirectTarget) {
-      return <Navigate to={redirectTarget} replace />;
-    }
+  if (redirectTarget) {
     return null;
   }
 
@@ -382,9 +390,9 @@ export default function Checkout() {
   return (
     <div className="animate-fade-in page-shell">
       <div className="page-header" style={{ alignItems: 'center', marginBottom: '24px' }}>
-        <Link to="/cart" className="sidebar-icon" style={{ margin: 0 }} aria-label="Back to cart">
+        <TransitionLink to="/cart" className="sidebar-icon" style={{ margin: 0 }} aria-label="Back to cart">
           <ArrowLeft size={20} />
-        </Link>
+        </TransitionLink>
         <div className="page-heading-group" style={{ flex: 1 }}>
           <h1 className="page-title">Checkout</h1>
           <p className="page-subtitle">Complete shipping, payment, and order review in 3 steps.</p>
@@ -706,7 +714,7 @@ export default function Checkout() {
               <div style={{ marginTop: '14px', padding: '14px 16px', borderRadius: '12px', background: 'var(--bg-main)', border: '1px solid var(--border-light)', fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.6 }}>
                 <strong style={{ color: 'var(--text-main)' }}>Returns:</strong>{' '}
                 Unopened items in original packaging may be returned within 14 days of pickup or delivery, unless marked final sale.
-                See our <Link to="/returns" style={{ color: 'var(--primary-blue)', fontWeight: 600 }}>Returns</Link> page for steps and exceptions.
+                See our <TransitionLink to="/returns" style={{ color: 'var(--primary-blue)', fontWeight: 600 }}>Returns</TransitionLink> page for steps and exceptions.
               </div>
               <div style={{ marginTop: '16px', padding: '16px', borderRadius: '12px', border: '1px dashed var(--border-light)', color: 'var(--text-muted)', fontSize: '13px', lineHeight: 1.6 }}>
                 <strong style={{ color: 'var(--text-main)' }}>What happens next:</strong><br />

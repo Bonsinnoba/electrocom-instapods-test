@@ -7,6 +7,7 @@ import {
   AlertCircle, Tag, ShieldCheck, CheckSquare, Square
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import TransitionLink from '../components/TransitionLink';
 import { useUser } from '../context/UserContext';
 import { useSettings } from '../context/SettingsContext';
 import { formatImageUrl } from '../services/api';

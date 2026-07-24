@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { startTransition } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
 import { useWishlist } from '../context/WishlistContext';
@@ -84,7 +84,11 @@ export default function Favorites({ onProductClick, searchQuery }) {
           <button 
             className="btn-primary" 
             style={{ marginTop: '32px' }}
-            onClick={() => navigate('/shop')}
+            onClick={() => {
+              startTransition(() => {
+                navigate('/shop');
+              });
+            }}
           >
             <ShoppingBag size={18} />
             Explore Shop
