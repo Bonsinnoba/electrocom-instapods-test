@@ -558,33 +558,35 @@ function AppContent() {
         <ScrollToTop />
 
         <main className="dashboard-grid full-width">
-          <Routes>
-            <Route path="/" element={<RouteLoader><Home products={products} onProductClick={handleProductClick} searchQuery={searchQuery} loading={loading} /></RouteLoader>} />
-            <Route path="/shop" element={<RouteLoader><Shop products={products} onProductClick={handleProductClick} searchQuery={searchQuery} loading={loading} /></RouteLoader>} />
-            <Route path="/cart" element={<RouteLoader><Cart /></RouteLoader>} />
-            <Route path="/favorites" element={<RouteLoader><Favorites onProductClick={handleProductClick} searchQuery={searchQuery} /></RouteLoader>} />
-            <Route path="/orders" element={<RouteLoader><Orders searchQuery={searchQuery} /></RouteLoader>} />
-            <Route path="/notifications" element={<RouteLoader><Notifications searchQuery={searchQuery} /></RouteLoader>} />
-            <Route path="/support" element={<RouteLoader><Support searchQuery={searchQuery} /></RouteLoader>} />
-            <Route path="/settings" element={<RouteLoader><Settings searchQuery={searchQuery} isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} /></RouteLoader>} />
-            <Route path="/profile" element={<RouteLoader><Profile /></RouteLoader>} />
-            <Route path="/checkout" element={<RouteLoader><Checkout /></RouteLoader>} />
-            <Route path="/order-success" element={<RouteLoader><OrderSuccess /></RouteLoader>} />
-            <Route path="/transactions" element={<RouteLoader><Transactions /></RouteLoader>} />
-            <Route path="/about" element={<RouteLoader><AboutUs /></RouteLoader>} />
-            <Route path="/locations" element={<RouteLoader><Locations /></RouteLoader>} />
+          <Suspense fallback={<div className="loading-state">Loading page...</div>}>
+            <Routes>
+              <Route path="/" element={<RouteLoader><Home products={products} onProductClick={handleProductClick} searchQuery={searchQuery} loading={loading} /></RouteLoader>} />
+              <Route path="/shop" element={<RouteLoader><Shop products={products} onProductClick={handleProductClick} searchQuery={searchQuery} loading={loading} /></RouteLoader>} />
+              <Route path="/cart" element={<RouteLoader><Cart /></RouteLoader>} />
+              <Route path="/favorites" element={<RouteLoader><Favorites onProductClick={handleProductClick} searchQuery={searchQuery} /></RouteLoader>} />
+              <Route path="/orders" element={<RouteLoader><Orders searchQuery={searchQuery} /></RouteLoader>} />
+              <Route path="/notifications" element={<RouteLoader><Notifications searchQuery={searchQuery} /></RouteLoader>} />
+              <Route path="/support" element={<RouteLoader><Support searchQuery={searchQuery} /></RouteLoader>} />
+              <Route path="/settings" element={<RouteLoader><Settings searchQuery={searchQuery} isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} /></RouteLoader>} />
+              <Route path="/profile" element={<RouteLoader><Profile /></RouteLoader>} />
+              <Route path="/checkout" element={<RouteLoader><Checkout /></RouteLoader>} />
+              <Route path="/order-success" element={<RouteLoader><OrderSuccess /></RouteLoader>} />
+              <Route path="/transactions" element={<RouteLoader><Transactions /></RouteLoader>} />
+              <Route path="/about" element={<RouteLoader><AboutUs /></RouteLoader>} />
+              <Route path="/locations" element={<RouteLoader><Locations /></RouteLoader>} />
 
-            <Route path="/reset-password" element={<RouteLoader><ResetPassword /></RouteLoader>} />
-            <Route path="/privacy-policy" element={<RouteLoader><PrivacyPolicy /></RouteLoader>} />
-            <Route path="/terms-of-service" element={<RouteLoader><TermsOfService /></RouteLoader>} />
-            <Route path="/cookie-policy" element={<RouteLoader><CookiePolicy /></RouteLoader>} />
-            <Route path="/shipping-info" element={<RouteLoader><ShippingInfo /></RouteLoader>} />
-            <Route path="/returns" element={<RouteLoader><Returns /></RouteLoader>} />
-            <Route path="/faq" element={<RouteLoader><FAQ /></RouteLoader>} />
-            <Route path="/track" element={<RouteLoader><TrackOrder /></RouteLoader>} />
-            <Route path="/p/:slug" element={<RouteLoader><CMSPage /></RouteLoader>} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+              <Route path="/reset-password" element={<RouteLoader><ResetPassword /></RouteLoader>} />
+              <Route path="/privacy-policy" element={<RouteLoader><PrivacyPolicy /></RouteLoader>} />
+              <Route path="/terms-of-service" element={<RouteLoader><TermsOfService /></RouteLoader>} />
+              <Route path="/cookie-policy" element={<RouteLoader><CookiePolicy /></RouteLoader>} />
+              <Route path="/shipping-info" element={<RouteLoader><ShippingInfo /></RouteLoader>} />
+              <Route path="/returns" element={<RouteLoader><Returns /></RouteLoader>} />
+              <Route path="/faq" element={<RouteLoader><FAQ /></RouteLoader>} />
+              <Route path="/track" element={<RouteLoader><TrackOrder /></RouteLoader>} />
+              <Route path="/p/:slug" element={<RouteLoader><CMSPage /></RouteLoader>} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Suspense>
         </main>
 
         {(location.pathname === '/' || location.pathname === '/shop') && (
