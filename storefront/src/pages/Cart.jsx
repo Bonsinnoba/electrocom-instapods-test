@@ -1,4 +1,4 @@
-import React, { useState, useEffect, startTransition } from 'react';
+import React, { useState, useMemo, startTransition } from 'react';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useNotifications } from '../context/NotificationContext';
@@ -26,35 +26,28 @@ export default function Cart() {
   const navigate = useNavigate();
 
   // ── Selection state ──────────────────────────────────────────────────────
-  const [selectedKeys, setSelectedKeys] = useState(() => new Set(Array.isArray(cartItems) ? cartItems.map(itemKey) : []));
+  const safeCartItems = useMemo(() => Array.isArray(cartItems) ? cartItems : [], [cartItems]);
+  const [selectedKeys, setSelectedKeys] = useState(() => new Set(safeCartItems.map(itemKey)));
 
-  useEffect(() => {
-    setSelectedKeys(prev => {
-      const safeCartItems = Array.isArray(cartItems) ? cartItems : [];
-      const cartKeySet = new Set(safeCartItems.map(itemKey));
-      const next = new Set();
-      for (const k of prev) { if (cartKeySet.has(k)) next.add(k); }
-      for (const k of cartKeySet) { if (!prev.has(k)) next.add(k); }
-      return next;
-    });
-  }, [cartItems]);
+  const selectedItems = useMemo(
+    () => safeCartItems.filter(item => selectedKeys.has(itemKey(item))),
+    [safeCartItems, selectedKeys]
+  );
 
-  const allSelected  = cartItems.length > 0 && selectedKeys.size === cartItems.length;
-  const noneSelected = selectedKeys.size === 0;
+  const allSelected = safeCartItems.length > 0 && selectedItems.length === safeCartItems.length;
+  const noneSelected = selectedItems.length === 0;
 
   const toggleSelectAll = () =>
-    allSelected ? setSelectedKeys(new Set()) : setSelectedKeys(new Set(cartItems.map(itemKey)));
+    setSelectedKeys(allSelected ? new Set() : new Set(safeCartItems.map(itemKey)));
 
   const toggleItem = (item) => {
-    setSelectedKeys(prev => {
+    setSelectedKeys((prev) => {
       const next = new Set(prev);
       const k = itemKey(item);
       next.has(k) ? next.delete(k) : next.add(k);
       return next;
     });
   };
-
-  const selectedItems = cartItems.filter(item => selectedKeys.has(itemKey(item)));
 
   // ── Totals (selected items only) ─────────────────────────────────────────
   const vatRate              = siteSettings?.vatRate !== undefined && siteSettings?.vatRate !== null ? parseFloat(siteSettings.vatRate) : 0;

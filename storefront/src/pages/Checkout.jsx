@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef, startTransition } from 'react';
+import React, { useState, useEffect, useCallback, useRef, startTransition, useMemo } from 'react';
 import { useCart } from '../context/CartContext';
 import { useNotifications } from '../context/NotificationContext';
 import { useUser } from '../context/UserContext';
@@ -35,14 +35,30 @@ const GHANA_REGIONS = [
 export default function Checkout() {
   const { cartItems, removeCheckedOutItems, appliedCoupon, applyCoupon, removeCoupon, isApplyingCoupon, couponError } = useCart();
   const location = useLocation();
-  // Use items passed from Cart's selection; fall back to full cart
-  const selectedItems = location.state?.selectedItems?.length ? location.state.selectedItems : cartItems;
-  const subtotal = selectedItems.reduce((a, i) => a + parseFloat(i.price) * i.quantity, 0);
+  const isMountedRef = useRef(true);
+
   const { addToast } = useNotifications();
   const { user } = useUser();
   const { siteSettings, formatPrice } = useSettings();
   const navigate = useNavigate();
-  
+  const safeCartItems = useMemo(() => Array.isArray(cartItems) ? cartItems : [], [cartItems]);
+
+  const selectedItems = useMemo(() => {
+    const locationItems = location.state?.selectedItems;
+    if (Array.isArray(locationItems) && locationItems.length > 0) {
+      return locationItems;
+    }
+    return safeCartItems;
+  }, [location.state, safeCartItems]);
+
+  const subtotal = useMemo(() => {
+    return selectedItems.reduce((a, item) => {
+      const price = Number(item?.price) || 0;
+      const quantity = Number(item?.quantity) || 0;
+      return a + price * quantity;
+    }, 0);
+  }, [selectedItems]);
+
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -65,6 +81,7 @@ export default function Checkout() {
     const loadPickupLocations = async () => {
       setLoadingPickupLocations(true);
       const data = await fetchPickupLocations();
+      if (!isMountedRef.current) return;
       setPickupLocations(Array.isArray(data) ? data : []);
       if (data?.length > 0) {
         setSelectedPickupId(String(data[0].id));
@@ -76,11 +93,14 @@ export default function Checkout() {
 
   const fetchShipping = useCallback(async () => {
     if (formData.deliveryMethod !== 'door_to_door' || !formData.region) {
-      setShippingData({ fee: 0, is_discounted: false, city: '' });
+      if (isMountedRef.current) {
+        setShippingData({ fee: 0, is_discounted: false, city: '' });
+      }
       return;
     }
     try {
       const res = await getShippingFee(formData.region, subtotal);
+      if (!isMountedRef.current) return;
       if (res.success) {
         setShippingData({
           fee: Number(res.fee || 0),
@@ -89,7 +109,9 @@ export default function Checkout() {
         });
       }
     } catch {
-      setShippingData({ fee: 0, is_discounted: false, city: '' });
+      if (isMountedRef.current) {
+        setShippingData({ fee: 0, is_discounted: false, city: '' });
+      }
     }
   }, [formData.deliveryMethod, formData.region, subtotal]);
 
@@ -97,31 +119,68 @@ export default function Checkout() {
     fetchShipping();
   }, [fetchShipping]);
 
-  const vatRate = siteSettings?.vatRate !== undefined && siteSettings?.vatRate !== null ? parseFloat(siteSettings.vatRate) : 0;
-  const selectedPickup = pickupLocations.find((loc) => String(loc.id) === String(selectedPickupId));
-  const shippingFee = formData.deliveryMethod === 'door_to_door'
-    ? Number(shippingData.fee || 0)
-    : (selectedPickup ? Number(selectedPickup.fee || 0) : 0);
-  const estimatedDelivery = formData.deliveryMethod === 'pickup'
-    ? 'Ready for pickup in 1-2 business days'
-    : 'Door delivery in 2-4 business days';
-  
-  const discount = Math.round((appliedCoupon ? appliedCoupon.discountAmount : 0) * 100) / 100;
+  const vatRate = useMemo(
+    () => (siteSettings?.vatRate !== undefined && siteSettings?.vatRate !== null ? parseFloat(siteSettings.vatRate) : 0),
+    [siteSettings?.vatRate]
+  );
 
-  const integrityDiscountThreshold = Number(siteSettings?.integrityDiscountThreshold || 0);
-  const integrityDiscountPct = Number(siteSettings?.integrityDiscountPct || 0);
-  const userIntegrityPoints = Number(user?.loyalty_points || 0);
-  const hasIntegrityDiscount = integrityDiscountThreshold > 0 && userIntegrityPoints >= integrityDiscountThreshold && integrityDiscountPct > 0;
-  const integrityDiscountAmount = hasIntegrityDiscount ? Math.round((subtotal * (integrityDiscountPct / 100)) * 100) / 100 : 0;
+  const selectedPickup = useMemo(
+    () => pickupLocations.find((loc) => String(loc.id) === String(selectedPickupId)),
+    [pickupLocations, selectedPickupId]
+  );
 
-  const totalDiscount = discount + integrityDiscountAmount;
-  const taxableAmount = Math.max(0, subtotal - totalDiscount);
-  const tax = Math.round((taxableAmount * (vatRate / 100)) * 100) / 100;
-  
-  const total = Math.round((taxableAmount + tax + shippingFee) * 100) / 100;
+  const shippingFee = useMemo(() => {
+    if (formData.deliveryMethod === 'door_to_door') {
+      return Number(shippingData.fee || 0);
+    }
+    return Number(selectedPickup?.fee || 0);
+  }, [formData.deliveryMethod, shippingData.fee, selectedPickup]);
 
-  const doorToDoorThreshold = Number(siteSettings?.doorToDoorThreshold || 0);
-  const isDoorToDoorAllowed = siteSettings?.allowDoorToDoorDelivery !== false && subtotal >= doorToDoorThreshold;
+  const estimatedDelivery = useMemo(
+    () => (formData.deliveryMethod === 'pickup' ? 'Ready for pickup in 1-2 business days' : 'Door delivery in 2-4 business days'),
+    [formData.deliveryMethod]
+  );
+
+  const couponDiscount = useMemo(() => Number(appliedCoupon?.discountAmount || 0), [appliedCoupon]);
+  const integrityDiscountThreshold = useMemo(() => Number(siteSettings?.integrityDiscountThreshold || 0), [siteSettings?.integrityDiscountThreshold]);
+  const integrityDiscountPct = useMemo(() => Number(siteSettings?.integrityDiscountPct || 0), [siteSettings?.integrityDiscountPct]);
+  const userIntegrityPoints = useMemo(() => Number(user?.loyalty_points || 0), [user?.loyalty_points]);
+
+  const hasIntegrityDiscount = useMemo(
+    () => integrityDiscountThreshold > 0 && userIntegrityPoints >= integrityDiscountThreshold && integrityDiscountPct > 0,
+    [integrityDiscountThreshold, userIntegrityPoints, integrityDiscountPct]
+  );
+
+  const integrityDiscountAmount = useMemo(
+    () => (hasIntegrityDiscount ? Math.round((subtotal * (integrityDiscountPct / 100)) * 100) / 100 : 0),
+    [hasIntegrityDiscount, subtotal, integrityDiscountPct]
+  );
+
+  const totalDiscount = useMemo(
+    () => Math.max(0, couponDiscount + integrityDiscountAmount),
+    [couponDiscount, integrityDiscountAmount]
+  );
+
+  const taxableAmount = useMemo(
+    () => Math.max(0, subtotal - totalDiscount),
+    [subtotal, totalDiscount]
+  );
+
+  const tax = useMemo(
+    () => Math.round((taxableAmount * (vatRate / 100)) * 100) / 100,
+    [taxableAmount, vatRate]
+  );
+
+  const total = useMemo(
+    () => Math.max(0, Math.round((taxableAmount + tax + shippingFee) * 100) / 100),
+    [taxableAmount, tax, shippingFee]
+  );
+
+  const doorToDoorThreshold = useMemo(() => Number(siteSettings?.doorToDoorThreshold || 0), [siteSettings?.doorToDoorThreshold]);
+  const isDoorToDoorAllowed = useMemo(
+    () => siteSettings?.allowDoorToDoorDelivery !== false && subtotal >= doorToDoorThreshold,
+    [siteSettings?.allowDoorToDoorDelivery, subtotal, doorToDoorThreshold]
+  );
 
   useEffect(() => {
     if (!isDoorToDoorAllowed && formData.deliveryMethod === 'door_to_door') {
@@ -129,8 +188,12 @@ export default function Checkout() {
     }
   }, [isDoorToDoorAllowed, formData.deliveryMethod]);
 
+  const sanitizeCouponCode = (code) => String(code || '').trim();
+
   const handleApplyCoupon = async () => {
-    const success = await applyCoupon(couponCode);
+    const cleanedCode = sanitizeCouponCode(couponCode);
+    if (!cleanedCode) return;
+    const success = await applyCoupon(cleanedCode);
     if (success) setCouponCode('');
   };
 
@@ -154,13 +217,29 @@ export default function Checkout() {
 
   // Update dynamic parts of config when dependencies change
   useEffect(() => {
-    setPaystackConfig(prev => ({
+    setPaystackConfig(prev => {
+      const nextChannels = paymentMethod === 'momo' ? ['mobile_money'] : ['card', 'mobile_money'];
+      const nextEmail = formData.email || user?.email || '';
+      const nextAmount = Math.ceil(total * 100);
+      const nextMetadata = { ...prev.metadata, user_id: user?.id };
+
+      if (
+        prev.email === nextEmail &&
+        prev.amount === nextAmount &&
+        JSON.stringify(prev.channels) === JSON.stringify(nextChannels) &&
+        prev.metadata?.user_id === nextMetadata.user_id
+      ) {
+        return prev;
+      }
+
+      return {
         ...prev,
-        email: formData.email || user?.email || '',
-        amount: Math.ceil(total * 100),
-        channels: paymentMethod === 'momo' ? ['mobile_money'] : ['card', 'mobile_money'],
-        metadata: { ...prev.metadata, user_id: user?.id }
-    }));
+        email: nextEmail,
+        amount: nextAmount,
+        channels: nextChannels,
+        metadata: nextMetadata
+      };
+    });
   }, [formData.email, user?.email, user?.id, total, paymentMethod]);
 
   const initializePayment = usePaystackPayment(paystackConfig);
@@ -187,9 +266,27 @@ export default function Checkout() {
       addToast('Payment window closed. Your stock hold may expire—try again or contact support if this persists.', 'info');
   }, [addToast]);
 
+  const sanitizeField = (name, value) => {
+    const rawValue = String(value || '');
+    switch (name) {
+      case 'zip':
+        return rawValue.replace(/[^0-9A-Za-z\s-]/g, '').trim();
+      case 'address':
+        return rawValue.replace(/[\u0000-\u001F\u007F]/g, '').trim();
+      case 'city':
+      case 'name':
+        return rawValue.replace(/[^a-zA-Z\s'\-\.]/g, '').trim();
+      case 'email':
+        return rawValue.trim();
+      default:
+        return rawValue;
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const sanitizedValue = sanitizeField(name, value);
+    setFormData(prev => ({ ...prev, [name]: sanitizedValue }));
   };
 
   const isProcessingOrder = useRef(false);
@@ -197,6 +294,14 @@ export default function Checkout() {
 
   const handleCompletePurchase = async () => {
     if (isProcessingOrder.current) return;
+    if (!selectedItems.length) {
+      addToast('No items selected for checkout.', 'info');
+      startTransition(() => {
+        navigate('/cart', { replace: true });
+      });
+      return;
+    }
+
     isProcessingOrder.current = true;
     setLoading(true);
 
@@ -209,15 +314,24 @@ export default function Checkout() {
               checkoutIdempotencyKeyRef.current = `ck_${user?.id || 'guest'}_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
             }
             // 1. Create Pending Order first
+            const sanitizedFormData = {
+              name: sanitizeField('name', formData.name),
+              email: sanitizeField('email', formData.email),
+              address: sanitizeField('address', formData.address),
+              city: sanitizeField('city', formData.city),
+              region: sanitizeField('region', formData.region),
+              zip: sanitizeField('zip', formData.zip)
+            };
+
             const orderData = {
-                total_amount: total,
+                total_amount: Number(total) || 0,
                 items: selectedItems.map(item => ({
                     id: item.id,
-                    quantity: item.quantity,
-                    price: parseFloat(item.price)
+                    quantity: Number(item?.quantity) || 0,
+                    price: Number(item?.price) || 0
                 })),
                 shipping_address: formData.deliveryMethod === 'door_to_door'
-                  ? `${formData.address}, ${formData.city}, ${GHANA_REGIONS.find(r => r.code === formData.region)?.label || ''} ${formData.zip}`
+                  ? `${sanitizedFormData.address}, ${sanitizedFormData.city}, ${GHANA_REGIONS.find(r => r.code === sanitizedFormData.region)?.label || ''} ${sanitizedFormData.zip}`
                   : (selectedPickup
                     ? `${selectedPickup.name} - ${selectedPickup.address}${selectedPickup.city ? `, ${selectedPickup.city}` : ''}`
                     : 'Store Pickup'),
@@ -225,7 +339,7 @@ export default function Checkout() {
                 delivery_method: formData.deliveryMethod,
                 pickup_location_id: formData.deliveryMethod === 'pickup' && selectedPickupId ? Number(selectedPickupId) : null,
                 coupon_code: appliedCoupon ? appliedCoupon.code : null,
-                discount_amount: totalDiscount,
+                discount_amount: Number(totalDiscount) || 0,
                 idempotency_key: checkoutIdempotencyKeyRef.current
             };
 
@@ -266,6 +380,13 @@ export default function Checkout() {
     return () => clearInterval(id);
   }, [reservationDeadlineMs]);
 
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
   const reservationRemainingSec = reservationDeadlineMs != null
     ? Math.max(0, Math.floor((reservationDeadlineMs - Date.now()) / 1000))
     : null;
@@ -277,8 +398,10 @@ export default function Checkout() {
 
   useEffect(() => {
     if (pendingRef) {
-        // Update config with the backend reference
-        setPaystackConfig(prev => ({ ...prev, reference: pendingRef }));
+      setPaystackConfig(prev => {
+        if (prev.reference === pendingRef) return prev;
+        return { ...prev, reference: pendingRef };
+      });
     }
   }, [pendingRef]);
 
