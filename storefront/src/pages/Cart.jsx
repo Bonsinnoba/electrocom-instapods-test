@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, startTransition } from 'react';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useNotifications } from '../context/NotificationContext';
@@ -88,7 +88,11 @@ export default function Cart() {
     setConfirmDelete(null);
   };
 
-  const handleCheckout = () => navigate('/checkout', { state: { selectedItems } });
+  const handleCheckout = () => {
+    startTransition(() => {
+      navigate('/checkout', { state: { selectedItems } });
+    });
+  };
 
   // ── Empty state ───────────────────────────────────────────────────────────
   if (cartItems.length === 0) {

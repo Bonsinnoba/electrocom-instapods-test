@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, startTransition } from 'react';
 import { useCart } from '../context/CartContext';
 import { useNotifications } from '../context/NotificationContext';
 import { useUser } from '../context/UserContext';
-import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { useNavigate, Link, useLocation, Navigate } from 'react-router-dom';
 import { CreditCard, Truck, ShieldCheck, ArrowLeft, ChevronRight, CheckCircle, Smartphone, MapPin, Tag } from 'lucide-react';
 import { useSettings } from '../context/SettingsContext';
 import { createOrder, fetchPickupLocations, getShippingFee } from '../services/api';
@@ -325,17 +325,23 @@ export default function Checkout() {
   }, [paystackConfig.reference, loading]);
   // -----------------------------------------------------------------
 
+  const [redirectTarget, setRedirectTarget] = useState(null);
   useEffect(() => {
     if (!user) {
       addToast('Please log in to proceed with checkout', 'info');
-      navigate('/login?redirect=/checkout');
+      setRedirectTarget('/login?redirect=/checkout');
     }
-  }, [user, navigate, addToast]);
+  }, [user, addToast]);
 
   const [errors, setErrors] = useState({});
 
   if (!user || selectedItems.length === 0) {
-    if (selectedItems.length === 0) navigate('/cart');
+    if (selectedItems.length === 0) {
+      return <Navigate to="/cart" replace />;
+    }
+    if (redirectTarget) {
+      return <Navigate to={redirectTarget} replace />;
+    }
     return null;
   }
 
