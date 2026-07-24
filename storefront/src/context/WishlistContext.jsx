@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { useUser } from './UserContext';
 import { secureStorage } from '../utils/secureStorage';
 import { fetchWishlist, addToWishlist, removeFromWishlist } from '../services/api';
@@ -20,10 +20,22 @@ export const WishlistProvider = ({ children }) => {
     return secureStorage.getItem('wishlist', 'local') || [];
   });
 
-  // Sync with API on login
+  const lastUserIdRef = useRef(null);
+  const isFetchingRef = useRef(false);
+
+  // Sync with API on login / user change
   useEffect(() => {
     let mounted = true;
     if (user) {
+      // Switched accounts — always re-fetch
+      if (lastUserIdRef.current !== user.id) {
+        lastUserIdRef.current = user.id;
+      }
+
+      // Prevent concurrent duplicate requests
+      if (isFetchingRef.current) return;
+      isFetchingRef.current = true;
+
       const loadWishlist = async () => {
         try {
           const items = await fetchWishlist();
@@ -33,10 +45,14 @@ export const WishlistProvider = ({ children }) => {
           }
         } catch (error) {
           console.error("Failed to load wishlist from server", error);
+        } finally {
+          isFetchingRef.current = false;
         }
       };
       loadWishlist();
     } else {
+      lastUserIdRef.current = null;
+      isFetchingRef.current = false;
       setWishlistItems([]);
     }
     return () => { mounted = false; };

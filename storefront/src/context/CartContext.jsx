@@ -27,6 +27,7 @@ export const CartProvider = ({ children }) => {
   const lastUserId = useRef(null);
   const lastCartItemsRef = useRef(null);
   const isInitialLoadRef = useRef(true);
+  const isFetchingRef = useRef(false);
 
   // ── Load from DB whenever the user changes (login / switch account) ──
   useEffect(() => {
@@ -37,12 +38,20 @@ export const CartProvider = ({ children }) => {
       lastUserId.current = null;
       lastCartItemsRef.current = null;
       isInitialLoadRef.current = true;
+      isFetchingRef.current = false;
       return;
     }
 
-    if (lastUserId.current === user.id) return; // Same session, skip
-    lastUserId.current = user.id;
-    isInitialLoadRef.current = true;
+    // Switched accounts — reset the sync refs
+    if (lastUserId.current !== user.id) {
+      lastUserId.current = user.id;
+      lastCartItemsRef.current = null;
+      isInitialLoadRef.current = true;
+    }
+
+    // Don't fire a concurrent duplicate request
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
 
     const loadFromServer = async () => {
       try {
@@ -52,6 +61,8 @@ export const CartProvider = ({ children }) => {
       } catch {
         setCartItems([]);
         lastCartItemsRef.current = [];
+      } finally {
+        isFetchingRef.current = false;
       }
     };
 

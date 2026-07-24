@@ -1,27 +1,27 @@
 import React, { startTransition } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 export default function TransitionLink({ to, onClick, children, className, style, ...props }) {
   const navigate = useNavigate();
-  const location = useLocation();
 
   const handleClick = (e) => {
-    // Check if the click is a normal left click without modifiers (Ctrl, Cmd, Alt, Shift)
+    // Let modifier-key clicks (new tab, etc.) pass through normally
     const isNormalClick = e.button === 0 && !e.metaKey && !e.altKey && !e.ctrlKey && !e.shiftKey;
-    
+
     if (isNormalClick && !e.defaultPrevented) {
       e.preventDefault();
-      
-      // Only navigate if we are transitioning to a different pathname
-      if (location.pathname !== to) {
-        startTransition(() => {
-          navigate(to);
-        });
-      }
-      
+
+      // Run caller's onClick first (e.g. auth guard that calls e.preventDefault)
       if (onClick) {
         onClick(e);
       }
+
+      // Skip router navigation for anchor-only hrefs used as auth placeholders
+      if (!to || to === '#' || e.defaultPrevented) return;
+
+      startTransition(() => {
+        navigate(to);
+      });
     }
   };
 
