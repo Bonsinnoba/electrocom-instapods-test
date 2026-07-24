@@ -29,21 +29,35 @@ export const UserProvider = ({ children }) => {
   // Ref to prevent duplicate checkUserStatus calls
   const hasCheckedStatus = useRef(false);
 
-  // Hydrate full user profile on initial load
+  // Hydrate full user profile on initial load.
+  // If a session cookie or shared token exists, we should validate it even when the local user object
+  // is absent due to browser refresh or missing secure storage state.
   useEffect(() => {
-      if (!hasCheckedStatus.current && user && secureStorage.getItem('token', 'shared')) {
-          hasCheckedStatus.current = true;
-          checkUserStatus().then(res => {
-              if (res && res.success && res.data && res.data.user) {
-                  // Use the login helper to ensure storage is synced to the confirmed ID
-                  login(res.data.user);
-              } else if (res && res.unauthorized) {
-                  logout();
-              }
-          }).catch(err => {
-              console.error('Session validation failed:', err);
-          });
+      if (hasCheckedStatus.current) return;
+
+      const hasStoredToken = Boolean(secureStorage.getItem('token', 'shared'));
+      let lastUserId = null;
+      try {
+        lastUserId = localStorage.getItem('ehub_last_user_id');
+      } catch (e) {
+        if (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
+          console.warn('Storage quota exceeded when reading last user ID');
+        }
       }
+
+      if (!user && !hasStoredToken && !lastUserId) return;
+
+      hasCheckedStatus.current = true;
+      checkUserStatus().then(res => {
+          if (res && res.success && res.data && res.data.user) {
+              // Use the login helper to ensure storage is synced to the confirmed ID
+              login(res.data.user);
+          } else if (res && res.unauthorized) {
+              logout();
+          }
+      }).catch(err => {
+          console.error('Session validation failed:', err);
+      });
   }, []);
 
   useEffect(() => {

@@ -55,7 +55,8 @@ export const WishlistProvider = ({ children }) => {
     } else {
       lastUserIdRef.current = null;
       isFetchingRef.current = false;
-      setWishlistItems([]);
+      const savedLocalWishlist = secureStorage.getItem('wishlist', 'local');
+      setWishlistItems(Array.isArray(savedLocalWishlist) ? savedLocalWishlist : []);
     }
     return () => { mounted = false; };
   }, [user]);
