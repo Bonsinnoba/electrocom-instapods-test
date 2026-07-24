@@ -8,6 +8,7 @@ import { HeartOff, ShoppingBag, LogIn } from 'lucide-react';
 export default function Favorites({ onProductClick, searchQuery }) {
   const { wishlistItems, toggleWishlist } = useWishlist();
   const { user, openAuthModal } = useUser();
+  const safeWishlistItems = Array.isArray(wishlistItems) ? wishlistItems : [];
   const navigate = useNavigate();
 
   if (!user) {
@@ -39,7 +40,7 @@ export default function Favorites({ onProductClick, searchQuery }) {
     );
   }
 
-  const filteredItems = wishlistItems.filter(p => {
+  const filteredItems = safeWishlistItems.filter(p => {
     const q = searchQuery.toLowerCase();
     return !searchQuery || 
            p.name.toLowerCase().includes(q) || 
@@ -51,11 +52,11 @@ export default function Favorites({ onProductClick, searchQuery }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', flexWrap: 'wrap', gap: '12px' }}>
         <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0 }}>My Favorites</h1>
         <div style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: 600, background: 'var(--bg-main)', padding: '6px 12px', borderRadius: '100px' }}>
-          {wishlistItems.length} {wishlistItems.length === 1 ? 'Item' : 'Items'}
+          {safeWishlistItems.length} {safeWishlistItems.length === 1 ? 'Item' : 'Items'}
         </div>
       </div>
       
-      {wishlistItems.length === 0 ? (
+      {safeWishlistItems.length === 0 ? (
         <div className="glass" style={{ 
           display: 'flex', 
           flexDirection: 'column', 

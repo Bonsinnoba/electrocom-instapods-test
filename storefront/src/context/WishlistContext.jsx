@@ -17,7 +17,9 @@ export const WishlistProvider = ({ children }) => {
   const { user } = useUser();
 
   const [wishlistItems, setWishlistItems] = useState(() => {
-    return secureStorage.getItem('wishlist', 'local') || [];
+    const storedKey = user?.id || 'local';
+    const savedValue = secureStorage.getItem('wishlist', storedKey);
+    return Array.isArray(savedValue) ? savedValue : [];
   });
 
   const lastUserIdRef = useRef(null);
@@ -59,15 +61,17 @@ export const WishlistProvider = ({ children }) => {
   }, [user]);
 
   const toggleWishlist = async (product) => {
-    const isAlreadyIn = wishlistItems.some(item => item.id === product.id);
+    const currentItems = Array.isArray(wishlistItems) ? wishlistItems : [];
+    const isAlreadyIn = currentItems.some(item => item.id === product.id);
     
     // Optimistic UI update
     setWishlistItems(prev => {
+      const safePrev = Array.isArray(prev) ? prev : [];
       let nextState;
       if (isAlreadyIn) {
-        nextState = prev.filter(item => item.id !== product.id);
+        nextState = safePrev.filter(item => item.id !== product.id);
       } else {
-        nextState = [...prev, product];
+        nextState = [...safePrev, product];
       }
       
       // Update local storage

@@ -25,11 +25,12 @@ export default function Cart() {
   const navigate = useNavigate();
 
   // ── Selection state ──────────────────────────────────────────────────────
-  const [selectedKeys, setSelectedKeys] = useState(() => new Set(cartItems.map(itemKey)));
+  const [selectedKeys, setSelectedKeys] = useState(() => new Set(Array.isArray(cartItems) ? cartItems.map(itemKey) : []));
 
   useEffect(() => {
     setSelectedKeys(prev => {
-      const cartKeySet = new Set(cartItems.map(itemKey));
+      const safeCartItems = Array.isArray(cartItems) ? cartItems : [];
+      const cartKeySet = new Set(safeCartItems.map(itemKey));
       const next = new Set();
       for (const k of prev) { if (cartKeySet.has(k)) next.add(k); }
       for (const k of cartKeySet) { if (!prev.has(k)) next.add(k); }

@@ -552,7 +552,7 @@ export const fetchWishlist = async () => {
         const response = await apiFetch(`${API_BASE_URL}/wishlist.php`, getFetchOptions());
         if (!response.ok) throw new Error('Failed to fetch wishlist');
         const result = await response.json();
-        const items = result.success ? result.items : [];
+        const items = result.success && Array.isArray(result.items) ? result.items : [];
         return items.map(product => ({
             ...product,
             name: decodeHtml(product.name),
@@ -601,7 +601,7 @@ export const fetchServerCart = async () => {
         const response = await apiFetch(`${API_BASE_URL}/cart_sync.php`, getFetchOptions());
         if (!response.ok) return [];
         const result = await response.json();
-        return result.success ? (result.cart || []) : [];
+        return result.success ? (Array.isArray(result.cart) ? result.cart : []) : [];
     } catch {
         return [];
     }
