@@ -563,14 +563,14 @@ function AppContent() {
           <Routes>
             <Route path="/" element={<RouteLoader><Home products={products} onProductClick={handleProductClick} searchQuery={searchQuery} loading={loading} /></RouteLoader>} />
             <Route path="/shop" element={<RouteLoader><Shop products={products} onProductClick={handleProductClick} searchQuery={searchQuery} loading={loading} /></RouteLoader>} />
-            <Route path="/cart" element={<Cart />} />
-            <Route path="/favorites" element={<Favorites onProductClick={handleProductClick} searchQuery={searchQuery} />} />
+            <Route path="/cart" element={<RouteLoader><Cart /></RouteLoader>} />
+            <Route path="/favorites" element={<RouteLoader><Favorites onProductClick={handleProductClick} searchQuery={searchQuery} /></RouteLoader>} />
             <Route path="/orders" element={<RouteLoader><Orders searchQuery={searchQuery} /></RouteLoader>} />
             <Route path="/notifications" element={<RouteLoader><Notifications searchQuery={searchQuery} /></RouteLoader>} />
             <Route path="/support" element={<RouteLoader><Support searchQuery={searchQuery} /></RouteLoader>} />
             <Route path="/settings" element={<RouteLoader><Settings searchQuery={searchQuery} isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} /></RouteLoader>} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/checkout" element={<Checkout />} />
+            <Route path="/profile" element={<RouteLoader><Profile /></RouteLoader>} />
+            <Route path="/checkout" element={<RouteLoader><Checkout /></RouteLoader>} />
             <Route path="/order-success" element={<RouteLoader><OrderSuccess /></RouteLoader>} />
             <Route path="/transactions" element={<RouteLoader><Transactions /></RouteLoader>} />
             <Route path="/about" element={<RouteLoader><AboutUs /></RouteLoader>} />

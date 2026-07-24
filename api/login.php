@@ -297,6 +297,7 @@ try {
         'message' => 'Login successful!',
         'data' => [
             'access_token' => $accessToken, // Short-lived token for memory storage
+            'token' => $accessToken,        // Fallback for older frontend contexts
             'user' => scrubUser($user)
         ]
     ]);

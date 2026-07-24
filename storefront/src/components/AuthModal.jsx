@@ -117,7 +117,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'signin' }) {
           setVerificationStep(true);
         } else {
           // Direct login
-          handleContextLogin(response.data.user, response.data.token);
+          handleContextLogin(response.data.user, response.data.token || response.data.access_token);
           onClose(response.data.user);
           setFormData({ name: '', email: '', phone: '', country: 'Ghana', password: '', confirmPassword: '', verification_method: 'email' });
         }
@@ -153,7 +153,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'signin' }) {
     try {
       const response = await recoverAccount({ email: recoveryEmail, password: formData.password });
       if (response.success && response.data?.user) {
-        handleContextLogin(response.data.user, response.data.token);
+        handleContextLogin(response.data.user, response.data.token || response.data.access_token);
         onClose(response.data.user);
         setIsRecoveryMode(false);
         setFormData({ name: '', email: '', phone: '', country: 'Ghana', password: '', confirmPassword: '', verification_method: 'email' });

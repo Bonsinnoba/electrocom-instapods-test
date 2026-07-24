@@ -143,9 +143,9 @@ $config = [
     'ELITE_THRESHOLD' => (int)($_ENV['ELITE_THRESHOLD'] ?? 500),
     'VIP_THRESHOLD'   => (int)($_ENV['VIP_THRESHOLD'] ?? 2000),
     
-    // Complex Types (Parsed from comma-separated strings)
-    'ALLOWED_ORIGINS'     => array_filter(array_map('trim', explode(',', $_ENV['ALLOWED_ORIGINS'] ?? ''))),
-    'ALLOWED_IMAGE_BASES' => array_filter(array_map('trim', explode(',', $_ENV['ALLOWED_IMAGE_BASES'] ?? ''))),
+    // Complex Types (Parsed from comma-separated strings with quotes stripped)
+    'ALLOWED_ORIGINS'     => array_filter(array_map(function($val) { return trim($val, " \t\n\r\0\x0B\"'"); }, explode(',', $_ENV['ALLOWED_ORIGINS'] ?? ''))),
+    'ALLOWED_IMAGE_BASES' => array_filter(array_map(function($val) { return trim($val, " \t\n\r\0\x0B\"'"); }, explode(',', $_ENV['ALLOWED_IMAGE_BASES'] ?? ''))),
 ];
 
 // Provide global access if needed
