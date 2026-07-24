@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useSettings } from '../context/SettingsContext';
 
 const formatImageUrl = (url) => {
   if (!url) return '';
@@ -10,34 +11,11 @@ const formatImageUrl = (url) => {
 };
 
 export default function PartnersMarquee() {
-  const [partners, setPartners] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const hasFetched = useRef(false);
+  const { homepageBoot } = useSettings();
+  const partners = homepageBoot?.partners || [];
 
-  useEffect(() => {
-    const fetchPartners = async () => {
-      try {
-        const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
-        const res = await fetch(`${API_BASE}/get_partners.php`);
-        const result = await res.json();
-        if (result.success) {
-          setPartners(result.data || []);
-        }
-      } catch (error) {
-        console.error('Failed to fetch partners:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (!hasFetched.current) {
-      hasFetched.current = true;
-      fetchPartners();
-    }
-  }, []);
-
-  if (loading || partners.length === 0) {
-    return null; // Don't render anything if empty or loading to keep the layout clean
+  if (partners.length === 0) {
+    return null;
   }
 
   // Duplicate the list of partners to create a seamless infinite marquee effect

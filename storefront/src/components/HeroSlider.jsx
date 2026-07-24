@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useCallback, memo, useRef } from 'react';
+import React, { useState, useEffect, memo, useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { fetchSlides } from '../services/api';
 import { useSettings } from '../context/SettingsContext';
 
 const isVideo = (url) => url && (url.match(/\.(mp4|webm)$/i) || url.startsWith('data:video'));
@@ -42,39 +41,19 @@ const sanitizeContentBlock = (block) => {
 };
 
 function HeroSlider() {
-  const { siteSettings } = useSettings();
-  const [slides, setSlides] = useState([]);
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const hasFetched = useRef(false);
-
-  const loadSlides = useCallback(async () => {
-      try {
-          const data = await fetchSlides();
-          // Only update if data actually changed to avoid resetting the slider position unnecessarily
-          setSlides(prev => {
-              const isDifferent = JSON.stringify(prev) !== JSON.stringify(data);
-              return isDifferent ? data : prev;
-          });
-      } catch (err) {
-          // Silent error handling to avoid console clutter
-      }
-  }, []);
+  const { siteSettings, homepageBoot } = useSettings();
+  const slides = homepageBoot?.slides || [];
+  const [currentSlide, setCurrentSlide] = React.useState(0);
 
   useEffect(() => {
-    if (!hasFetched.current) {
-      hasFetched.current = true;
-      loadSlides();
-    }
-
+    if (slides.length <= 1) return;
     const handleFocus = () => {
-        loadSlides();
+      // If the page regains focus, restart the slider loop.
+      setCurrentSlide((prev) => Math.min(prev, slides.length - 1));
     };
-
     window.addEventListener('focus', handleFocus);
-    return () => {
-        window.removeEventListener('focus', handleFocus);
-    };
-  }, [loadSlides]);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [slides.length]);
 
   useEffect(() => {
     if (slides.length <= 1) return;
@@ -82,7 +61,7 @@ function HeroSlider() {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
     }, 8000); // Increased to 8 seconds
     return () => clearInterval(timer);
-  }, [slides]);
+  }, [slides.length]);
 
   const [sliderHeight, setSliderHeight] = useState(() =>
     window.innerWidth <= 768 ? 312 : 480

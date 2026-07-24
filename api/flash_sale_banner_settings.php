@@ -1,6 +1,7 @@
 <?php
 require_once 'db.php';
 require_once 'security.php';
+require_once __DIR__ . '/cache.php';
 
 header('Content-Type: application/json');
 
@@ -115,6 +116,7 @@ if ($method === 'GET' && $isAdmin) {
         $stmt = $pdo->prepare($sql);
         $stmt->execute($updateValues);
 
+        eh_cache_delete('homepage_boot', 'homepage');
         sendResponse(true, 'Settings updated successfully');
     } catch (PDOException $e) {
         sendDatabaseError($e, 'Unable to update settings.');

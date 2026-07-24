@@ -187,6 +187,7 @@ if ($method === 'GET') {
         eh_cache_delete('merged_settings', 'settings');
         eh_cache_delete('always_load_settings', 'settings_always');
         eh_cache_delete('occasional_settings', 'settings_occasional');
+        eh_cache_delete('homepage_boot', 'homepage');
     } catch (Exception $e) {
         error_log('Cache invalidation error: ' . $e->getMessage());
     }

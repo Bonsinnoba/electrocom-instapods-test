@@ -3,6 +3,7 @@
 require 'cors_middleware.php';
 require 'db.php';
 require 'security.php';
+require_once __DIR__ . '/cache.php';
 
 header('Content-Type: application/json');
 header('Cache-Control: no-cache, no-store, must-revalidate');
@@ -181,6 +182,7 @@ try {
             ]);
             $newId = $pdo->lastInsertId();
             logger('info', 'APPEARANCE', "New hero slide created (ID: {$newId}) by {$userName}");
+            eh_cache_delete('homepage_boot', 'homepage');
             echo json_encode(['success' => true, 'id' => $newId]);
         } elseif ($action === 'update') {
             $id = $data['id'];
@@ -212,6 +214,7 @@ try {
             }
 
             logger('info', 'APPEARANCE', "Hero slide updated (ID: {$id}) by {$userName}");
+            eh_cache_delete('homepage_boot', 'homepage');
             echo json_encode(['success' => true]);
         } elseif ($action === 'delete') {
             $id = $data['id'];
@@ -229,6 +232,7 @@ try {
             $stmt->execute([$id]);
 
             logger('warn', 'APPEARANCE', "Hero slide deleted (ID: {$id}) by {$userName}");
+            eh_cache_delete('homepage_boot', 'homepage');
             echo json_encode(['success' => true]);
         } elseif ($action === 'upload') {
             // Handle file upload

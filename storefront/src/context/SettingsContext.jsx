@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { updateProfile, formatImageUrl } from '../services/api';
+import { updateProfile, formatImageUrl, fetchHomepageBoot } from '../services/api';
 import { useUser } from './UserContext';
 
 const SettingsContext = createContext();
@@ -83,8 +83,50 @@ export const SettingsProvider = ({ children }) => {
   });
 
   // Fetch site settings from backend
+  const [homepageBoot, setHomepageBoot] = useState({
+    slides: [],
+    partners: [],
+    flashSaleBannerSettings: null
+  });
+
   useEffect(() => {
-    const loadSiteSettings = async () => {
+    const loadHomepageBoot = async () => {
+      try {
+        const data = await fetchHomepageBoot();
+
+        if (data.csrf_token) {
+          sessionStorage.setItem('csrf_token', data.csrf_token);
+        }
+
+        if (data.site_settings) {
+          const cleanedData = {};
+          Object.keys(data.site_settings).forEach(key => {
+            const val = data.site_settings[key];
+            if (val !== null && val !== undefined && String(val).trim() !== '') {
+              cleanedData[key] = val;
+            }
+          });
+
+          if (cleanedData.siteLogoUrl) cleanedData.siteLogoUrl = formatImageUrl(cleanedData.siteLogoUrl);
+          if (cleanedData.faviconUrl) cleanedData.faviconUrl = formatImageUrl(cleanedData.faviconUrl);
+          setSiteSettings(prev => ({ ...prev, ...cleanedData }));
+        }
+
+        setHomepageBoot({
+          slides: Array.isArray(data.slides)
+            ? data.slides.map(slide => ({ ...slide, image_url: formatImageUrl(slide.image_url) }))
+            : [],
+          partners: Array.isArray(data.partners)
+            ? data.partners.map(partner => ({ ...partner, logo_url: formatImageUrl(partner.logo_url) }))
+            : [],
+          flashSaleBannerSettings: data.flash_sale_banner_settings || null
+        });
+        return;
+      } catch (error) {
+        console.error('Failed loading homepage boot payload:', error);
+      }
+
+      // Fallback to legacy site settings endpoint if boot fails
       try {
         const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
         const response = await fetch(`${base}/get_site_settings.php`);
@@ -94,8 +136,6 @@ export const SettingsProvider = ({ children }) => {
         try { result = JSON.parse(text); } catch { throw new Error('Invalid JSON from settings endpoint'); }
         if (result.success && result.data) {
           const data = result.data;
-
-          // Clean empty/null/undefined values to allow fallback to local defaults
           const cleanedData = {};
           Object.keys(data).forEach(key => {
             const val = data[key];
@@ -103,20 +143,18 @@ export const SettingsProvider = ({ children }) => {
               cleanedData[key] = val;
             }
           });
-
-          // Ensure branding URLs are absolute
           if (cleanedData.siteLogoUrl) cleanedData.siteLogoUrl = formatImageUrl(cleanedData.siteLogoUrl);
-          if (cleanedData.faviconUrl)  cleanedData.faviconUrl  = formatImageUrl(cleanedData.faviconUrl);
-
+          if (cleanedData.faviconUrl) cleanedData.faviconUrl = formatImageUrl(cleanedData.faviconUrl);
           setSiteSettings(prev => ({ ...prev, ...cleanedData }));
         }
       } catch (error) {
-        console.error('Error loading site settings:', error);
+        console.error('Error loading site settings fallback:', error);
       }
     };
+
     if (!hasFetchedSiteSettings.current) {
       hasFetchedSiteSettings.current = true;
-      loadSiteSettings();
+      loadHomepageBoot();
     }
   }, []);
 
@@ -239,7 +277,7 @@ export const SettingsProvider = ({ children }) => {
   };
 
   return (
-    <SettingsContext.Provider value={{ settings, siteSettings, updateSetting, updateCurrency, formatPrice }}>
+    <SettingsContext.Provider value={{ siteSettings, settings, updateSetting, homepageBoot, formatImageUrl }}>
       {children}
     </SettingsContext.Provider>
   );

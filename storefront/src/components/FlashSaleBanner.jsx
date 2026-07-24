@@ -2,22 +2,12 @@ import React, { useState, useEffect, useMemo, memo } from 'react';
 import { Flame, Clock, ArrowRight, Percent, Sparkles, AlertTriangle, TrendingUp, Truck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useSettings } from '../context/SettingsContext';
-import { fetchFlashSaleBannerSettings } from '../services/api';
 
 function FlashSaleBanner({ products, onProductClick }) {
   const navigate = useNavigate();
-  const { formatPrice } = useSettings();
-  const [bannerSettings, setBannerSettings] = useState(null);
+  const { formatPrice, homepageBoot } = useSettings();
+  const bannerSettings = homepageBoot?.flashSaleBannerSettings || null;
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-
-  // Load banner settings on mount
-  useEffect(() => {
-    fetchFlashSaleBannerSettings().then(settings => {
-      if (settings) {
-        setBannerSettings(settings);
-      }
-    });
-  }, []);
 
   // 1. Scan catalog for active discounted products with future end times
   const featuredProduct = useMemo(() => {

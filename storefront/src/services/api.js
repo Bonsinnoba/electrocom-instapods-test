@@ -83,6 +83,15 @@ export const fetchCSRFToken = async () => {
     }
 };
 
+export const fetchHomepageBoot = async () => {
+    const response = await apiFetch(`${API_BASE_URL}/get_homepage_boot.php`, getFetchOptions());
+    if (response.status === 503) return { success: false, maintenance: true };
+    if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+    const result = await response.json();
+    if (!result.success) throw new Error(result.message || 'API error');
+    return result.data;
+};
+
 /**
  * Get CSRF token from localStorage or fetch new one
  */

@@ -3,6 +3,7 @@
 require 'cors_middleware.php';
 require 'db.php';
 require 'security.php';
+require_once __DIR__ . '/cache.php';
 
 header('Content-Type: application/json');
 header('Cache-Control: no-cache, no-store, must-revalidate');
@@ -157,6 +158,7 @@ try {
             ]);
             $newId = $pdo->lastInsertId();
             logger('info', 'APPEARANCE', "New partner created (ID: {$newId}) by {$userName}");
+            eh_cache_delete('homepage_boot', 'homepage');
             echo json_encode(['success' => true, 'id' => $newId]);
         } elseif ($action === 'update') {
             $id = $data['id'];
@@ -182,6 +184,7 @@ try {
             }
 
             logger('info', 'APPEARANCE', "Partner updated (ID: {$id}) by {$userName}");
+            eh_cache_delete('homepage_boot', 'homepage');
             echo json_encode(['success' => true]);
         } elseif ($action === 'delete') {
             $id = $data['id'];
@@ -199,6 +202,7 @@ try {
             $stmt->execute([$id]);
 
             logger('warn', 'APPEARANCE', "Partner deleted (ID: {$id}) by {$userName}");
+            eh_cache_delete('homepage_boot', 'homepage');
             echo json_encode(['success' => true]);
         } elseif ($action === 'upload') {
             if (!isset($_FILES['logo'])) {
@@ -214,6 +218,7 @@ try {
 
             if (move_uploaded_file($file['tmp_name'], $targetPath)) {
                 $publicUrl = "uploads/partners/" . $filename;
+                eh_cache_delete('homepage_boot', 'homepage');
                 echo json_encode(['success' => true, 'url' => $publicUrl]);
             } else {
                 throw new Exception('Failed to move uploaded file');

@@ -30,7 +30,7 @@ const Cart = lazy(() => import('./pages/Cart'));
 const Favorites = lazy(() => import('./pages/Favorites'));
 const Profile = lazy(() => import('./pages/Profile'));
 const Checkout = lazy(() => import('./pages/Checkout'));
-import { fetchOrders, fetchProducts, socialAuthExchange, fetchCSRFToken } from './services/api';
+import { fetchOrders, fetchProducts, socialAuthExchange } from './services/api';
 import { useUser } from './context/UserContext';
 import { formatRelativeTime, formatDate } from './utils/dateFormatter';
 import MaintenancePage from './pages/MaintenancePage';
@@ -83,7 +83,6 @@ function AppContent() {
   const lastFetchRef = React.useRef(0);
   const processingSocialAuthRef = useRef(null);
   const hasCheckedMaintenance = useRef(false);
-  const hasFetchedCSRF = useRef(false);
   const hasLoadedProducts = useRef(false);
 
   // Check maintenance mode from backend
@@ -238,17 +237,6 @@ function AppContent() {
   }, [isDarkMode]);
 
   // Fetch CSRF token on app initialization
-  useEffect(() => {
-    if (!hasFetchedCSRF.current) {
-      hasFetchedCSRF.current = true;
-      fetchCSRFToken().then(token => {
-        if (token) {
-          sessionStorage.setItem('csrf_token', token);
-        }
-      });
-    }
-  }, []);
-
   // Helper to calculate hover colors from base colors
   const calculateHoverColors = (primary, accent, header) => {
     const darken = (hex, percent) => {

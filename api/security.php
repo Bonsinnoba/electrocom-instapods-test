@@ -1027,7 +1027,7 @@ if (!function_exists('checkMaintenanceMode')) {
             if (isset($settings['maintenanceMode']) && $settings['maintenanceMode'] === true) {
                 if (isSuperAdmin($pdo)) return;
                 $script = basename($_SERVER['SCRIPT_NAME']);
-                if (in_array($script, ['super_settings.php', 'login.php', 'get_site_settings.php'])) return;
+                if (in_array($script, ['super_settings.php', 'login.php', 'get_site_settings.php', 'get_homepage_boot.php'])) return;
                 header('Content-Type: application/json');
                 http_response_code(503);
                 echo json_encode(['success' => false, 'maintenance' => true, 'message' => 'Under maintenance.']);
