@@ -26,10 +26,10 @@ const AuthModal = lazy(() => import('./components/AuthModal'));
 const Drawer = lazy(() => import('./components/Drawer'));
 const ToastContainer = lazy(() => import('./components/ToastContainer'));
 
-const Cart = lazy(() => import('./pages/Cart'));
-const Favorites = lazy(() => import('./pages/Favorites'));
+import Cart from './pages/Cart';
+import Favorites from './pages/Favorites';
 const Profile = lazy(() => import('./pages/Profile'));
-const Checkout = lazy(() => import('./pages/Checkout'));
+import Checkout from './pages/Checkout';
 import PageLoader from './components/PageLoader';
 import { fetchOrders, fetchProducts, socialAuthExchange } from './services/api';
 import { useUser } from './context/UserContext';
