@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, startTransition } from 'react';
 import { logoutUser, checkUserStatus } from '../services/api';
 import { secureStorage } from '../utils/secureStorage';
 
@@ -163,7 +163,13 @@ export const UserProvider = ({ children }) => {
   const [authModal, setAuthModal] = useState({ isOpen: false, mode: 'signin' });
 
   const openAuthModal = (mode = 'signin') => {
-    setAuthModal({ isOpen: true, mode });
+    // Wrapped in startTransition: AuthModal is lazy-loaded, and opening it
+    // directly from a synchronous click handler (Cart's "Login to Checkout",
+    // Favorites' login prompt, Navbar's cart icon) throws React error #426
+    // the first time it mounts in a session. This makes it safe everywhere.
+    startTransition(() => {
+      setAuthModal({ isOpen: true, mode });
+    });
   };
 
   const closeAuthModal = () => {
