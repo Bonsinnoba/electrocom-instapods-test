@@ -309,7 +309,7 @@ function AppContent() {
   }, [isAuthenticated, logout, addToast]);
 
   return (
-    <Router>
+    <Router basename="/admin">
       <div className="mobile-restriction">
         <div style={{ fontSize: '48px', marginBottom: '20px' }}>🖥️</div>
         <h2>Desktop or Tablet Required</h2>
