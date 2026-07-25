@@ -11,6 +11,7 @@ import {
   toggleUserStatus as toggleStatus, 
   deleteCustomer as deleteUser,
   generateReportToken,
+  fetchReportsArchive,
   API_BASE_URL
 } from '../../services/api';
 
@@ -54,11 +55,7 @@ export default function AdminControl() {
   const loadArchives = async () => {
     setArchivesLoading(true);
     try {
-      const token = localStorage.getItem('ehub_token');
-      const res = await fetch(`${API_BASE_URL}/admin_reports_list.php`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const json = await res.json();
+      const json = await fetchReportsArchive();
       if (json.success) setArchives(json.data);
     } catch (e) {
       console.error(e);

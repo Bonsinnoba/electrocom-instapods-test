@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Search, Filter, X, Upload, Save, CheckCircle, Image as ImageIcon, Loader, Star, Download, UploadCloud, ShieldAlert, FileText, CheckSquare, Square, MoreVertical } from 'lucide-react';
 import Papa from 'papaparse';
-import { fetchProducts, createProduct, updateProduct, deleteProduct, formatImageUrl, fetchBatch } from '../services/api';
+import { fetchProducts, createProduct, updateProduct, deleteProduct, formatImageUrl, fetchBatch, bulkDeleteProducts, bulkUpdateProductStatus, bulkUpdateProductCategory } from '../services/api';
 import { useNotifications } from '../context/NotificationContext';
 import { useConfirm } from '../context/ConfirmContext';
 import { formatPrice } from '../utils/formatPrice';
@@ -401,21 +401,13 @@ export default function ProductManager() {
     if (!confirmed) return;
 
     try {
-      const token = localStorage.getItem('ehub_token');
-      const promises = Array.from(selectedProducts).map(id =>
-        fetch(`${API_BASE}/admin_products.php`, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-            'X-App-ID': 'admin'
-          },
-          body: JSON.stringify({ id })
-        })
-      );
-
-      await Promise.all(promises);
-      addToast(`${selectedProducts.size} products deleted successfully`, 'success');
+      const results = await bulkDeleteProducts(Array.from(selectedProducts));
+      const failed = results.filter(r => !r.success).length;
+      if (failed > 0) {
+        addToast(`${failed} of ${selectedProducts.size} products failed to delete`, 'error');
+      } else {
+        addToast(`${selectedProducts.size} products deleted successfully`, 'success');
+      }
       setSelectedProducts(new Set());
       loadProducts();
     } catch (error) {
@@ -427,21 +419,14 @@ export default function ProductManager() {
     if (selectedProducts.size === 0) return;
 
     try {
-      const token = localStorage.getItem('ehub_token');
-      const promises = Array.from(selectedProducts).map(id =>
-        fetch(`${API_BASE}/admin_products.php`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-            'X-App-ID': 'admin'
-          },
-          body: JSON.stringify({ id, status: newStatus })
-        })
-      );
-
-      await Promise.all(promises);
-      addToast(`${selectedProducts.size} products updated to ${newStatus}`, 'success');
+      // UI uses display labels; backend stores 'active' / 'out_of_stock'
+      const backendStatus = newStatus === 'Out of Stock' ? 'out_of_stock' : 'active';
+      const result = await bulkUpdateProductStatus(Array.from(selectedProducts), backendStatus);
+      if (result.success) {
+        addToast(`${selectedProducts.size} products updated to ${newStatus}`, 'success');
+      } else {
+        addToast(result.error || 'Failed to update products', 'error');
+      }
       setSelectedProducts(new Set());
       setBulkAction(null);
       loadProducts();
@@ -454,21 +439,12 @@ export default function ProductManager() {
     if (selectedProducts.size === 0) return;
 
     try {
-      const token = localStorage.getItem('ehub_token');
-      const promises = Array.from(selectedProducts).map(id =>
-        fetch(`${API_BASE}/admin_products.php`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-            'X-App-ID': 'admin'
-          },
-          body: JSON.stringify({ id, category: newCategory })
-        })
-      );
-
-      await Promise.all(promises);
-      addToast(`${selectedProducts.size} products moved to ${newCategory}`, 'success');
+      const result = await bulkUpdateProductCategory(Array.from(selectedProducts), newCategory);
+      if (result.success) {
+        addToast(`${selectedProducts.size} products moved to ${newCategory}`, 'success');
+      } else {
+        addToast(result.error || 'Failed to update products', 'error');
+      }
       setSelectedProducts(new Set());
       setBulkAction(null);
       loadProducts();

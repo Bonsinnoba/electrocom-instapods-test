@@ -8,7 +8,7 @@ import {
 import { useNotifications } from '../context/NotificationContext';
 import POSReceipt from '../components/POSReceipt';
 
-import { API_BASE_URL, formatImageUrl, fetchPosReturnOrder, processPosReturn, issueRefund, fetchBatch } from '../services/api';
+import { API_BASE_URL, formatImageUrl, fetchPosReturnOrder, processPosReturn, issueRefund, fetchBatch, posCheckout, posEmailReceipt } from '../services/api';
 
 export default function POSInterface() {
   const { addToast } = useNotifications();
@@ -55,21 +55,13 @@ export default function POSInterface() {
   const syncOfflineOrders = async () => {
     const currentOfflineOrders = JSON.parse(localStorage.getItem('ehub_offline_orders') || '[]');
     if (currentOfflineOrders.length === 0) return;
-    const token = localStorage.getItem('ehub_token');
     let remaining = [...currentOfflineOrders];
     let syncedCount = 0;
     
     for (const order of currentOfflineOrders) {
       try {
-        const response = await fetch(`${API_BASE_URL}/pos_checkout.php`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify(order.payload)
-        });
-        if (response.ok) {
+        const result = await posCheckout(order.payload);
+        if (result.success) {
           remaining = remaining.filter(o => o.id !== order.id);
           syncedCount++;
         }
@@ -334,21 +326,12 @@ export default function POSInterface() {
     if (cart.length === 0) return;
     setProcessing(true);
     try {
-      const token = localStorage.getItem('ehub_token');
-      const response = await fetch(`${API_BASE_URL}/pos_checkout.php`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          items: cart.map(item => ({ id: item.id, quantity: item.quantity, price: item.price })),
-          total_amount: total,
-          payment_method: paymentMethod,
-          customer_email: customerEmail
-        })
+      const result = await posCheckout({
+        items: cart.map(item => ({ id: item.id, quantity: item.quantity, price: item.price })),
+        total_amount: total,
+        payment_method: paymentMethod,
+        customer_email: customerEmail
       });
-      const result = await response.json();
       if (result.success) {
         setLastOrderId(result.order_id);
         setLastTransaction({
@@ -401,19 +384,10 @@ export default function POSInterface() {
     
     setSendingEmail(true);
     try {
-      const token = localStorage.getItem('ehub_token');
-      const response = await fetch(`${API_BASE_URL}/pos_email_receipt.php`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          order_id: lastOrderId,
-          email: email
-        })
+      const result = await posEmailReceipt({
+        order_id: lastOrderId,
+        email: email
       });
-      const result = await response.json();
       if (result.success) {
         addToast(`Receipt emailed to ${email} successfully!`, 'success');
       } else {

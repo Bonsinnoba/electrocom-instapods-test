@@ -1,6 +1,6 @@
 /* @refresh reload */
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import { API_BASE_URL } from '../services/api';
+import { fetchAdminNotifications, markNotificationRead as markNotificationReadApi, deleteNotification as deleteNotificationApi } from '../services/api';
 import { useAuth } from './AuthContext';
 
 const NotificationContext = createContext();
@@ -63,28 +63,19 @@ export const NotificationProvider = ({ children }) => {
   };
 
   const fetchServerNotifications = async () => {
-    const token = localStorage.getItem('ehub_token');
-    if (!token) return false; // No token — stop immediately
-
     try {
-        const response = await fetch(`${API_BASE_URL}/get_notifications.php?admin=true&_t=${Date.now()}`, {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'X-App-ID': 'admin'
-            }
-        });
-        
-        if (response.status === 401 || response.status === 403) {
-             // Stop polling if unauthorized — do NOT dispatch auth event from here
-             return false;
+        const result = await fetchAdminNotifications();
+
+        if (result.unauthorized) {
+            // Stop polling if unauthorized — do NOT dispatch auth event from here
+            return false;
         }
 
-        if (response.status === 429) {
+        if (result.rateLimited) {
             console.warn('Rate limited on notifications, backing off');
             return true; // Continue polling but let interval handle timing
         }
 
-        const result = await response.json();
         if (result.success && Array.isArray(result.data)) {
             const formatted = result.data.map(n => ({
                 id: n.id,
@@ -180,14 +171,7 @@ export const NotificationProvider = ({ children }) => {
     
     if (typeof id === 'number' && id < 1000000000000) {
         try {
-            await fetch(`${API_BASE_URL}/get_notifications.php?action=mark_read`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('ehub_token')}`
-                },
-                body: JSON.stringify({ id })
-            });
+            await markNotificationReadApi(id);
         } catch (error) {
             console.error("Failed to mark notification as read on server", error);
         }
@@ -206,14 +190,7 @@ export const NotificationProvider = ({ children }) => {
 
     if (typeof id === 'number' && id < 1000000000000) {
         try {
-            await fetch(`${API_BASE_URL}/get_notifications.php?action=delete`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('ehub_token')}`
-                },
-                body: JSON.stringify({ id })
-            });
+            await deleteNotificationApi(id);
         } catch (error) {
             console.error("Failed to delete notification on server", error);
         }

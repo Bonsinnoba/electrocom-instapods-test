@@ -13,9 +13,8 @@ export const AdminSettingsProvider = ({ children }) => {
   const [error, setError] = useState(null);
 
   const refreshSettings = useCallback(async () => {
-    const token = localStorage.getItem('ehub_token');
-    if (!isAuthenticated || !token) return;
-    
+    if (!isAuthenticated) return;
+
     setLoading(true);
     try {
       const response = await fetchSuperSettings();

@@ -22,6 +22,30 @@ if (!$user) {
     sendResponse(false, 'User record mismatch.', null, 401);
 }
 
+try {
+    $pdo->exec("CREATE TABLE IF NOT EXISTS admin_messages (
+        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+        sender_id INT NOT NULL,
+        receiver_id INT DEFAULT NULL,
+        message TEXT NOT NULL,
+        is_pinned TINYINT(1) NOT NULL DEFAULT 0,
+        pinned_by INT DEFAULT NULL,
+        attachment_url VARCHAR(255) DEFAULT NULL,
+        reply_to_id BIGINT DEFAULT NULL,
+        is_read TINYINT(1) NOT NULL DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_receiver_created (receiver_id, created_at),
+        INDEX idx_sender_receiver (sender_id, receiver_id)
+    )");
+} catch (Throwable $e) {
+    if (function_exists('logger')) {
+        logger('error', 'CHAT', 'admin_messages bootstrap failed: ' . $e->getMessage());
+    }
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => 'Staff chat is not provisioned correctly. Check DB privileges (CREATE).']);
+    exit;
+}
+
 $action = $_GET['action'] ?? '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
@@ -52,40 +76,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $with_user = isset($_GET['with_user']) && $_GET['with_user'] !== 'global' ? (int)$_GET['with_user'] : null;
         $limit = min(200, max(50, (int)($_GET['limit'] ?? 150)));
 
-        if ($with_user === null) {
-            // Global channel — paginated
-            $stmt = $pdo->prepare("
-                SELECT m.*, u.name as sender_name, u.avatar_text, u.profile_image, 
-                       p.name as pinner_name, r.message as reply_to_message, ru.name as reply_to_name
-                FROM admin_messages m 
-                JOIN users u ON m.sender_id = u.id 
-                LEFT JOIN users p ON m.pinned_by = p.id
-                LEFT JOIN admin_messages r ON m.reply_to_id = r.id
-                LEFT JOIN users ru ON r.sender_id = ru.id
-                WHERE m.receiver_id IS NULL 
-                ORDER BY m.created_at ASC
-                LIMIT $limit
-            ");
-            $stmt->execute();
-        } else {
-            // DM — paginated
-            $stmt = $pdo->prepare("
-                SELECT m.*, u.name as sender_name, u.avatar_text, u.profile_image, 
-                       p.name as pinner_name, r.message as reply_to_message, ru.name as reply_to_name
-                FROM admin_messages m 
-                JOIN users u ON m.sender_id = u.id 
-                LEFT JOIN users p ON m.pinned_by = p.id
-                LEFT JOIN admin_messages r ON m.reply_to_id = r.id
-                LEFT JOIN users ru ON r.sender_id = ru.id
-                WHERE (m.sender_id = ? AND m.receiver_id = ?) OR (m.sender_id = ? AND m.receiver_id = ?) 
-                ORDER BY m.created_at ASC
-                LIMIT $limit
-            ");
-            $stmt->execute([$user['id'], $with_user, $with_user, $user['id']]);
-        }
+        try {
+            if ($with_user === null) {
+                // Global channel — paginated
+                $stmt = $pdo->prepare("
+                    SELECT m.*, u.name as sender_name, u.avatar_text, u.profile_image, 
+                           p.name as pinner_name, r.message as reply_to_message, ru.name as reply_to_name
+                    FROM admin_messages m 
+                    JOIN users u ON m.sender_id = u.id 
+                    LEFT JOIN users p ON m.pinned_by = p.id
+                    LEFT JOIN admin_messages r ON m.reply_to_id = r.id
+                    LEFT JOIN users ru ON r.sender_id = ru.id
+                    WHERE m.receiver_id IS NULL 
+                    ORDER BY m.created_at ASC
+                    LIMIT $limit
+                ");
+                $stmt->execute();
+            } else {
+                // DM — paginated
+                $stmt = $pdo->prepare("
+                    SELECT m.*, u.name as sender_name, u.avatar_text, u.profile_image, 
+                           p.name as pinner_name, r.message as reply_to_message, ru.name as reply_to_name
+                    FROM admin_messages m 
+                    JOIN users u ON m.sender_id = u.id 
+                    LEFT JOIN users p ON m.pinned_by = p.id
+                    LEFT JOIN admin_messages r ON m.reply_to_id = r.id
+                    LEFT JOIN users ru ON r.sender_id = ru.id
+                    WHERE (m.sender_id = ? AND m.receiver_id = ?) OR (m.sender_id = ? AND m.receiver_id = ?) 
+                    ORDER BY m.created_at ASC
+                    LIMIT $limit
+                ");
+                $stmt->execute([$user['id'], $with_user, $with_user, $user['id']]);
+            }
 
-        $messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        echo json_encode(['success' => true, 'messages' => $messages]);
+            $messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            echo json_encode(['success' => true, 'messages' => $messages]);
+        } catch (Throwable $e) {
+            if (function_exists('logger')) {
+                logger('error', 'CHAT', 'History query failed: ' . $e->getMessage());
+            }
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Unable to load chat history.']);
+        }
         exit;
     }
 }

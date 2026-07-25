@@ -187,6 +187,19 @@ export const deleteProduct = async (id) => authFetch('/admin_products.php', {
     body: JSON.stringify({ action: 'delete', id }),
 });
 
+export const bulkDeleteProducts = async (ids) =>
+    Promise.all(ids.map(id => deleteProduct(id)));
+
+export const bulkUpdateProductStatus = async (ids, status) => authFetch('/admin_products.php', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'bulk_status_update', product_ids: ids, status }),
+});
+
+export const bulkUpdateProductCategory = async (ids, category) => authFetch('/admin_products.php', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'bulk_category_update', product_ids: ids, category }),
+});
+
 export const fetchCustomers = async () => {
     try {
         const result = await authFetch(`/admin_customers.php?_t=${Date.now()}`);
@@ -207,7 +220,32 @@ export const deleteUser = async (id) => authFetch('/admin_customers.php', {
     method: 'POST',
     body: JSON.stringify({ action: 'delete', id })
 });
+// --- Coupons ---
+export const fetchCoupons = async () => authFetch('/coupons.php');
+
+export const saveCoupon = async (payload) => authFetch('/coupons.php', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+});
+
+export const deleteCoupon = async (id) => authFetch('/coupons.php', {
+    method: 'DELETE',
+    body: JSON.stringify({ id }),
+});
+
+export const posCheckout = async (payload) => authFetch('/pos_checkout.php', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+});
+
+export const posEmailReceipt = async (payload) => authFetch('/pos_email_receipt.php', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+});
+
 export const fetchAnalytics = async () => authFetch('/admin_analytics.php');
+
+
 
 // --- CMS ---
 export const fetchCMSPages = async () => authFetch('/cms.php?all=1');
@@ -217,6 +255,8 @@ export const deleteCMSPage = async (id) => authFetch(`/cms.php?id=${id}`, { meth
 
 // deleteCustomer is kept as a backward-compat alias for deleteUser
 export const deleteCustomer = deleteUser;
+export const fetchReportsArchive = async () => authFetch('/admin_reports_list.php');
+
 export const generateReportToken = async () => authFetch('/generate_report_token.php', { method: 'POST' });
 export const setUserRole = async (id, role) => {
     try {
@@ -798,8 +838,17 @@ export const requestCustomerMissingItemConfirmation = async (id) =>
 export const fetchAdminNotifications = async () => {
     try {
         const response = await fetch(`${API_BASE_URL}/get_notifications.php?admin=true&_t=${Date.now()}`, {
+            credentials: 'include',
             headers: getAuthHeaders()
         });
+
+        if (response.status === 401 || response.status === 403) {
+            return { success: false, data: [], unauthorized: true };
+        }
+        if (response.status === 429) {
+            return { success: false, data: [], rateLimited: true };
+        }
+
         return await response.json();
     } catch (error) {
         console.error('Error fetching admin notifications:', error);
@@ -820,6 +869,11 @@ export const markNotificationRead = async (id) => {
         throw error;
     }
 };
+
+export const deleteNotification = async (id) => authFetch('/get_notifications.php?action=delete', {
+    method: 'POST',
+    body: JSON.stringify({ id })
+});
 
 
 export const fetchBackend = authFetch;

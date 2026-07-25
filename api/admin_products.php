@@ -300,6 +300,92 @@ if ($method === 'POST') {
         exit;
     }
     
+    if ($action === 'bulk_status_update') {
+        $ids = $decoded['product_ids'] ?? [];
+        if (!is_array($ids) || empty($ids)) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'product_ids array is required']);
+            exit;
+        }
+        $newStatus = $decoded['status'] ?? '';
+        if (!in_array($newStatus, ['active', 'out_of_stock'], true)) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => "status must be 'active' or 'out_of_stock'"]);
+            exit;
+        }
+        $ids = array_values(array_unique(array_map('intval', $ids)));
+        $ids = array_filter($ids, function ($pid) { return $pid > 0; });
+        if (empty($ids)) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'No valid product IDs']);
+            exit;
+        }
+        try {
+            $pdo->beginTransaction();
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            $lockStmt = $pdo->prepare("SELECT id FROM products WHERE id IN ($placeholders) FOR UPDATE");
+            $lockStmt->execute($ids);
+
+            $stmt = $pdo->prepare("UPDATE products SET status = ?, version = version + 1 WHERE id IN ($placeholders)");
+            $stmt->execute(array_merge([$newStatus], $ids));
+            $updated = $stmt->rowCount();
+
+            $pdo->commit();
+
+            logger('info', 'PRODUCTS', "Bulk status update ({$newStatus}) for " . count($ids) . " products by {$userName}");
+            logAdminAudit($pdo, $userId, 'product.bulk_status_update', 'product', implode(',', $ids), ['status' => $newStatus]);
+            echo json_encode(['success' => true, 'updated' => $updated]);
+        } catch (Exception $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            http_response_code(500);
+            echo json_encode(['success' => false, 'error' => 'Bulk status update failed']);
+        }
+        exit;
+    }
+
+    if ($action === 'bulk_category_update') {
+        $ids = $decoded['product_ids'] ?? [];
+        if (!is_array($ids) || empty($ids)) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'product_ids array is required']);
+            exit;
+        }
+        $newCategory = sanitizeInput($decoded['category'] ?? '');
+        if (empty($newCategory)) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'category is required']);
+            exit;
+        }
+        $ids = array_values(array_unique(array_map('intval', $ids)));
+        $ids = array_filter($ids, function ($pid) { return $pid > 0; });
+        if (empty($ids)) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'No valid product IDs']);
+            exit;
+        }
+        try {
+            $pdo->beginTransaction();
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            $lockStmt = $pdo->prepare("SELECT id FROM products WHERE id IN ($placeholders) FOR UPDATE");
+            $lockStmt->execute($ids);
+
+            $stmt = $pdo->prepare("UPDATE products SET category = ?, version = version + 1 WHERE id IN ($placeholders)");
+            $stmt->execute(array_merge([$newCategory], $ids));
+            $updated = $stmt->rowCount();
+
+            $pdo->commit();
+
+            logger('info', 'PRODUCTS', "Bulk category update ({$newCategory}) for " . count($ids) . " products by {$userName}");
+            logAdminAudit($pdo, $userId, 'product.bulk_category_update', 'product', implode(',', $ids), ['category' => $newCategory]);
+            echo json_encode(['success' => true, 'updated' => $updated]);
+        } catch (Exception $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            http_response_code(500);
+            echo json_encode(['success' => false, 'error' => 'Bulk category update failed']);
+        }
+        exit;
+    }
+    
     $name = sanitizeInput($decoded['name'] ?? '');
     $category = sanitizeInput($decoded['category'] ?? '');
     if (empty($category)) $category = 'Gadgets';

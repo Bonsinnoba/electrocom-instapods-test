@@ -18,38 +18,47 @@ try {
     exit;
 }
 
-$pdo->exec("CREATE TABLE IF NOT EXISTS order_missing_items (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    order_id INT NOT NULL,
-    product_id INT DEFAULT NULL,
-    product_name VARCHAR(255) NOT NULL,
-    qty_missing INT NOT NULL DEFAULT 1,
-    reason VARCHAR(255) DEFAULT NULL,
-    reported_by INT NOT NULL,
-    status ENUM('open', 'resolved') DEFAULT 'open',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    resolved_at DATETIME DEFAULT NULL,
-    resolved_by INT DEFAULT NULL,
-    resolution_note VARCHAR(255) DEFAULT NULL,
-    customer_action ENUM('replace_item','refund_item','cancel_order','accept_available') DEFAULT NULL,
-    customer_notified_at DATETIME DEFAULT NULL,
-    INDEX idx_order_created (order_id, created_at),
-    INDEX idx_status_created (status, created_at)
-)");
+try {
+    $pdo->exec("CREATE TABLE IF NOT EXISTS order_missing_items (
+        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+        order_id INT NOT NULL,
+        product_id INT DEFAULT NULL,
+        product_name VARCHAR(255) NOT NULL,
+        qty_missing INT NOT NULL DEFAULT 1,
+        reason VARCHAR(255) DEFAULT NULL,
+        reported_by INT NOT NULL,
+        status ENUM('open', 'resolved') DEFAULT 'open',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        resolved_at DATETIME DEFAULT NULL,
+        resolved_by INT DEFAULT NULL,
+        resolution_note VARCHAR(255) DEFAULT NULL,
+        customer_action ENUM('replace_item','refund_item','cancel_order','accept_available') DEFAULT NULL,
+        customer_notified_at DATETIME DEFAULT NULL,
+        INDEX idx_order_created (order_id, created_at),
+        INDEX idx_status_created (status, created_at)
+    )");
 
-$pdo->exec("CREATE TABLE IF NOT EXISTS missing_item_confirmations (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    report_id BIGINT NOT NULL,
-    order_id INT NOT NULL,
-    user_id INT NOT NULL,
-    proposed_options JSON NOT NULL,
-    status ENUM('pending','confirmed','expired') DEFAULT 'pending',
-    customer_choice ENUM('replace_item','refund_item','cancel_order','accept_available') DEFAULT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    confirmed_at DATETIME DEFAULT NULL,
-    INDEX idx_user_status_created (user_id, status, created_at),
-    INDEX idx_report (report_id)
-)");
+    $pdo->exec("CREATE TABLE IF NOT EXISTS missing_item_confirmations (
+        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+        report_id BIGINT NOT NULL,
+        order_id INT NOT NULL,
+        user_id INT NOT NULL,
+        proposed_options JSON NOT NULL,
+        status ENUM('pending','confirmed','expired') DEFAULT 'pending',
+        customer_choice ENUM('replace_item','refund_item','cancel_order','accept_available') DEFAULT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        confirmed_at DATETIME DEFAULT NULL,
+        INDEX idx_user_status_created (user_id, status, created_at),
+        INDEX idx_report (report_id)
+    )");
+} catch (Throwable $e) {
+    if (function_exists('logger')) {
+        logger('error', 'MISSING_ITEMS', 'Table bootstrap failed: ' . $e->getMessage());
+    }
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => 'Missing-items module is not provisioned correctly. Check DB privileges (CREATE/ALTER).']);
+    exit;
+}
 
 try {
     $cols = $pdo->query("DESCRIBE order_missing_items")->fetchAll(PDO::FETCH_COLUMN);

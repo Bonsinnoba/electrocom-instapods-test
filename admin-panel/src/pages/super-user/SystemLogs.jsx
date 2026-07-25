@@ -4,7 +4,7 @@ import {
   AlertTriangle, Info, CheckCircle, XCircle, Search,
   ChevronDown, Clock, Database, FileText, Plus, User
 } from 'lucide-react';
-import { fetchLogs, clearLogs, deleteLogDay, fetchBackups, createBackup, deleteBackup, API_BASE_URL, fetchBatch } from '../../services/api';
+import { fetchLogs, clearLogs, deleteLogDay, fetchBackups, createBackup, deleteBackup, API_BASE_URL, fetchBatch, getGlobalAccessToken } from '../../services/api';
 import { useConfirm } from '../../context/ConfirmContext';
 
 
@@ -386,7 +386,7 @@ export default function SystemLogs() {
                             <td style={{ padding: '14px 20px', textAlign: 'right' }}>
                                 <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                                     <a 
-                                      href={`${API_BASE_URL}/super_backup.php?action=download&file=${b.name}&token=${localStorage.getItem('ehub_token')}`}
+                                      href={`${API_BASE_URL}/super_backup.php?action=download&file=${b.name}&token=${encodeURIComponent(getGlobalAccessToken() || '')}`}
                                       target="_blank"
                                       rel="noreferrer"
                                       style={{ padding: '6px 10px', borderRadius: '6px', background: 'rgba(59,130,246,0.1)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.2)' }}

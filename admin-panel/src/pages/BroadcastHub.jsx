@@ -30,11 +30,10 @@ export default function BroadcastHub() {
     useEffect(() => {
         const loadRoles = async () => {
             try {
-                const token = localStorage.getItem('ehub_token');
                 const res = await fetch(`${API_BASE_URL}/admin_broadcast.php`, {
+                    credentials: 'include',
                     headers: {
-                        'X-App-ID': 'admin',
-                        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                        'X-App-ID': 'admin'
                     }
                 });
                 const data = await res.json();

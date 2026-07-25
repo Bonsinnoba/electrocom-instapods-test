@@ -3,7 +3,7 @@ import { Tag, Plus, Search, Edit2, Trash2, X, CheckCircle, Copy } from 'lucide-r
 import { useNotifications } from '../context/NotificationContext';
 import { useConfirm } from '../context/ConfirmContext';
 
-import { API_BASE_URL } from '../services/api';
+import { fetchCoupons as fetchCouponsApi, saveCoupon, deleteCoupon as deleteCouponApi } from '../services/api';
 
 export default function CouponManager() {
   const [coupons, setCoupons] = useState([]);
@@ -26,10 +26,7 @@ export default function CouponManager() {
 
   const fetchCoupons = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/coupons.php`, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('ehub_token')}` }
-      });
-      const data = await response.json();
+      const data = await fetchCouponsApi();
       if (data.success) {
         setCoupons(data.data);
       } else {
@@ -72,17 +69,8 @@ export default function CouponManager() {
     e.preventDefault();
     try {
       const dbFormatValidUntil = formData.valid_until ? formData.valid_until.replace('T', ' ') + ':00' : null;
-      
-      const response = await fetch(`${API_BASE_URL}/coupons.php`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('ehub_token')}`
-        },
-        body: JSON.stringify({ ...formData, valid_until: dbFormatValidUntil })
-      });
-      
-      const data = await response.json();
+
+      const data = await saveCoupon({ ...formData, valid_until: dbFormatValidUntil });
       if (data.success) {
         addToast(`Coupon ${formData.id ? 'updated' : 'created'} successfully`, 'success');
         setIsModalOpen(false);
@@ -98,15 +86,7 @@ export default function CouponManager() {
   const handleDelete = async (id) => {
     if (!(await confirm("Are you sure you want to delete this coupon?"))) return;
     try {
-      const response = await fetch(`${API_BASE_URL}/coupons.php`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('ehub_token')}`
-        },
-        body: JSON.stringify({ id })
-      });
-      const data = await response.json();
+      const data = await deleteCouponApi(id);
       if (data.success) {
         addToast('Coupon deleted', 'success');
         fetchCoupons();
