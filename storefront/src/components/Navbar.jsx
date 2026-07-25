@@ -111,9 +111,9 @@ export default function Navbar({
             src={import.meta.env.VITE_SITE_LOGO_URL}
             className={`nav-logo ${isSearchOpen ? 'hidden-mobile' : ''}`}
             alt={siteSettings.siteName}
-            width="120"
+            width="40"
             height="40"
-            style={{ maxHeight: '40px', objectFit: 'contain', aspectRatio: '3/1' }}
+            style={{ maxHeight: '40px', maxWidth: '40px', objectFit: 'cover', aspectRatio: '1/1', borderRadius: '8px' }}
           />
         ) : (
           <div className={`nav-logo-text ${isSearchOpen ? 'hidden-mobile' : ''}`} style={{ fontWeight: 900, fontSize: '20px', color: 'var(--primary-blue)' }}>
