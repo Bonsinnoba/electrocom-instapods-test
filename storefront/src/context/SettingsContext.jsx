@@ -277,7 +277,7 @@ export const SettingsProvider = ({ children }) => {
   };
 
   return (
-    <SettingsContext.Provider value={{ siteSettings, settings, updateSetting, homepageBoot, formatImageUrl }}>
+    <SettingsContext.Provider value={{ siteSettings, settings, updateSetting, homepageBoot, formatImageUrl, formatPrice }}>
       {children}
     </SettingsContext.Provider>
   );
