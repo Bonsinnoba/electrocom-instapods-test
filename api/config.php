@@ -43,12 +43,12 @@ if (empty($dbHost) || empty($dbPass) || $dbHost === 'localhost') {
         : ['.env', '.env.production'];
 
     foreach ($envFiles as $envFile) {
-        if (!is_file(__DIR__ . '/' . $envFile)) {
+        if (!is_file(dirname(__DIR__) . '/' . $envFile)) {
             continue;
         }
 
         try {
-            $dotenv = Dotenv::createImmutable(__DIR__, $envFile);
+            $dotenv = Dotenv::createImmutable(dirname(__DIR__), $envFile);
             $dotenv->load();
             error_log("Loaded from $envFile");
             break;
