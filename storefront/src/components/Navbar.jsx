@@ -106,23 +106,9 @@ export default function Navbar({
       </div>
       
       <TransitionLink to="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}>
-        {siteSettings.faviconUrl ? (
-          <>
-            <img
-              src={formatImageUrl(siteSettings.faviconUrl)}
-              className={`nav-favicon ${isSearchOpen ? 'hidden-mobile' : ''}`}
-              alt={siteSettings.siteName}
-              width="32"
-              height="32"
-              style={{ maxHeight: '32px', objectFit: 'contain', borderRadius: '6px' }}
-            />
-            <div className={`nav-logo-text ${isSearchOpen ? 'hidden-mobile' : ''}`} style={{ fontWeight: 900, fontSize: '20px', color: 'var(--primary-blue)' }}>
-              {siteSettings.siteName}
-            </div>
-          </>
-        ) : siteSettings.siteLogoUrl ? (
+        {import.meta.env.VITE_SITE_LOGO_URL ? (
           <img
-            src={formatImageUrl(siteSettings.siteLogoUrl)}
+            src={import.meta.env.VITE_SITE_LOGO_URL}
             className={`nav-logo ${isSearchOpen ? 'hidden-mobile' : ''}`}
             alt={siteSettings.siteName}
             width="120"
