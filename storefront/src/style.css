@@ -4023,9 +4023,9 @@ button.btn-login:hover {
         display: none;
         position: absolute;
         top: 0;
-        left: 0;
-        right: 0;
-        width: 100%;
+        left: -16px;
+        right: -16px;
+        width: calc(100% + 32px);
         height: 100%;
         background: var(--bg-surface);
         z-index: 1000;

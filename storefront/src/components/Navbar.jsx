@@ -101,10 +101,6 @@ export default function Navbar({
 
   return (
     <nav className="top-nav" aria-label="Main Navigation">
-      <div className="sidebar-icon btn" id="toggle-menu" style={{ margin: 0 }} onClick={onMenuClick} role="button" aria-label="Toggle Side Menu" tabIndex={0}>
-        <Menu size={20} />
-      </div>
-      
       <TransitionLink to="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}>
         {import.meta.env.VITE_SITE_LOGO_URL ? (
           <img
@@ -122,6 +118,12 @@ export default function Navbar({
         )}
       </TransitionLink>
       
+
+            <div className="sidebar-icon btn" id="toggle-menu" style={{ margin: 0 }} onClick={onMenuClick} role="button" aria-label="Toggle Side Menu" tabIndex={0}>
+              <Menu size={20} />
+            </div>
+
+            
       <div ref={searchRef} className={`search-container ${isSearchOpen ? 'active' : ''}`}>
         <Search className="search-icon" size={18} />
         <input 
