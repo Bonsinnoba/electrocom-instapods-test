@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState, useEffect, useRef, startTransition } from 'react';
-import { logoutUser, checkUserStatus } from '../services/api';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback, startTransition } from 'react';
+import { logoutUser, checkUserStatus, refreshSession } from '../services/api';
 import { secureStorage } from '../utils/secureStorage';
+import IdleWarningModal from '../components/IdleWarningModal';
 
 const UserContext = createContext();
 
@@ -10,6 +11,33 @@ export const useUser = () => {
     throw new Error('useUser must be used within a UserProvider');
   }
   return context;
+};
+
+// --- Session policy ---
+// The access token's 15-minute lifetime is a technical detail only — it should
+// never be felt by the customer. We refresh it silently in the background
+// well before it expires. The real security boundary is genuine inactivity:
+// enforced here for UX (warning + auto logout), and independently re-enforced
+// server-side in refresh.php so it can't be bypassed by disabling this JS.
+const IDLE_LIMIT_MS = 4 * 60 * 60 * 1000; // 4 hours of inactivity
+const IDLE_WARNING_LEAD_MS = 60 * 1000; // show the warning modal 60s before logout
+const IDLE_CHECK_INTERVAL_MS = 15 * 1000; // how often we check for inactivity
+const ACTIVITY_THROTTLE_MS = 5 * 1000; // don't record activity more than once per 5s
+const REFRESH_BUFFER_MS = 90 * 1000; // refresh the access token 90s before it actually expires
+const LAST_ACTIVE_STORAGE_KEY = 'ehub_store_last_active'; // synced across tabs
+const ACTIVITY_EVENTS = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart'];
+
+// Decode a JWT's payload without verifying it — verification is the server's job.
+// We only need `exp` client-side to know when to proactively refresh.
+const decodeJwtExp = (token) => {
+  try {
+    const payloadB64 = token.split('.')[1];
+    const json = atob(payloadB64.replace(/-/g, '+').replace(/_/g, '/'));
+    const payload = JSON.parse(json);
+    return typeof payload.exp === 'number' ? payload.exp : null;
+  } catch {
+    return null;
+  }
 };
 
 export const UserProvider = ({ children }) => {
@@ -26,8 +54,15 @@ export const UserProvider = ({ children }) => {
     return lastUserId ? secureStorage.getItem('user', lastUserId) : null;
   });
 
+  const [idleWarning, setIdleWarning] = useState({ show: false, secondsLeft: 0 });
+
   // Ref to prevent duplicate checkUserStatus calls
   const hasCheckedStatus = useRef(false);
+
+  const lastActivityRef = useRef(Date.now());
+  const lastActivityWriteRef = useRef(0);
+  const proactiveRefreshTimerRef = useRef(null);
+  const idleCheckIntervalRef = useRef(null);
 
   // Hydrate full user profile on initial load.
   // If a session cookie or shared token exists, we should validate it even when the local user object
@@ -73,6 +108,119 @@ export const UserProvider = ({ children }) => {
     }
   }, [user]);
 
+  // --- Proactive silent refresh: renew the access token before it expires,
+  // so an active customer never actually experiences a 15-minute cutoff. ---
+  const scheduleProactiveRefresh = useCallback((token) => {
+    if (proactiveRefreshTimerRef.current) {
+      clearTimeout(proactiveRefreshTimerRef.current);
+      proactiveRefreshTimerRef.current = null;
+    }
+    if (!token) return;
+
+    const exp = decodeJwtExp(token);
+    if (!exp) return;
+
+    const msUntilRefresh = Math.max(0, (exp * 1000) - Date.now() - REFRESH_BUFFER_MS);
+
+    proactiveRefreshTimerRef.current = setTimeout(async () => {
+      const newToken = await refreshSession();
+      if (newToken) {
+        scheduleProactiveRefresh(newToken);
+      }
+      // If this fails, the next apiFetch 401 will attempt its own retry via
+      // refreshSession; only a genuinely dead refresh-token cookie ends the
+      // session, which surfaces through the normal auth_unauthorized flow.
+    }, msUntilRefresh);
+  }, []);
+
+  // --- Inactivity tracking ---
+  const recordActivity = useCallback(() => {
+    const now = Date.now();
+    lastActivityRef.current = now;
+
+    setIdleWarning((prev) => (prev.show ? { show: false, secondsLeft: 0 } : prev));
+
+    if (now - lastActivityWriteRef.current > ACTIVITY_THROTTLE_MS) {
+      lastActivityWriteRef.current = now;
+      try {
+        localStorage.setItem(LAST_ACTIVE_STORAGE_KEY, String(now));
+      } catch (e) {
+        // Ignore storage errors — idle tracking still works within this tab.
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!user) return undefined;
+
+    ACTIVITY_EVENTS.forEach((evt) => window.addEventListener(evt, recordActivity, { passive: true }));
+
+    const handleStorageActivity = (e) => {
+      if (e.key === LAST_ACTIVE_STORAGE_KEY && e.newValue) {
+        const otherTs = Number(e.newValue);
+        if (otherTs > lastActivityRef.current) {
+          lastActivityRef.current = otherTs;
+          setIdleWarning((prev) => (prev.show ? { show: false, secondsLeft: 0 } : prev));
+        }
+      }
+    };
+    window.addEventListener('storage', handleStorageActivity);
+
+    return () => {
+      ACTIVITY_EVENTS.forEach((evt) => window.removeEventListener(evt, recordActivity));
+      window.removeEventListener('storage', handleStorageActivity);
+    };
+  }, [user, recordActivity]);
+
+  // --- Idle checker: the client-side half of the idle-logout policy. This is
+  // a UX courtesy — the real security boundary is enforced independently in
+  // refresh.php's server-side idle window (4h for storefront), so tampering
+  // with this code doesn't extend a session past the true limit. ---
+  useEffect(() => {
+    if (!user) {
+      if (idleCheckIntervalRef.current) {
+        clearInterval(idleCheckIntervalRef.current);
+        idleCheckIntervalRef.current = null;
+      }
+      if (proactiveRefreshTimerRef.current) {
+        clearTimeout(proactiveRefreshTimerRef.current);
+        proactiveRefreshTimerRef.current = null;
+      }
+      return undefined;
+    }
+
+    // Kick off proactive refresh scheduling for whatever token we currently hold.
+    lastActivityRef.current = Date.now();
+    scheduleProactiveRefresh(secureStorage.getItem('token', 'shared'));
+
+    idleCheckIntervalRef.current = setInterval(() => {
+      const idleMs = Date.now() - lastActivityRef.current;
+
+      if (idleMs >= IDLE_LIMIT_MS) {
+        setIdleWarning({ show: false, secondsLeft: 0 });
+        logout();
+        return;
+      }
+
+      if (idleMs >= IDLE_LIMIT_MS - IDLE_WARNING_LEAD_MS) {
+        const secondsLeft = Math.max(0, Math.ceil((IDLE_LIMIT_MS - idleMs) / 1000));
+        setIdleWarning({ show: true, secondsLeft });
+      }
+    }, IDLE_CHECK_INTERVAL_MS);
+
+    return () => {
+      if (idleCheckIntervalRef.current) {
+        clearInterval(idleCheckIntervalRef.current);
+        idleCheckIntervalRef.current = null;
+      }
+      if (proactiveRefreshTimerRef.current) {
+        clearTimeout(proactiveRefreshTimerRef.current);
+        proactiveRefreshTimerRef.current = null;
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+
   const updateUser = (newData) => {
     setUser(prev => {
         if (!prev) return newData;
@@ -95,6 +243,10 @@ export const UserProvider = ({ children }) => {
     
     // 3. Set the new user state cleanly (REPLACE, don't MERGE)
     setUser(userData);
+    lastActivityRef.current = Date.now();
+    try {
+      localStorage.setItem(LAST_ACTIVE_STORAGE_KEY, String(Date.now()));
+    } catch (e) { /* ignore storage errors */ }
     
     // 4. Store the ID so we can recover this specific session on refresh
     if (userData && userData.id) {
@@ -111,6 +263,16 @@ export const UserProvider = ({ children }) => {
   };
 
   const logout = async () => {
+    if (proactiveRefreshTimerRef.current) {
+      clearTimeout(proactiveRefreshTimerRef.current);
+      proactiveRefreshTimerRef.current = null;
+    }
+    if (idleCheckIntervalRef.current) {
+      clearInterval(idleCheckIntervalRef.current);
+      idleCheckIntervalRef.current = null;
+    }
+    setIdleWarning({ show: false, secondsLeft: 0 });
+
     const currentId = user?.id;
 
     // 1. Clear State
@@ -176,6 +338,10 @@ export const UserProvider = ({ children }) => {
     setAuthModal(prev => ({ ...prev, isOpen: false }));
   };
 
+  const handleStaySignedIn = () => {
+    recordActivity();
+  };
+
   return (
     <UserContext.Provider value={{ 
       user, 
@@ -188,6 +354,13 @@ export const UserProvider = ({ children }) => {
       closeAuthModal
     }}>
       {children}
+      {idleWarning.show && (
+        <IdleWarningModal
+          secondsLeft={idleWarning.secondsLeft}
+          onContinue={handleStaySignedIn}
+          onLogoutNow={logout}
+        />
+      )}
     </UserContext.Provider>
   );
 };

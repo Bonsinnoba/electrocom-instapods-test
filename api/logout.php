@@ -13,8 +13,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-// Get the refresh token from cookie
-$refreshToken = $_COOKIE['ehub_refresh_token'] ?? null;
+$headers = function_exists('getallheaders') ? getallheaders() : [];
+$appId = $headers['X-App-ID'] ?? $headers['x-app-id'] ?? 'storefront';
+$cookieName = ($appId === 'admin') ? 'ehub_admin_refresh_token' : 'ehub_store_refresh_token';
+
+// Get the refresh token from cookie — app-specific first, legacy shared name as fallback
+$refreshToken = $_COOKIE[$cookieName] ?? $_COOKIE['ehub_refresh_token'] ?? null;
 
 // Revoke refresh token from database
 if ($refreshToken) {
@@ -26,18 +30,22 @@ if ($refreshToken) {
     }
 }
 
-// Clear the refresh token cookie — SameSite must match the one used when it was set
+// Clear the refresh token cookies — SameSite must match the one used when set.
+// Clear both the app-specific cookie and the legacy shared one, in case this
+// session hasn't migrated off the old shared cookie yet.
 $isProd = ($config['APP_ENV'] ?? 'production') === 'production';
 // Use null for domain to allow browser default behavior (fixes cross-port cookie issues in dev)
 $cookieDomain = $isProd ? '' : null;
-setcookie('ehub_refresh_token', '', [
+$cookieOptions = [
     'expires'  => time() - 3600,
     'path'     => '/',
     'domain'   => $cookieDomain,
     'secure'   => $isProd ? true : (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on'),
     'httponly' => true,
     'samesite' => $isProd ? 'Strict' : 'Lax'
-]);
+];
+setcookie($cookieName, '', $cookieOptions);
+setcookie('ehub_refresh_token', '', $cookieOptions);
 
 // Clear the HttpOnly session cookie (legacy)
 clearSession();

@@ -183,11 +183,25 @@ const fetchWithRetry = async (url, options, maxRetries = 3, baseDelay = 1000) =>
  * and triggers a global logout event instead of relying on wasteful 10-second background polling.
  * Includes retry mechanism for network failures and server errors.
  */
-const apiFetch = async (url, options = {}) => {
+const apiFetch = async (url, options = {}, _isRetry = false) => {
     const response = await fetchWithRetry(url, options, 3, 1000);
     
     // Check for HTTP 401 status
     if (response.status === 401) {
+        if (!_isRetry) {
+            // Try a silent refresh before treating this as a real session expiration.
+            // The access token naturally expires every 15 minutes; a still-valid
+            // refresh-token cookie should renew it transparently rather than
+            // interrupting the customer mid-browse.
+            const newToken = await refreshSession();
+            if (newToken) {
+                const retryHeaders = { ...(options.headers || {}) };
+                if (retryHeaders['X-Session-Token'] !== undefined) {
+                    retryHeaders['X-Session-Token'] = newToken;
+                }
+                return apiFetch(url, { ...options, headers: retryHeaders }, true);
+            }
+        }
         handleTokenExpiration();
         return response;
     }
@@ -293,6 +307,36 @@ export const loginUser = async (credentials) => {
     }));
     if (response.status === 503) return { success: false, maintenance: true };
     return await response.json();
+};
+
+/**
+ * Exchange the httpOnly refresh-token cookie for a new short-lived access
+ * token. Uses a raw fetch (not apiFetch) so a failed refresh doesn't trigger
+ * apiFetch's own 401 handling and cause a loop.
+ */
+export const refreshSession = async () => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/refresh.php`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'X-App-ID': 'storefront' }
+        });
+
+        if (response.status === 401 || response.status === 403) {
+            return null;
+        }
+
+        const result = await response.json();
+        if (result.success && result.data?.access_token) {
+            secureStorage.setItem('token', result.data.access_token, 'shared');
+            return result.data.access_token;
+        }
+        return null;
+    } catch (error) {
+        // Network error — don't treat as a hard failure, caller decides what to do
+        console.error('Session refresh failed (network error):', error);
+        return null;
+    }
 };
 
 export const logoutUser = async () => {

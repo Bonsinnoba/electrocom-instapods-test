@@ -246,7 +246,7 @@ try {
     // Identify target application for cookie naming
     $headers = function_exists('getallheaders') ? getallheaders() : [];
     $appId = $headers['X-App-ID'] ?? $headers['x-app-id'] ?? ($data['app_source'] ?? 'storefront');
-    $cookieName = ($appId === 'admin') ? 'ehub_refresh_token' : 'ehub_refresh_token';
+    $cookieName = ($appId === 'admin') ? 'ehub_admin_refresh_token' : 'ehub_store_refresh_token';
 
     // Get device info for refresh token storage
     $deviceFingerprint = null;

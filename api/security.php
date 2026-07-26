@@ -1352,12 +1352,12 @@ if (!function_exists('storeRefreshToken')) {
  * Verifies the refresh token and returns user_id if valid
  */
 if (!function_exists('verifyRefreshToken')) {
-    function verifyRefreshToken(PDO $pdo, string $token)
+    function verifyRefreshToken(PDO $pdo, string $token, ?int $maxIdleSeconds = null)
     {
         $tokenHash = hashRefreshToken($token);
         
         $stmt = $pdo->prepare("
-            SELECT rt.id, rt.user_id, rt.expires_at, rt.is_revoked, u.status
+            SELECT rt.id, rt.user_id, rt.expires_at, rt.is_revoked, rt.last_used_at, u.status
             FROM refresh_tokens rt
             JOIN users u ON rt.user_id = u.id
             WHERE rt.token_hash = ? AND rt.is_revoked = FALSE
@@ -1369,12 +1369,26 @@ if (!function_exists('verifyRefreshToken')) {
             return null;
         }
         
-        // Check if expired
+        // Check if expired (absolute ceiling — 7 days)
         if (strtotime($record['expires_at']) < time()) {
             // Mark as revoked
             $stmt = $pdo->prepare("UPDATE refresh_tokens SET is_revoked = TRUE, revoked_at = NOW() WHERE id = ?");
             $stmt->execute([$record['id']]);
             return null;
+        }
+
+        // Check inactivity window — this is the real security boundary, independent
+        // of the 7-day absolute expiry. It's enforced here (server-side) so a
+        // stolen refresh token cookie replayed after hours of dormancy stops
+        // working, and so a user can't extend their own session past the policy
+        // limit simply by disabling the client-side idle-logout JS.
+        if ($maxIdleSeconds !== null && $record['last_used_at']) {
+            $idleSeconds = time() - strtotime($record['last_used_at']);
+            if ($idleSeconds > $maxIdleSeconds) {
+                $stmt = $pdo->prepare("UPDATE refresh_tokens SET is_revoked = TRUE, revoked_at = NOW() WHERE id = ?");
+                $stmt->execute([$record['id']]);
+                return null;
+            }
         }
         
         // Check if user account is active
