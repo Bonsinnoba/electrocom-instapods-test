@@ -99,6 +99,102 @@ if (!function_exists('eh_occasional_settings_keys')) {
     }
 }
 
+if (!function_exists('eh_ensure_site_settings_table')) {
+    /**
+     * Self-heal: create the site_settings table (and seed its defaults) if it
+     * doesn't exist yet. This table is referenced everywhere in this file but
+     * was only ever provisioned via migration 028, which — like several other
+     * migrations in this codebase — may never have actually been run against
+     * the live database. Without this, every settings save throws an
+     * uncaught-by-design PDOException ("table doesn't exist") that surfaces
+     * to the admin as a raw save error, and every settings read silently
+     * falls back to empty (caught and swallowed), which is why saved
+     * branding/theme changes never appeared to stick.
+     */
+    function eh_ensure_site_settings_table(PDO $pdo): void
+    {
+        static $checked = false;
+        if ($checked) {
+            return;
+        }
+        $checked = true;
+
+        $pdo->exec("CREATE TABLE IF NOT EXISTS site_settings (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            setting_key VARCHAR(100) NOT NULL UNIQUE,
+            setting_value TEXT,
+            value_type ENUM('string', 'integer', 'float', 'boolean', 'json') NOT NULL DEFAULT 'string',
+            category ENUM('security', 'business', 'operational', 'payment', 'delivery', 'identity', 'branding', 'content', 'insights', 'availability') NOT NULL DEFAULT 'operational',
+            description TEXT,
+            is_public BOOLEAN DEFAULT FALSE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            INDEX idx_category (category),
+            INDEX idx_is_public (is_public),
+            INDEX idx_setting_key (setting_key)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        // Seed defaults only if the table is empty (first-ever provisioning) —
+        // never overwrite values an admin may have already saved.
+        $count = (int)$pdo->query("SELECT COUNT(*) FROM site_settings")->fetchColumn();
+        if ($count > 0) {
+            return;
+        }
+
+        $defaults = [
+            ['maxLoginAttempts', '5', 'integer', 'security', FALSE],
+            ['sessionTimeout', '360', 'integer', 'security', FALSE],
+            ['twoFactorAdmin', 'true', 'boolean', 'security', FALSE],
+            ['lockoutDuration', '30', 'integer', 'security', FALSE],
+            ['passwordMinLength', '8', 'integer', 'security', FALSE],
+            ['requireEmailVerification', 'false', 'boolean', 'security', FALSE],
+            ['requireNumberInPassword', 'false', 'boolean', 'security', FALSE],
+            ['apiRateLimit', '60', 'integer', 'security', FALSE],
+            ['emailNotify', 'true', 'boolean', 'security', FALSE],
+            ['securityAlerts', 'true', 'boolean', 'security', FALSE],
+            ['debugMode', 'false', 'boolean', 'security', FALSE],
+            ['vatRate', '0', 'float', 'business', TRUE],
+            ['allowRegistration', 'true', 'boolean', 'business', TRUE],
+            ['allowCardPayment', 'true', 'boolean', 'business', TRUE],
+            ['lowStockThreshold', '5', 'integer', 'business', FALSE],
+            ['lowStockAlertEmail', '', 'string', 'business', FALSE],
+            ['integrityDiscountThreshold', '5000', 'float', 'business', TRUE],
+            ['integrityDiscountPct', '10', 'float', 'business', TRUE],
+            ['backupFrequency', 'daily', 'string', 'operational', FALSE],
+            ['defaultItemsPerPage', '6', 'integer', 'operational', TRUE],
+            ['homepageSectionTitle', '', 'string', 'operational', TRUE],
+            ['homepageFeaturedCategory', '', 'string', 'operational', TRUE],
+            ['orderReceiptFooterNote', '', 'string', 'operational', TRUE],
+            ['allowDoorToDoorDelivery', 'false', 'boolean', 'delivery', TRUE],
+            ['doorToDoorThreshold', '400', 'float', 'delivery', TRUE],
+            ['insightsShipWarnHours', '24', 'integer', 'operational', FALSE],
+            ['insightsShipCriticalHours', '48', 'integer', 'operational', FALSE],
+            ['insightsLowStockWarnCount', '5', 'integer', 'operational', FALSE],
+            ['insightsLowStockCriticalCount', '12', 'integer', 'operational', FALSE],
+            ['insightsOnlineRevenueMinPct', '20', 'float', 'operational', FALSE],
+            ['insightsRepeatOrderMin', '1.2', 'float', 'operational', FALSE],
+            ['insightsWeightShip', '35', 'float', 'operational', FALSE],
+            ['insightsWeightStock', '25', 'float', 'operational', FALSE],
+            ['insightsWeightOnline', '20', 'float', 'operational', FALSE],
+            ['insightsWeightRepeat', '20', 'float', 'operational', FALSE],
+            ['primaryColor', '#3b82f6', 'string', 'branding', TRUE],
+            ['accentColor', '#f59e0b', 'string', 'branding', TRUE],
+            ['headerBg', '#0f172a', 'string', 'branding', TRUE],
+            ['fontFamily', '', 'string', 'branding', TRUE],
+            ['selectedTheme', 'iconic_blue', 'string', 'branding', TRUE],
+        ];
+
+        $stmt = $pdo->prepare("
+            INSERT INTO site_settings (setting_key, setting_value, value_type, category, is_public)
+            VALUES (?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE setting_value = setting_value
+        ");
+        foreach ($defaults as $row) {
+            $stmt->execute($row);
+        }
+    }
+}
+
 if (!function_exists('eh_get_db_settings')) {
     /** Fetch critical settings from database with file + in-memory caching */
     function eh_get_db_settings(bool $forceRefresh = false): ?array
@@ -124,6 +220,8 @@ if (!function_exists('eh_get_db_settings')) {
         try {
             require_once __DIR__ . '/db.php';
             global $pdo;
+
+            eh_ensure_site_settings_table($pdo);
 
             $stmt = $pdo->prepare("SELECT setting_key, setting_value, value_type FROM site_settings");
             $stmt->execute();

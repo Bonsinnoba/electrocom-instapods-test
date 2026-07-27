@@ -85,6 +85,8 @@ if ($method === 'GET') {
 
     error_log('POST super_settings: Safe settings keys: ' . implode(', ', array_keys($safeSettings)));
 
+    eh_ensure_site_settings_table($pdo);
+
     $changedKeys = [];
 
     // Save all settings to database

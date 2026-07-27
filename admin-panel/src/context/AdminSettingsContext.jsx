@@ -55,7 +55,11 @@ export const AdminSettingsProvider = ({ children }) => {
     }
     if (settings?.accentColor) {
       root.style.setProperty('--accent-blue', settings.accentColor);
-      root.style.setProperty('--accent-blue-rgb', settings.accentColor);
+      const hexA = settings.accentColor.replace('#', '');
+      const ra = parseInt(hexA.substr(0, 2), 16);
+      const ga = parseInt(hexA.substr(2, 2), 16);
+      const ba = parseInt(hexA.substr(4, 2), 16);
+      root.style.setProperty('--accent-blue-rgb', `${ra}, ${ga}, ${ba}`);
     }
     if (settings?.headerBg) {
       root.style.setProperty('--header-bg', settings.headerBg);

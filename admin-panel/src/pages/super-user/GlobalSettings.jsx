@@ -15,11 +15,13 @@ import {
 } from '../../services/api';
 import { useAdminSettings } from '../../context/AdminSettingsContext';
 import { useConfirm } from '../../context/ConfirmContext';
+import { useNotifications } from '../../context/NotificationContext';
 
 // ── File Upload Helper ────────────────────────────────────────────────────────
 function FileUploadField({ label, description, icon, value, type, onChange, oldPath }) {
   const [uploading, setUploading] = React.useState(false);
   const fileInputRef = React.useRef(null);
+  const { addToast } = useNotifications();
 
   const handleUpload = async (e) => {
     const file = e.target.files[0];
@@ -31,11 +33,11 @@ function FileUploadField({ label, description, icon, value, type, onChange, oldP
       if (res.success) {
         onChange(res.url);
       } else {
-        alert(res.message || 'Upload failed');
+        addToast(res.message || 'Upload failed', 'error');
       }
     } catch (err) {
       console.error('Upload error:', err);
-      alert('Network error during upload.');
+      addToast('Network error during upload.', 'error');
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -292,6 +294,7 @@ function ThemeSelector({ value, onChange, presets }) {
 export default function GlobalSettings() {
   const { refreshSettings } = useAdminSettings();
   const { confirm } = useConfirm();
+  const { addToast } = useNotifications();
   const [settings, setSettings] = useState({});
   const [saving, setSaving]     = useState(false);
   const [saved, setSaved]       = useState(false);
@@ -353,11 +356,16 @@ export default function GlobalSettings() {
     const updated = { ...settings, [key]: val };
     setSettings(updated);
     try {
-      await saveSettings(updated);
-      setLastSynced(new Date());
-      await refreshSettings(); // Sync global UI state (colors, name, etc.)
+      const res = await saveSettings(updated);
+      if (res.success) {
+        setLastSynced(new Date());
+        await refreshSettings(); // Sync global UI state (colors, name, etc.)
+      } else {
+        addToast(res.message || 'Failed to save setting', 'error');
+      }
     } catch (e) {
       console.error('Auto-save failed:', e);
+      addToast('Connection error while saving', 'error');
     }
   };
 
@@ -368,11 +376,16 @@ export default function GlobalSettings() {
     setSettings(updated);
     setSelectedPreset('custom'); // Switch to custom when manually changing colors
     try {
-      await saveSettings(updated);
-      setLastSynced(new Date());
-      await refreshSettings(); // Sync global UI state (colors, name, etc.)
+      const res = await saveSettings(updated);
+      if (res.success) {
+        setLastSynced(new Date());
+        await refreshSettings(); // Sync global UI state (colors, name, etc.)
+      } else {
+        addToast(res.message || 'Failed to save color', 'error');
+      }
     } catch (e) {
       console.error('Color save failed:', e);
+      addToast('Connection error while saving', 'error');
     }
   };
 
@@ -397,25 +410,34 @@ export default function GlobalSettings() {
     setSettings(updated);
     setSelectedPreset(presetKey);
     try {
-      await saveSettings(updated);
-      setLastSynced(new Date());
-      await refreshSettings();
+      const res = await saveSettings(updated);
+      if (res.success) {
+        setLastSynced(new Date());
+        await refreshSettings();
+      } else {
+        addToast(res.message || 'Failed to apply theme', 'error');
+      }
     } catch (e) {
       console.error('Theme preset application failed:', e);
+      addToast('Connection error while applying theme', 'error');
     }
   };
 
   const save = async () => {
     setSaving(true);
     try {
-      await saveSettings(settings);
-      setLastSynced(new Date());
-      setSaved(true);
-      await refreshSettings(); // Sync global UI state
-      setTimeout(() => setSaved(false), 3000);
+      const res = await saveSettings(settings);
+      if (res.success) {
+        setLastSynced(new Date());
+        setSaved(true);
+        await refreshSettings(); // Sync global UI state
+        setTimeout(() => setSaved(false), 3000);
+      } else {
+        addToast(res.message || 'Failed to save settings. Please try again.', 'error');
+      }
     } catch (e) {
       console.error('Save error:', e);
-      alert('Failed to save settings. Please try again.');
+      addToast('Connection error while saving settings.', 'error');
     } finally {
       setSaving(false);
     }
@@ -801,10 +823,10 @@ export default function GlobalSettings() {
                   if (await confirm('🚨 WARNING: This will WIPE all products and slider images. Are you absolutely sure?', { title: 'Factory Reset' })) {
                     try {
                       const res = await (await import('../../services/api')).wipeDemoData();
-                      if (res.success) alert(res.message);
-                      else alert(res.message || 'Cleanup failed.');
+                      if (res.success) addToast(res.message, 'success');
+                      else addToast(res.message || 'Cleanup failed.', 'error');
                     } catch (e) {
-                      alert('Error during cleanup: ' + e.message);
+                      addToast('Error during cleanup: ' + e.message, 'error');
                     }
                   }
                 }}
