@@ -4,6 +4,7 @@
  */
 require_once 'db.php';
 require_once 'security.php';
+require_once 'order_utils.php';
 
 header('Content-Type: application/json');
 
@@ -57,9 +58,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
     try {
         ensure_returns_table($pdo);
+        ensure_delivered_at_column($pdo);
 
         $oStmt = $pdo->prepare('
-            SELECT id, order_type, created_at, total_amount, status
+            SELECT id, order_type, created_at, delivered_at, total_amount, status
             FROM orders
             WHERE id = ?
         ');
@@ -76,14 +78,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $isPosOrder = $orderType === 'pos';
         $returnWindowHours = $isPosOrder ? 48 : 168; // 48 hours for POS, 7 days (168 hours) for online orders
 
+        // Measured from actual delivery time (falling back to order placement
+        // for orders that predate the delivered_at column). For POS orders
+        // these are identical (set together at sale time), but for online
+        // orders processed in-store this matters — an order that took days to
+        // arrive shouldn't have its window measured from when it was placed.
         $winStmt = $pdo->prepare("
             SELECT id FROM orders
             WHERE id = ?
-              AND created_at >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL ? HOUR)
+              AND COALESCE(delivered_at, created_at) >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL ? HOUR)
         ");
         $winStmt->execute([$orderId, $returnWindowHours]);
         if (!$winStmt->fetchColumn()) {
-            $ageStmt = $pdo->prepare('SELECT TIMESTAMPDIFF(MINUTE, created_at, UTC_TIMESTAMP()) FROM orders WHERE id = ?');
+            $ageStmt = $pdo->prepare('SELECT TIMESTAMPDIFF(MINUTE, COALESCE(delivered_at, created_at), UTC_TIMESTAMP()) FROM orders WHERE id = ?');
             $ageStmt->execute([$orderId]);
             $ageMinutes = (int)$ageStmt->fetchColumn();
             $windowDesc = $isPosOrder ? '48-hour POS return window' : '7-day in-store return window for online orders';
@@ -97,7 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             exit;
         }
 
-        $ageStmt = $pdo->prepare('SELECT TIMESTAMPDIFF(MINUTE, created_at, UTC_TIMESTAMP()) FROM orders WHERE id = ?');
+        $ageStmt = $pdo->prepare('SELECT TIMESTAMPDIFF(MINUTE, COALESCE(delivered_at, created_at), UTC_TIMESTAMP()) FROM orders WHERE id = ?');
         $ageStmt->execute([$orderId]);
         $ageMinutes = (int)$ageStmt->fetchColumn();
 
@@ -111,7 +118,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $itemsStmt->execute([$orderId]);
         $rows = $itemsStmt->fetchAll(PDO::FETCH_ASSOC);
 
-        $retStmt = $pdo->prepare('SELECT COALESCE(SUM(quantity), 0) FROM order_returns WHERE order_id = ? AND product_id = ?');
+        $retStmt = $pdo->prepare("SELECT COALESCE(SUM(quantity), 0) FROM order_returns WHERE order_id = ? AND product_id = ? AND status != 'rejected'");
         foreach ($rows as &$row) {
             $retStmt->execute([$orderId, $row['product_id']]);
             $returned = (int)$retStmt->fetchColumn();
@@ -129,7 +136,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 'created_at' => $order['created_at'],
                 'total_amount' => $order['total_amount'],
                 'status' => $order['status'],
-                'hours_remaining_return' => max(0, round((48 * 60 - $ageMinutes) / 60, 4)),
+                'hours_remaining_return' => max(0, round(($returnWindowHours * 60 - $ageMinutes) / 60, 4)),
             ],
             'items' => $rows,
         ]);
@@ -169,10 +176,11 @@ if ($orderId <= 0 || !is_array($items) || empty($items)) {
 
 try {
     ensure_returns_table($pdo);
+    ensure_delivered_at_column($pdo);
     $pdo->beginTransaction();
 
     // First get order details to determine type and return window
-    $chk = $pdo->prepare("SELECT id, order_type, created_at FROM orders WHERE id = ?");
+    $chk = $pdo->prepare("SELECT id, order_type, created_at, delivered_at FROM orders WHERE id = ?");
     $chk->execute([$orderId]);
     $row = $chk->fetch(PDO::FETCH_ASSOC);
     if (!$row) {
@@ -184,24 +192,24 @@ try {
     $returnWindowHours = $isPosOrder ? 48 : 168; // 48 hours for POS, 7 days for online
 
     $oStmt = $pdo->prepare("
-        SELECT id, order_type, created_at
+        SELECT id, order_type, created_at, delivered_at
         FROM orders
         WHERE id = ?
-          AND created_at >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL ? HOUR)
+          AND COALESCE(delivered_at, created_at) >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL ? HOUR)
         FOR UPDATE
     ");
     $oStmt->execute([$orderId, $returnWindowHours]);
     $order = $oStmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$order) {
-        $windowDesc = $isPosOrder ? '48 hours from sale' : '7 days from sale';
+        $windowDesc = $isPosOrder ? '48 hours from sale' : '7 days from delivery';
         throw new Exception("Return window expired ({$windowDesc}).");
     }
 
     $insReturn = $pdo->prepare('INSERT INTO order_returns (order_id, product_id, quantity, reason, processed_by) VALUES (?, ?, ?, ?, ?)');
     $updStock = $pdo->prepare('UPDATE products SET stock_quantity = stock_quantity + ? WHERE id = ?');
     $getLine = $pdo->prepare('SELECT quantity FROM order_items WHERE order_id = ? AND product_id = ? FOR UPDATE');
-    $sumRet = $pdo->prepare('SELECT COALESCE(SUM(quantity), 0) FROM order_returns WHERE order_id = ? AND product_id = ?');
+    $sumRet = $pdo->prepare("SELECT COALESCE(SUM(quantity), 0) FROM order_returns WHERE order_id = ? AND product_id = ? AND status != 'rejected'");
 
     $processed = 0;
 

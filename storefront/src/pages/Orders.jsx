@@ -2,9 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { Package, Truck, CheckCircle, Clock, ExternalLink, Calendar, Hash, MapPin, Loader, FileText, RotateCcw, X, XCircle } from 'lucide-react';
 import { formatDateTime } from '../utils/dateFormatter';
 import { useUser } from '../context/UserContext';
-import { fetchOrders, getInvoiceUrl, requestReturn } from '../services/api';
+import { fetchOrders, getInvoiceUrl, requestReturn, fetchMyReturns, cancelOrder } from '../services/api';
 import { useSettings } from '../context/SettingsContext';
 import OrderTrackingModal from '../components/OrderTrackingModal';
+import { useNotifications } from '../context/NotificationContext';
 
 const StatusIcon = ({ status }) => {
   switch(status?.toLowerCase()) {
@@ -92,16 +93,20 @@ const StatusBadge = ({ status, refundedAmount, hasPendingRefund }) => {
 export default function Orders() {
   const { user } = useUser();
   const { formatPrice } = useSettings();
+  const { addToast } = useNotifications();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [trackingOrderId, setTrackingOrderId] = useState(null);
   const [isTrackingOpen, setIsTrackingOpen] = useState(false);
-  
+
   // Return request modal state
   const [returnModalOrder, setReturnModalOrder] = useState(null);
   const [selectedReturnItems, setSelectedReturnItems] = useState({});
   const [returnReason, setReturnReason] = useState('');
   const [isSubmittingReturn, setIsSubmittingReturn] = useState(false);
+
+  // Return status per order (order_id -> array of return records)
+  const [returnsByOrder, setReturnsByOrder] = useState({});
 
   // Cancel order modal state
   const [cancelModalOrder, setCancelModalOrder] = useState(null);
@@ -132,40 +137,35 @@ export default function Orders() {
     setCancelModalOrder(null);
   };
 
+  const loadReturnsForOrder = async (orderId) => {
+    try {
+      const res = await fetchMyReturns(orderId);
+      if (res.success) {
+        setReturnsByOrder(prev => ({ ...prev, [orderId]: res.data }));
+      }
+    } catch {
+      // Non-critical — return status is supplementary info, fail silently
+    }
+  };
+
   const handleCancelOrder = async () => {
     if (!cancelModalOrder) return;
 
     setIsCancelling(true);
     try {
-      let token;
-      try {
-        token = localStorage.getItem('token');
-      } catch (e) {
-        if (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
-          console.warn('Storage quota exceeded when getting token');
-        }
-      }
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}/orders.php?order_id=${cancelModalOrder.id}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      const data = await response.json();
+      const data = await cancelOrder(cancelModalOrder.id);
 
       if (data.success) {
-        alert('Order cancelled successfully');
+        addToast('Order cancelled successfully', 'success');
         closeCancelModal();
         // Reload orders
         const ordersData = await fetchOrders(user.id);
         setOrders(ordersData);
       } else {
-        alert(data.message || 'Failed to cancel order');
+        addToast(data.message || 'Failed to cancel order', 'error');
       }
     } catch {
-      alert('An error occurred while cancelling the order');
+      addToast('An error occurred while cancelling the order', 'error');
     } finally {
       setIsCancelling(false);
     }
@@ -180,7 +180,7 @@ export default function Orders() {
     })).filter(i => i.quantity > 0);
 
     if (itemsPayload.length === 0) {
-      alert('Please select at least one item to return.');
+      addToast('Please select at least one item to return.', 'error');
       return;
     }
 
@@ -188,13 +188,14 @@ export default function Orders() {
     try {
       const res = await requestReturn(returnModalOrder.id, itemsPayload, returnReason);
       if (res.success) {
-        alert('Return request submitted successfully! Awaiting admin approval.');
+        addToast('Return request submitted! Awaiting admin approval.', 'success');
+        loadReturnsForOrder(returnModalOrder.id);
         closeReturnModal();
       } else {
-        alert(res.error || res.message || 'Failed to submit return request.');
+        addToast(res.error || res.message || 'Failed to submit return request.', 'error');
       }
     } catch {
-      alert('An error occurred while submitting your return request.');
+      addToast('An error occurred while submitting your return request.', 'error');
     } finally {
       setIsSubmittingReturn(false);
     }
@@ -209,6 +210,17 @@ export default function Orders() {
       try {
         const data = await fetchOrders(user.id);
         setOrders(data);
+
+        // Load return statuses for all orders in one call, grouped client-side
+        const returnsRes = await fetchMyReturns();
+        if (returnsRes.success && Array.isArray(returnsRes.data)) {
+          const grouped = {};
+          returnsRes.data.forEach(r => {
+            if (!grouped[r.order_id]) grouped[r.order_id] = [];
+            grouped[r.order_id].push(r);
+          });
+          setReturnsByOrder(grouped);
+        }
       } catch {
         console.error("Failed to load orders");
       } finally {
@@ -394,6 +406,28 @@ export default function Orders() {
           refundedAmount={order.refunded_amount}
           hasPendingRefund={order.has_pending_refund}
         />
+        {(returnsByOrder[order.id] || []).map((ret) => {
+          const styles = {
+            pending:   { bg: 'rgba(245,158,11,0.12)', color: '#f59e0b', label: 'Return Pending Review' },
+            processed: { bg: 'rgba(34,197,94,0.12)',  color: '#22c55e', label: 'Return Approved' },
+            inspected: { bg: 'rgba(34,197,94,0.12)',  color: '#22c55e', label: 'Return Approved' },
+            rejected:  { bg: 'rgba(239,68,68,0.12)',  color: '#ef4444', label: 'Return Rejected' },
+          };
+          const s = styles[ret.status] || styles.pending;
+          return (
+            <div key={ret.id} style={{
+              background: s.bg, color: s.color, borderRadius: '10px', padding: '8px 12px',
+              fontSize: '12px', fontWeight: 700
+            }}>
+              <div>{s.label} — {ret.product_name} × {ret.quantity}</div>
+              {ret.status === 'rejected' && ret.resolution_note && (
+                <div style={{ fontWeight: 500, marginTop: '4px', color: 'var(--text-muted)' }}>
+                  Reason: {ret.resolution_note}
+                </div>
+              )}
+            </div>
+          );
+        })}
         {(order.status === 'completed' || order.status === 'delivered') && (
           <button
             onClick={() => openReturnModal(order)}

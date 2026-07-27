@@ -314,6 +314,16 @@ export const processReturn = async (returnData) => authFetch('/admin_returns.php
     body: JSON.stringify(returnData) 
 });
 
+export const approveReturn = async (returnIds) => authFetch('/admin_returns.php', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'approve', return_ids: Array.isArray(returnIds) ? returnIds : [returnIds] }),
+});
+
+export const rejectReturn = async (returnIds, reason) => authFetch('/admin_returns.php', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'reject', return_ids: Array.isArray(returnIds) ? returnIds : [returnIds], reason }),
+});
+
 export const updateOrderStatus = async (id, status) => {
     try {
         const response = await fetch(`${API_BASE_URL}/admin_orders.php`, {

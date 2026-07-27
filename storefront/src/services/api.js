@@ -720,6 +720,18 @@ export const submitMissingItemConfirmation = async (id, choice) => {
     }
 };
 
+export const cancelOrder = async (orderId) => {
+    try {
+        const response = await apiFetch(`${API_BASE_URL}/orders.php?order_id=${orderId}`, getFetchOptions({
+            method: 'DELETE',
+        }));
+        return await response.json();
+    } catch (error) {
+        console.error('Error cancelling order:', error);
+        return { success: false, message: 'Network error' };
+    }
+};
+
 export const requestReturn = async (orderId, items, reason) => {
     try {
         const response = await apiFetch(`${API_BASE_URL}/customer_return_request.php`, getFetchOptions({
@@ -730,6 +742,19 @@ export const requestReturn = async (orderId, items, reason) => {
     } catch (error) {
         console.error('Error requesting return:', error);
         return { success: false, error: 'Network error' };
+    }
+};
+
+export const fetchMyReturns = async (orderId = null) => {
+    try {
+        const query = orderId ? `?order_id=${encodeURIComponent(orderId)}` : '';
+        const response = await apiFetch(`${API_BASE_URL}/customer_return_request.php${query}`, getFetchOptions({
+            method: 'GET',
+        }));
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching return status:', error);
+        return { success: false, data: [] };
     }
 };
 

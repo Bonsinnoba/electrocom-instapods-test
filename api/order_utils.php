@@ -169,3 +169,22 @@ if (!function_exists('logOrderEvent')) {
         }
     }
 }
+
+/**
+ * Self-heal: add a delivered_at timestamp column to orders if it doesn't
+ * exist yet. This is the real timestamp a customer-facing return-eligibility
+ * window should be measured against — previously there was no such column
+ * anywhere, so no accurate "X days since delivery" check was possible.
+ */
+if (!function_exists('ensure_delivered_at_column')) {
+    function ensure_delivered_at_column(PDO $pdo)
+    {
+        $has = $pdo->query("
+            SELECT COUNT(*) FROM information_schema.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'orders' AND COLUMN_NAME = 'delivered_at'
+        ")->fetchColumn();
+        if (!$has) {
+            $pdo->exec("ALTER TABLE orders ADD COLUMN delivered_at DATETIME NULL AFTER status");
+        }
+    }
+}

@@ -68,16 +68,57 @@ try {
     $pdo->beginTransaction();
 
     if ($type === 'order_payment') {
-        // If order_id is provided, update it.
-        if (isset($data['order_id'])) {
-            $orderId = (int)$data['order_id'];
-            require_once 'order_utils.php';
-            completeOrder($orderId, $pdo);
-            $message = "Order verification complete";
-        } else {
-            // Just verifying for valid payment to allow order creation
-            $message = "Payment verified successfully";
+        // order_id is required — this endpoint completes a specific order,
+        // and a specific order must be verified as belonging to the caller
+        // and matching the amount actually paid before we touch it.
+        if (!isset($data['order_id'])) {
+            throw new Exception("order_id is required.");
         }
+
+        $orderId = (int)$data['order_id'];
+
+        // Lock and fetch the order to check ownership + amount before completing.
+        $orderStmt = $pdo->prepare("SELECT id, user_id, total_amount, status, payment_reference FROM orders WHERE id = ? FOR UPDATE");
+        $orderStmt->execute([$orderId]);
+        $order = $orderStmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$order) {
+            throw new Exception("Order #{$orderId} not found.");
+        }
+
+        // Ownership check: a payment reference can only complete the order
+        // belonging to the authenticated caller, never an arbitrary order_id.
+        if ((int)$order['user_id'] !== (int)$userId) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'This order does not belong to you.']);
+            $pdo->rollBack();
+            exit;
+        }
+
+        // Amount check: the amount actually paid at the gateway must match
+        // this order's total (within a small rounding tolerance), or a cheap
+        // payment reference could be used to complete an unrelated, more
+        // expensive order.
+        $expectedTotal = (float)$order['total_amount'];
+        if (abs($amountPaid - $expectedTotal) > 0.10) {
+            http_response_code(400);
+            echo json_encode([
+                'success' => false,
+                'message' => "Payment amount mismatch. Expected GHS {$expectedTotal}, paid GHS {$amountPaid}."
+            ]);
+            $pdo->rollBack();
+            exit;
+        }
+
+        // Reconcile the order's payment_reference with the actual verified
+        // reference (needed so refunds can later locate the real gateway transaction).
+        if ($order['payment_reference'] !== $reference) {
+            $pdo->prepare("UPDATE orders SET payment_reference = ? WHERE id = ?")->execute([$reference, $orderId]);
+        }
+
+        require_once 'order_utils.php';
+        completeOrder($orderId, $pdo);
+        $message = "Order verification complete";
     } else {
         throw new Exception("Invalid transaction type.");
     }

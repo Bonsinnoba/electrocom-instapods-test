@@ -3,6 +3,7 @@ import { Eye, Truck, CheckCircle, Clock, X, MapPin, User, Package, Calendar, Mai
 import { useNavigate } from 'react-router-dom';
 import { fetchOrders, updateOrderStatus, updatePickerOrderStage, resendReceipt, verifyDelivery, reportPickerMissingItems, API_BASE_URL, fetchBatch, getGlobalAccessToken } from '../services/api';
 import { useConfirm } from '../context/ConfirmContext';
+import { useNotifications } from '../context/NotificationContext';
 import { formatPrice } from '../utils/formatPrice';
 
 export default function OrderManager() {
@@ -19,9 +20,14 @@ export default function OrderManager() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const { confirm } = useConfirm();
+  const { addToast } = useNotifications();
   const navigate = useNavigate();
   
   const user = JSON.parse(localStorage.getItem('ehub_user') || '{}');
+
+  // Inline missing-item report form state (replaces two window.prompt() calls)
+  const [missingItemDraft, setMissingItemDraft] = useState(null); // { item, qty, reason }
+  const pickerStageOrder = ['received', 'picked', 'shipped'];
   const isAccountant = user.role === 'accountant';
   const isMarketing = user.role === 'marketing';
   const isPicker = user.role === 'picker';
@@ -86,6 +92,13 @@ export default function OrderManager() {
   };
 
   useEffect(() => {
+    if (isPicker) {
+      setStatusFilter('processing');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
     if (isMarketing) return;
 
     let isMounted = true;
@@ -132,58 +145,76 @@ export default function OrderManager() {
           setSelectedOrder({ ...selectedOrder, status: newStatus });
         }
     } catch (error) {
-        alert("Failed to update status");
+        addToast('Failed to update status', 'error');
     }
   };
 
   const handleVerifyDelivery = async () => {
-    if (!otp) return alert('Please enter the delivery code');
+    if (!otp) { addToast('Please enter the delivery code', 'error'); return; }
     setVerifying(true);
     try {
       const res = await verifyDelivery(selectedOrder.id, otp);
       if (res.success) {
-        alert(res.message);
+        addToast(res.message, 'success');
         setOtp('');
         // Reload orders or update local state
         if (selectedOrder) {
           setSelectedOrder({ ...selectedOrder, status: 'Delivered' });
         }
       } else {
-        alert(res.error);
+        addToast(res.error, 'error');
       }
     } catch (err) {
-      alert('Connection error');
+      addToast('Connection error', 'error');
     } finally {
       setVerifying(false);
     }
   };
 
   const handlePickerStage = async (id, stage) => {
+    // Warn before dispatching an order that still has an unresolved
+    // missing-item report — previously nothing stopped this.
+    if (stage === 'dispatched' && selectedOrder?.open_missing_items_count > 0) {
+      const proceed = await confirm(
+        `This order has ${selectedOrder.open_missing_items_count} unresolved missing-item report(s). Dispatch anyway?`
+      );
+      if (!proceed) return;
+    }
+
     try {
       const res = await updatePickerOrderStage(id, stage);
       if (!res.success) {
-        alert(res.error || 'Failed to update picker stage');
+        addToast(res.error || 'Failed to update picker stage', 'error');
         return;
       }
       if (selectedOrder && selectedOrder.id === id) {
-        setSelectedOrder({ ...selectedOrder, status: res.status || selectedOrder.status });
+        setSelectedOrder({
+          ...selectedOrder,
+          status: res.status || selectedOrder.status,
+          picker_stage: stage === 'dispatched' ? 'shipped' : stage,
+        });
       }
+      addToast(`Order marked as ${stage}.`, 'success');
     } catch (error) {
-      alert('Failed to update picker stage');
+      addToast('Failed to update picker stage', 'error');
     }
   };
 
-  const handleReportMissingItem = async (item) => {
-    if (!selectedOrder?.id) return;
+  const openMissingItemForm = (item) => {
+    setMissingItemDraft({ item, qty: '1', reason: '' });
+  };
+
+  const cancelMissingItemForm = () => setMissingItemDraft(null);
+
+  const submitMissingItemForm = async () => {
+    if (!selectedOrder?.id || !missingItemDraft) return;
+    const { item, qty, reason } = missingItemDraft;
     const maxQty = Math.max(1, Number(item.qty || 1));
-    const qtyInput = window.prompt(`How many units are missing for "${item.name}"? (1-${maxQty})`, '1');
-    if (qtyInput === null) return;
-    const qtyMissing = Math.max(1, Math.min(maxQty, parseInt(String(qtyInput), 10) || 1));
-    const reason = window.prompt(`Why is "${item.name}" missing?`, 'Not found on shelf');
-    if (reason === null) return;
+    const qtyMissing = Math.max(1, Math.min(maxQty, parseInt(qty, 10) || 1));
     const cleanReason = String(reason || '').trim();
+
     if (!cleanReason) {
-      alert('Please provide a reason before reporting.');
+      addToast('Please provide a reason before reporting.', 'error');
       return;
     }
 
@@ -196,12 +227,14 @@ export default function OrderManager() {
         reason: cleanReason,
       }]);
       if (!res.success) {
-        alert(res.error || 'Failed to report missing item');
+        addToast(res.error || 'Failed to report missing item', 'error');
         return;
       }
-      alert('Missing item reported. Admin team has been notified.');
+      addToast('Missing item reported. Admin team has been notified.', 'success');
+      setSelectedOrder(prev => prev ? { ...prev, open_missing_items_count: (prev.open_missing_items_count || 0) + 1 } : prev);
+      setMissingItemDraft(null);
     } catch (error) {
-      alert('Failed to report missing item');
+      addToast('Failed to report missing item', 'error');
     } finally {
       setReportingMissing(false);
     }
@@ -236,6 +269,9 @@ export default function OrderManager() {
     }
     
     return matchesSearch && matchesStatus && matchesType && matchesDate;
+  }).sort((a, b) => {
+    if (!isPicker) return 0; // preserve backend order (newest-first) for non-pickers
+    return new Date(a.date) - new Date(b.date); // oldest-first queue for pickers
   });
 
   const exportOrdersCSV = () => {
@@ -534,8 +570,8 @@ export default function OrderManager() {
                     onClick={async () => {
                       if(await confirm('Resend receipt to customer?')) {
                         const res = await resendReceipt(selectedOrder.id);
-                        if(res.success) alert('Receipt re-sent!');
-                        else alert('Failed: ' + res.error);
+                        if(res.success) addToast('Receipt re-sent!', 'success');
+                        else addToast('Failed: ' + res.error, 'error');
                       }
                     }}
                     className="btn" 
@@ -603,7 +639,7 @@ export default function OrderManager() {
                         {canUsePickerWorkflow && (
                           <button
                             type="button"
-                            onClick={() => handleReportMissingItem(item)}
+                            onClick={() => openMissingItemForm(item)}
                             disabled={reportingMissing}
                             style={{
                               border: '1px solid rgba(245, 158, 11, 0.45)',
@@ -637,31 +673,60 @@ export default function OrderManager() {
               </h3>
               
 
-              {canUsePickerWorkflow ? (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px' }}>
-                  <button
-                    onClick={() => handlePickerStage(selectedOrder.id, 'received')}
-                    className="btn"
-                    style={{ background: 'var(--warning-bg)', color: 'var(--warning)', display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}
-                  >
-                    <Clock size={14} /> Mark Order Received
-                  </button>
-                  <button
-                    onClick={() => handlePickerStage(selectedOrder.id, 'picked')}
-                    className="btn"
-                    style={{ background: 'var(--info-bg)', color: 'var(--accent-blue)', display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}
-                  >
-                    <Package size={14} /> Mark Items Picked
-                  </button>
-                  <button
-                    onClick={() => handlePickerStage(selectedOrder.id, 'dispatched')}
-                    className="btn"
-                    style={{ background: 'var(--success-bg)', color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}
-                  >
-                    <Truck size={14} /> Mark Dispatched
-                  </button>
-                </div>
-              ) : (
+              {canUsePickerWorkflow ? (() => {
+                const stageDefs = [
+                  { key: 'received',   label: 'Mark Order Received', icon: <Clock size={14} />,   bg: 'var(--warning-bg)', color: 'var(--warning)' },
+                  { key: 'picked',     label: 'Mark Items Picked',   icon: <Package size={14} />, bg: 'var(--info-bg)',    color: 'var(--accent-blue)' },
+                  { key: 'dispatched', label: 'Mark Dispatched',     icon: <Truck size={14} />,   bg: 'var(--success-bg)', color: 'var(--success)' },
+                ];
+                const currentIndex = pickerStageOrder.indexOf(selectedOrder.picker_stage); // -1 if not started
+
+                return (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                      {stageDefs.map((s, i) => (
+                        <div key={s.key} style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1, justifyContent: 'center' }}>
+                          <div style={{
+                            width: '22px', height: '22px', borderRadius: '50%',
+                            background: i <= currentIndex ? 'var(--success)' : 'var(--border-light)',
+                            color: i <= currentIndex ? 'white' : 'var(--text-muted)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: '11px', fontWeight: 800,
+                          }}>
+                            {i <= currentIndex ? '✓' : i + 1}
+                          </div>
+                          <span style={{ fontSize: '10px', fontWeight: 700, color: i <= currentIndex ? 'var(--success)' : 'var(--text-muted)' }}>
+                            {s.key === 'dispatched' ? 'Dispatched' : s.key === 'picked' ? 'Picked' : 'Received'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                    {stageDefs.map((s, i) => {
+                      const isDone = i <= currentIndex;
+                      const isNext = i === currentIndex + 1;
+                      const disabled = isDone || !isNext;
+                      return (
+                        <button
+                          key={s.key}
+                          onClick={() => handlePickerStage(selectedOrder.id, s.key)}
+                          disabled={disabled}
+                          className="btn"
+                          style={{
+                            background: isDone ? 'var(--border-light)' : s.bg,
+                            color: isDone ? 'var(--text-muted)' : s.color,
+                            display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center',
+                            opacity: disabled && !isDone ? 0.5 : 1,
+                            cursor: disabled ? 'not-allowed' : 'pointer',
+                          }}
+                          title={isDone ? 'Already completed' : (!isNext ? 'Complete the previous stage first' : '')}
+                        >
+                          {isDone ? '✓' : s.icon} {isDone ? `${s.label} (done)` : s.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                );
+              })() : (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                   <button 
                     onClick={() => handleUpdateStatus(selectedOrder.id, 'Shipped')}
@@ -759,6 +824,59 @@ export default function OrderManager() {
                 </div>
               </section>
             )}
+          </div>
+        </div>
+      )}
+
+      {missingItemDraft && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)',
+          zIndex: 999999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px'
+        }}>
+          <div className="card glass" style={{ maxWidth: '420px', width: '100%', padding: '28px' }}>
+            <h3 style={{ fontSize: '17px', fontWeight: 800, marginBottom: '4px' }}>Report Missing Item</h3>
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '18px' }}>
+              {missingItemDraft.item.name}
+            </p>
+
+            <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
+              Quantity missing (max {missingItemDraft.item.qty})
+            </label>
+            <input
+              type="number"
+              min={1}
+              max={missingItemDraft.item.qty}
+              value={missingItemDraft.qty}
+              onChange={(e) => setMissingItemDraft(prev => ({ ...prev, qty: e.target.value }))}
+              className="input-field"
+              style={{ width: '100%', padding: '10px', marginBottom: '16px', background: 'var(--bg-surface)' }}
+            />
+
+            <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
+              Reason
+            </label>
+            <textarea
+              value={missingItemDraft.reason}
+              onChange={(e) => setMissingItemDraft(prev => ({ ...prev, reason: e.target.value }))}
+              placeholder="e.g. Not found on shelf, damaged, out of stock…"
+              rows={3}
+              className="input-field"
+              style={{ width: '100%', padding: '10px', marginBottom: '20px', background: 'var(--bg-surface)', resize: 'vertical' }}
+            />
+
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button className="btn btn-secondary" onClick={cancelMissingItemForm} disabled={reportingMissing}>
+                Cancel
+              </button>
+              <button
+                className="btn"
+                style={{ background: 'var(--danger)', color: 'white', border: 'none' }}
+                onClick={submitMissingItemForm}
+                disabled={reportingMissing}
+              >
+                {reportingMissing ? 'Reporting...' : 'Report Missing Item'}
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -124,11 +124,18 @@ try {
         }
 
         // Check if reference already processed
-        $stmt = $pdo->prepare("SELECT id, status FROM orders WHERE payment_reference = ?");
+        $stmt = $pdo->prepare("SELECT id, status, total_amount FROM orders WHERE payment_reference = ?");
         $stmt->execute([$reference]);
         $order = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($order) {
+            $expectedTotal = (float)$order['total_amount'];
+            if (abs($amountPaid - $expectedTotal) > 0.10) {
+                throw new Exception(
+                    "Amount mismatch for Order #{$order['id']} (Ref: {$reference}). "
+                    . "Expected GHS {$expectedTotal}, paid GHS {$amountPaid}. Order NOT completed — needs manual review."
+                );
+            }
             completeOrder($order['id'], $pdo);
             logger('ok', 'WEBHOOK', "Order #{$order['id']} completed via webhook.");
         } else {

@@ -4,6 +4,7 @@ require 'db.php';
 require 'security.php';
 
 require_once 'inventory_utils.php';
+require_once 'order_utils.php';
 
 // Lazy-sync pending orders to cancelled if they expired
 lazyCancelOrders($pdo);
@@ -100,8 +101,51 @@ if ($method === 'GET') {
             $itemStmt->execute($orderIds);
             $allItems = $itemStmt->fetchAll(PDO::FETCH_GROUP | PDO::FETCH_ASSOC);
 
+            // Open missing-item reports per order (self-heal in case the table doesn't exist yet)
+            $pdo->exec("CREATE TABLE IF NOT EXISTS order_missing_items (
+                id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                order_id INT NOT NULL,
+                product_id INT DEFAULT NULL,
+                product_name VARCHAR(255) NOT NULL,
+                qty_missing INT NOT NULL DEFAULT 1,
+                reason VARCHAR(255) DEFAULT NULL,
+                reported_by INT NOT NULL,
+                status ENUM('open', 'resolved') DEFAULT 'open',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_order_created (order_id, created_at),
+                INDEX idx_status_created (status, created_at)
+            )");
+            $missingStmt = $pdo->prepare("
+                SELECT order_id, COUNT(*) as cnt FROM order_missing_items
+                WHERE order_id IN ($placeholders) AND status = 'open'
+                GROUP BY order_id
+            ");
+            $missingStmt->execute($orderIds);
+            $missingCounts = [];
+            foreach ($missingStmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $missingCounts[$row['order_id']] = (int)$row['cnt'];
+            }
+
+            // Most recent picker stage per order (received/picked/shipped), for the step indicator
+            $stageStmt = $pdo->prepare("
+                SELECT l1.order_id, l1.status_key
+                FROM order_status_logs l1
+                INNER JOIN (
+                    SELECT order_id, MAX(id) as max_id FROM order_status_logs
+                    WHERE order_id IN ($placeholders) AND status_key IN ('received', 'picked', 'shipped')
+                    GROUP BY order_id
+                ) l2 ON l1.order_id = l2.order_id AND l1.id = l2.max_id
+            ");
+            $stageStmt->execute($orderIds);
+            $pickerStages = [];
+            foreach ($stageStmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $pickerStages[$row['order_id']] = $row['status_key'];
+            }
+
             foreach ($orders as &$order) {
                 $order['items'] = $allItems[$order['id']] ?? [];
+                $order['open_missing_items_count'] = $missingCounts[$order['id']] ?? 0;
+                $order['picker_stage'] = $pickerStages[$order['id']] ?? null;
                 $order['id'] = 'ORD-' . $order['id']; // Add prefix for display
             }
         }
@@ -153,7 +197,12 @@ if ($method === 'GET') {
             }
 
             if ($currentStatus !== $status) {
-                $stmt = $pdo->prepare("UPDATE orders SET status = ? WHERE id = ?");
+                if ($status === 'delivered') {
+                    ensure_delivered_at_column($pdo);
+                    $stmt = $pdo->prepare("UPDATE orders SET status = ?, delivered_at = NOW() WHERE id = ?");
+                } else {
+                    $stmt = $pdo->prepare("UPDATE orders SET status = ? WHERE id = ?");
+                }
                 $stmt->execute([$status, $id]);
 
                 // Stock Replenishment Logic
@@ -472,7 +521,8 @@ if ($method === 'GET') {
                 exit;
             }
 
-            $updateStmt = $pdo->prepare("UPDATE orders SET status = 'delivered' WHERE id = ?");
+            ensure_delivered_at_column($pdo);
+            $updateStmt = $pdo->prepare("UPDATE orders SET status = 'delivered', delivered_at = NOW() WHERE id = ?");
             $updateStmt->execute([$id]);
 
             $userStmt = $pdo->prepare("SELECT user_id FROM orders WHERE id = ?");

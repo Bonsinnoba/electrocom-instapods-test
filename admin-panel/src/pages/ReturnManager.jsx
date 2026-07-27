@@ -19,7 +19,7 @@ import {
   XCircle,
   Star,
 } from 'lucide-react';
-import { fetchReturns, processReturn, fetchOrders, fetchRefundInfo, issueRefund } from '../services/api';
+import { fetchReturns, processReturn, fetchOrders, fetchRefundInfo, issueRefund, approveReturn, rejectReturn } from '../services/api';
 import { useNotifications } from '../context/NotificationContext';
 
 /* ─── tiny helpers ─────────────────────────────────────────────────── */
@@ -89,6 +89,11 @@ export default function ReturnManager() {
   const [refundNote,       setRefundNote]        = useState('');
   const [refundProcessing, setRefundProcessing]  = useState(false);
   const [lastReturnId,     setLastReturnId]      = useState(null);
+
+  // Pending return-request approve/reject
+  const [resolvingId,      setResolvingId]       = useState(null);
+  const [rejectingId,      setRejectingId]       = useState(null);
+  const [rejectReasonText, setRejectReasonText]  = useState('');
 
   useEffect(() => { loadReturnHistory(); }, []);
 
@@ -226,6 +231,48 @@ export default function ReturnManager() {
     setRefundInfo(null);
   };
 
+  const handleApproveReturn = async (returnId) => {
+    setResolvingId(returnId);
+    try {
+      const res = await approveReturn(returnId);
+      if (res.success) {
+        addToast('Return approved — stock restocked.', 'success');
+        loadReturnHistory();
+      } else {
+        addToast(res.error || 'Failed to approve return', 'error');
+      }
+    } catch {
+      addToast('Connection error while approving return', 'error');
+    } finally {
+      setResolvingId(null);
+    }
+  };
+
+  const handleRejectReturn = async (returnId) => {
+    if (!rejectReasonText.trim()) {
+      addToast('Please enter a rejection reason.', 'error');
+      return;
+    }
+    setResolvingId(returnId);
+    try {
+      const res = await rejectReturn(returnId, rejectReasonText.trim());
+      if (res.success) {
+        addToast('Return rejected — customer notified.', 'success');
+        setRejectingId(null);
+        setRejectReasonText('');
+        loadReturnHistory();
+      } else {
+        addToast(res.error || 'Failed to reject return', 'error');
+      }
+    } catch {
+      addToast('Connection error while rejecting return', 'error');
+    } finally {
+      setResolvingId(null);
+    }
+  };
+
+  const pendingReturns = returnHistory.filter(r => r.status === 'pending');
+
   /* ── render ── */
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
@@ -241,7 +288,84 @@ export default function ReturnManager() {
 
       <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '32px', alignItems: 'start' }}>
 
-        {/* ── Left: Return History ── */}
+        {/* ── Left: Pending Requests + Return History ── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+
+        {pendingReturns.length > 0 && (
+          <div className="card glass" style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--warning)' }}>
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(245,158,11,0.06)' }}>
+              <h3 style={{ margin: 0, fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--warning)' }}>
+                <AlertCircle size={18} /> Pending Return Requests
+              </h3>
+              <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--warning)' }}>{pendingReturns.length} awaiting review</span>
+            </div>
+            <div style={{ maxHeight: '340px', overflowY: 'auto' }}>
+              {pendingReturns.map((ret) => (
+                <div key={ret.id} style={{ padding: '16px 24px', borderBottom: '1px solid var(--border-light)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+                    <div>
+                      <div style={{ fontWeight: 700, color: 'var(--primary-blue)', fontSize: '13px' }}>{ret.order_display_id}</div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>{ret.customer_name}</div>
+                      <div style={{ fontSize: '13px', fontWeight: 600 }}>{ret.product_name} × {ret.quantity}</div>
+                      <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>Reason: {ret.reason}</div>
+                    </div>
+                    {rejectingId !== ret.id && (
+                      <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                        <button
+                          className="btn btn-secondary"
+                          style={{ fontSize: '11px', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                          onClick={() => setRejectingId(ret.id)}
+                          disabled={resolvingId === ret.id}
+                        >
+                          <XCircle size={12} /> Reject
+                        </button>
+                        <button
+                          className="btn btn-primary"
+                          style={{ fontSize: '11px', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                          onClick={() => handleApproveReturn(ret.id)}
+                          disabled={resolvingId === ret.id}
+                        >
+                          {resolvingId === ret.id ? <Loader size={12} className="animate-spin" /> : <CheckCircle2 size={12} />} Approve
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {rejectingId === ret.id && (
+                    <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <textarea
+                        placeholder="Reason for rejecting this return (shown to the customer)…"
+                        value={rejectReasonText}
+                        onChange={(e) => setRejectReasonText(e.target.value)}
+                        rows={2}
+                        style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid var(--border-light)', background: 'var(--bg-surface)', fontSize: '12px', resize: 'vertical' }}
+                      />
+                      <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                        <button
+                          className="btn btn-secondary"
+                          style={{ fontSize: '11px', padding: '6px 12px' }}
+                          onClick={() => { setRejectingId(null); setRejectReasonText(''); }}
+                          disabled={resolvingId === ret.id}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          className="btn"
+                          style={{ fontSize: '11px', padding: '6px 12px', background: 'var(--danger)', color: 'white', border: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}
+                          onClick={() => handleRejectReturn(ret.id)}
+                          disabled={resolvingId === ret.id}
+                        >
+                          {resolvingId === ret.id ? <Loader size={12} className="animate-spin" /> : <XCircle size={12} />} Confirm Reject
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="card glass" style={{ padding: 0, overflow: 'hidden' }}>
           <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h3 style={{ margin: 0, fontSize: '18px', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -293,6 +417,8 @@ export default function ReturnManager() {
               </table>
             )}
           </div>
+        </div>
+
         </div>
 
         {/* ── Right: Process / Refund ── */}

@@ -63,11 +63,13 @@ try {
     }
 
     // 3. Create POS Order
+    require_once 'order_utils.php';
+    ensure_delivered_at_column($pdo);
     $stmt = $pdo->prepare("
         INSERT INTO orders (
             user_id, total_amount, status, payment_method, 
-            order_type, cashier_id, customer_email
-        ) VALUES (?, ?, 'delivered', ?, 'pos', ?, ?)
+            order_type, cashier_id, customer_email, delivered_at
+        ) VALUES (?, ?, 'delivered', ?, 'pos', ?, ?, NOW())
     ");
     $stmt->execute([$customerId, $totalAmount, $paymentMethod, $cashierId, $customerEmail]);
     $orderId = $pdo->lastInsertId();

@@ -19,6 +19,29 @@ try {
     exit;
 }
 
+/**
+ * Add resolution_note / resolved_at columns to order_returns if they don't
+ * exist yet. Self-healing, matching the pattern already used elsewhere.
+ */
+function ensure_return_resolution_columns(PDO $pdo)
+{
+    $hasNote = $pdo->query("
+        SELECT COUNT(*) FROM information_schema.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'order_returns' AND COLUMN_NAME = 'resolution_note'
+    ")->fetchColumn();
+    if (!$hasNote) {
+        $pdo->exec("ALTER TABLE order_returns ADD COLUMN resolution_note TEXT NULL AFTER processed_by");
+    }
+
+    $hasResolvedAt = $pdo->query("
+        SELECT COUNT(*) FROM information_schema.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'order_returns' AND COLUMN_NAME = 'resolved_at'
+    ")->fetchColumn();
+    if (!$hasResolvedAt) {
+        $pdo->exec("ALTER TABLE order_returns ADD COLUMN resolved_at DATETIME NULL AFTER resolution_note");
+    }
+}
+
 $method = $_SERVER['REQUEST_METHOD'];
 
 if ($method === 'GET') {
@@ -46,7 +69,109 @@ if ($method === 'GET') {
 } elseif ($method === 'POST') {
     $content = trim(file_get_contents("php://input"));
     $decoded = json_decode($content, true);
-    
+    $action = $decoded['action'] ?? 'create';
+
+    // ─── Approve or reject specific pending return request(s) ──────────────────
+    // This is the core fix: previously there was no way to actually resolve a
+    // customer's pending return request — admin could only create a brand new,
+    // disconnected return record, leaving the original pending row orphaned
+    // forever and double-counting returned quantity.
+    if ($action === 'approve' || $action === 'reject') {
+        $returnIds = isset($decoded['return_ids']) && is_array($decoded['return_ids']) ? $decoded['return_ids'] : [];
+        if (isset($decoded['return_id']) && empty($returnIds)) {
+            $returnIds[] = $decoded['return_id'];
+        }
+        $returnIds = array_values(array_unique(array_map('intval', $returnIds)));
+        $returnIds = array_values(array_filter($returnIds, function ($id) { return $id > 0; }));
+
+        if (empty($returnIds)) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'return_ids array is required']);
+            exit;
+        }
+
+        $resolutionNote = sanitizeInput($decoded['reason'] ?? $decoded['note'] ?? '');
+        if ($action === 'reject' && $resolutionNote === '') {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'A rejection reason is required']);
+            exit;
+        }
+
+        try {
+            $pdo->beginTransaction();
+            ensure_return_resolution_columns($pdo);
+
+            $placeholders = implode(',', array_fill(0, count($returnIds), '?'));
+            $lockStmt = $pdo->prepare("SELECT id, order_id, product_id, quantity, status FROM order_returns WHERE id IN ($placeholders) FOR UPDATE");
+            $lockStmt->execute($returnIds);
+            $rows = $lockStmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if (count($rows) !== count($returnIds)) {
+                throw new Exception('One or more return_ids were not found.');
+            }
+
+            foreach ($rows as $row) {
+                if ($row['status'] !== 'pending') {
+                    throw new Exception("Return #{$row['id']} is no longer pending (already resolved) — refresh and try again.");
+                }
+            }
+
+            $newStatus = $action === 'approve' ? 'processed' : 'rejected';
+            $updStmt = $pdo->prepare("
+                UPDATE order_returns
+                SET status = ?, processed_by = ?, resolution_note = ?, resolved_at = NOW()
+                WHERE id = ?
+            ");
+            $restockStmt = $pdo->prepare("UPDATE products SET stock_quantity = stock_quantity + ? WHERE id = ?");
+
+            $affectedOrders = [];
+            foreach ($rows as $row) {
+                $updStmt->execute([$newStatus, $userId, $resolutionNote !== '' ? $resolutionNote : null, $row['id']]);
+                if ($action === 'approve') {
+                    // Only now — on confirmed approval — does stock actually return to inventory.
+                    $restockStmt->execute([$row['quantity'], $row['product_id']]);
+                }
+                $affectedOrders[(int)$row['order_id']] = true;
+            }
+
+            // Notify each affected customer of the decision.
+            $custStmt = $pdo->prepare('SELECT user_id FROM orders WHERE id = ?');
+            foreach (array_keys($affectedOrders) as $affectedOrderId) {
+                $custStmt->execute([$affectedOrderId]);
+                $custUserId = $custStmt->fetchColumn();
+                if ($custUserId) {
+                    if ($action === 'approve') {
+                        $title = 'Return Approved';
+                        $msg = "Your return request for Order ORD-{$affectedOrderId} has been approved.";
+                    } else {
+                        $title = 'Return Request Rejected';
+                        $msg = "Your return request for Order ORD-{$affectedOrderId} was not approved. Reason: {$resolutionNote}";
+                    }
+                    $pdo->prepare("INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, 'return_request')")
+                        ->execute([$custUserId, $title, $msg]);
+                }
+            }
+
+            $pdo->commit();
+
+            $verb = $action === 'approve' ? 'approved' : 'rejected';
+            logger('ok', 'RETURNS', count($rows) . " return(s) {$verb} by {$userName}: " . implode(',', $returnIds));
+
+            echo json_encode([
+                'success' => true,
+                'message' => "Return(s) {$verb} successfully.",
+                'return_ids' => $returnIds,
+            ]);
+        } catch (Exception $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+        }
+        exit;
+    }
+
+    // ─── Legacy path: staff creates a brand-new return record directly ─────────
+    // (e.g. an in-store correction not preceded by an online customer request)
     $orderIdStr = $decoded['order_id'] ?? null;
     $items = $decoded['items'] ?? [];
     $reason = sanitizeInput($decoded['reason'] ?? 'Not specified');
@@ -82,9 +207,10 @@ if ($method === 'GET') {
             FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
             FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
         )");
+        ensure_return_resolution_columns($pdo);
 
         $itemCheck = $pdo->prepare("SELECT quantity FROM order_items WHERE order_id = ? AND product_id = ? FOR UPDATE");
-        $sumRet = $pdo->prepare('SELECT COALESCE(SUM(quantity), 0) FROM order_returns WHERE order_id = ? AND product_id = ?');
+        $sumRet = $pdo->prepare("SELECT COALESCE(SUM(quantity), 0) FROM order_returns WHERE order_id = ? AND product_id = ? AND status != 'rejected'");
         $stmt = $pdo->prepare("INSERT INTO order_returns (order_id, product_id, quantity, reason, processed_by) VALUES (?, ?, ?, ?, ?)");
         $upd = $pdo->prepare("UPDATE products SET stock_quantity = stock_quantity + ? WHERE id = ?");
         
