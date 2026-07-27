@@ -33,6 +33,11 @@ const CMSManager = lazy(() => import('./pages/CMSManager'));
 const CategoryManager = lazy(() => import('./pages/CategoryManager'));
 const SliderManager = lazy(() => import('./pages/SliderManager'));
 const BroadcastHub = lazy(() => import('./pages/BroadcastHub'));
+const InstitutionManager = lazy(() => import('./pages/InstitutionManager'));
+const QuoteManager = lazy(() => import('./pages/QuoteManager'));
+const ShippingZoneManager = lazy(() => import('./pages/ShippingZoneManager'));
+const RiderManager = lazy(() => import('./pages/RiderManager'));
+const ShipmentsDashboard = lazy(() => import('./pages/ShipmentsDashboard'));
 
 // ─── Toast Overlay ────────────────────────────────────────────────────────────
 const AdminToasts = () => {
@@ -337,6 +342,11 @@ function AppContent() {
 
         <Route path="/pos" element={<ProtectedLayout><RouteLoader><POSInterface /></RouteLoader></ProtectedLayout>} />
         <Route path="/customers" element={<ProtectedLayout><RouteLoader><CustomerManager /></RouteLoader></ProtectedLayout>} />
+        <Route path="/institutions" element={<ProtectedLayout><RouteLoader><InstitutionManager /></RouteLoader></ProtectedLayout>} />
+        <Route path="/quotes" element={<ProtectedLayout><RouteLoader><QuoteManager /></RouteLoader></ProtectedLayout>} />
+        <Route path="/shipping-zones" element={<ProtectedLayout><RouteLoader><ShippingZoneManager /></RouteLoader></ProtectedLayout>} />
+        <Route path="/riders" element={<ProtectedLayout><RouteLoader><RiderManager /></RouteLoader></ProtectedLayout>} />
+        <Route path="/shipments" element={<ProtectedLayout><RouteLoader><ShipmentsDashboard /></RouteLoader></ProtectedLayout>} />
         <Route path="/notifications" element={<ProtectedLayout><RouteLoader><SystemNotifications /></RouteLoader></ProtectedLayout>} />
         <Route path="/help" element={<ProtectedLayout><RouteLoader><HelpCenter /></RouteLoader></ProtectedLayout>} />
         <Route path="/cms" element={<ProtectedLayout><RouteLoader><CMSManager /></RouteLoader></ProtectedLayout>} />

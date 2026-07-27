@@ -913,3 +913,105 @@ export const updateFlashSaleBannerSettings = async (settings) => authFetch('/fla
     method: 'POST',
     body: JSON.stringify(settings)
 });
+
+// --- Institutions (B2B quotes feature) ---
+export const fetchInstitutions = async (status) => authFetch(`/admin_institutions.php${status ? `?status=${status}` : ''}`);
+export const fetchInstitution = async (id) => authFetch(`/admin_institutions.php?id=${id}`);
+export const createInstitution = async (payload) => authFetch('/admin_institutions.php', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'create', ...payload }),
+});
+export const updateInstitution = async (id, payload) => authFetch('/admin_institutions.php', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'update', id, ...payload }),
+});
+export const setInstitutionStatus = async (id, status) => authFetch('/admin_institutions.php', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'set_status', id, status }),
+});
+export const addInstitutionContact = async (institutionId, email, title, isPrimary) => authFetch('/admin_institutions.php', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'add_contact', institution_id: institutionId, email, title, is_primary: isPrimary }),
+});
+export const removeInstitutionContact = async (contactId) => authFetch('/admin_institutions.php', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'remove_contact', contact_id: contactId }),
+});
+
+// --- Quote requests (staff inbox) ---
+export const fetchQuoteRequests = async (status) => authFetch(`/admin_quote_requests.php${status ? `?status=${status}` : ''}`);
+export const fetchQuoteRequest = async (id) => authFetch(`/admin_quote_requests.php?id=${id}`);
+export const setQuoteRequestStatus = async (id, status) => authFetch('/admin_quote_requests.php', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'set_status', id, status }),
+});
+export const addQuoteRequestNote = async (id, note) => authFetch('/admin_quote_requests.php', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'add_note', id, note }),
+});
+
+// --- Quotes (staff build & send) ---
+export const fetchQuotesForRequest = async (quoteRequestId) => authFetch(`/admin_quotes.php?quote_request_id=${quoteRequestId}`);
+export const fetchQuote = async (id) => authFetch(`/admin_quotes.php?id=${id}`);
+export const createQuote = async (payload) => authFetch('/admin_quotes.php', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'create', ...payload }),
+});
+export const voidQuote = async (id) => authFetch('/admin_quotes.php', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'void', id }),
+});
+
+// --- Shipping zones (self-fleet) ---
+export const fetchShippingZones = async () => authFetch('/admin_shipping_zones.php');
+export const createShippingZone = async (payload) => authFetch('/admin_shipping_zones.php', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'create', ...payload }),
+});
+export const updateShippingZone = async (id, payload) => authFetch('/admin_shipping_zones.php', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'update', id, ...payload }),
+});
+export const deleteShippingZone = async (id) => authFetch('/admin_shipping_zones.php', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'delete', id }),
+});
+
+// --- Riders (self-owned fleet) ---
+export const fetchRiders = async () => authFetch('/admin_riders.php');
+export const createRider = async (payload) => authFetch('/admin_riders.php', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'create', ...payload }),
+});
+export const updateRider = async (id, payload) => authFetch('/admin_riders.php', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'update', id, ...payload }),
+});
+export const setRiderStatus = async (id, status) => authFetch('/admin_riders.php', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'set_status', id, status }),
+});
+export const deleteRider = async (id) => authFetch('/admin_riders.php', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'delete', id }),
+});
+
+// --- Shipments ---
+export const fetchShipments = async (status) => authFetch(`/admin_shipments.php${status ? `?status=${status}` : ''}`);
+export const fetchShipment = async (id) => authFetch(`/admin_shipments.php?id=${id}`);
+export const createSelfFleetShipment = async (payload) => authFetch('/admin_shipments.php', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'create_self_fleet', ...payload }),
+});
+export const createCarrierShipment = async (payload) => authFetch('/admin_shipments.php', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'create_carrier', ...payload }),
+});
+export const assignRiderToShipment = async (id, riderId) => authFetch('/admin_shipments.php', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'assign_rider', id, rider_id: riderId }),
+});
+export const updateShipmentStatus = async (id, status) => authFetch('/admin_shipments.php', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'update_status', id, status }),
+});
