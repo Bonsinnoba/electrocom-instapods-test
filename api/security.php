@@ -825,11 +825,8 @@ if (!function_exists('logger')) {
             return;
         }
 
-        $logDir = __DIR__ . '/logs';
-        if (!is_dir($logDir)) @mkdir($logDir, 0755, true);
-        
         // 1. Context Extraction
-        $userIdCtx = '';
+        $userIdCtx = null;
         $token = null;
         $headers = function_exists('getallheaders') ? getallheaders() : [];
         $authHeader = $headers['Authorization'] ?? $headers['authorization'] ?? null;
@@ -844,26 +841,64 @@ if (!function_exists('logger')) {
             if (count($parts) === 3) {
                 $payload = json_decode(base64_decode(str_replace(['-', '_'], ['+', '/'], $parts[1])), true);
                 if (isset($payload['user_id'])) {
-                    $userIdCtx = " [UID:{$payload['user_id']}]";
+                    $userIdCtx = (int)$payload['user_id'];
                 }
             }
         }
 
         $method = $_SERVER['REQUEST_METHOD'] ?? 'CLI';
         $uri    = $_SERVER['REQUEST_URI'] ?? 'n/a';
-        $ip     = getClientIP();
+        $ip     = function_exists('getClientIP') ? getClientIP() : ($_SERVER['REMOTE_ADDR'] ?? null);
+        $methodUri = "$method $uri";
 
-        // 2. Format Line
-        // Format: YYYY-MM-DD HH:MM:SS [LEVEL] [SOURCE] [METHOD URI] [IP] [UID:X] message
-        $ts = date('Y-m-d H:i:s');
-        $lvl = strtoupper($level);
-        $src = strtoupper($source);
-        $line = "$ts [$lvl] [$src] [$method $uri] [$ip]$userIdCtx $message" . PHP_EOL;
+        // 2. Write to the database — this is the durable, cross-instance store.
+        // (Local log FILES don't survive across container restarts/multiple
+        // instances on most modern PHP hosting, which is why the System Logs
+        // page could appear permanently empty even though logger() was being
+        // called constantly throughout the app.)
+        $wroteToDb = false;
+        global $pdo;
+        if (isset($pdo) && $pdo instanceof PDO) {
+            try {
+                $pdo->exec("CREATE TABLE IF NOT EXISTS system_logs (
+                    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                    level VARCHAR(20) NOT NULL,
+                    source VARCHAR(100) NOT NULL,
+                    method_uri VARCHAR(500) DEFAULT NULL,
+                    ip VARCHAR(45) DEFAULT NULL,
+                    user_id INT DEFAULT NULL,
+                    message TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    INDEX idx_created_at (created_at),
+                    INDEX idx_level (level)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
-        // 3. Reliable Write with Locking
-        $dailyFile = $logDir . '/app-' . date('Y-m-d') . '.log';
-        @file_put_contents($dailyFile, $line, FILE_APPEND | LOCK_EX);
-        
+                $stmt = $pdo->prepare("
+                    INSERT INTO system_logs (level, source, method_uri, ip, user_id, message)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                ");
+                $stmt->execute([strtoupper($level), strtoupper($source), $methodUri, $ip, $userIdCtx, $message]);
+                $wroteToDb = true;
+            } catch (Throwable $e) {
+                // Fall through to file-based logging below
+                $wroteToDb = false;
+            }
+        }
+
+        // 3. Best-effort file fallback (kept only for local/dev environments
+        // where the DB write couldn't happen for some reason).
+        if (!$wroteToDb) {
+            $logDir = __DIR__ . '/logs';
+            if (!is_dir($logDir)) @mkdir($logDir, 0755, true);
+            $ts = date('Y-m-d H:i:s');
+            $lvl = strtoupper($level);
+            $src = strtoupper($source);
+            $uidPart = $userIdCtx !== null ? " [UID:{$userIdCtx}]" : '';
+            $line = "$ts [$lvl] [$src] [$methodUri] [$ip]$uidPart $message" . PHP_EOL;
+            $dailyFile = $logDir . '/app-' . date('Y-m-d') . '.log';
+            @file_put_contents($dailyFile, $line, FILE_APPEND | LOCK_EX);
+        }
+
         $isLogging = false;
     }
 }

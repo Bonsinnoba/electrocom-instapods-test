@@ -124,7 +124,7 @@ if (!function_exists('eh_ensure_site_settings_table')) {
             setting_key VARCHAR(100) NOT NULL UNIQUE,
             setting_value TEXT,
             value_type ENUM('string', 'integer', 'float', 'boolean', 'json') NOT NULL DEFAULT 'string',
-            category ENUM('security', 'business', 'operational', 'payment', 'delivery', 'identity', 'branding', 'content', 'insights', 'availability') NOT NULL DEFAULT 'operational',
+            category ENUM('security', 'business', 'operational', 'payment', 'delivery', 'identity', 'branding', 'content', 'email', 'insights', 'availability') NOT NULL DEFAULT 'operational',
             description TEXT,
             is_public BOOLEAN DEFAULT FALSE,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -134,6 +134,12 @@ if (!function_exists('eh_ensure_site_settings_table')) {
             INDEX idx_setting_key (setting_key)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
+        // If the table already existed (e.g. migration 028 ran but 029 never
+        // did), make sure the category column supports the full set anyway.
+        $pdo->exec("ALTER TABLE site_settings MODIFY COLUMN category
+            ENUM('security', 'business', 'operational', 'payment', 'delivery', 'identity', 'branding', 'content', 'email', 'insights', 'availability')
+            NOT NULL DEFAULT 'operational'");
+
         // Seed defaults only if the table is empty (first-ever provisioning) —
         // never overwrite values an admin may have already saved.
         $count = (int)$pdo->query("SELECT COUNT(*) FROM site_settings")->fetchColumn();
@@ -142,6 +148,7 @@ if (!function_exists('eh_ensure_site_settings_table')) {
         }
 
         $defaults = [
+            // Security
             ['maxLoginAttempts', '5', 'integer', 'security', FALSE],
             ['sessionTimeout', '360', 'integer', 'security', FALSE],
             ['twoFactorAdmin', 'true', 'boolean', 'security', FALSE],
@@ -153,6 +160,7 @@ if (!function_exists('eh_ensure_site_settings_table')) {
             ['emailNotify', 'true', 'boolean', 'security', FALSE],
             ['securityAlerts', 'true', 'boolean', 'security', FALSE],
             ['debugMode', 'false', 'boolean', 'security', FALSE],
+            // Business
             ['vatRate', '0', 'float', 'business', TRUE],
             ['allowRegistration', 'true', 'boolean', 'business', TRUE],
             ['allowCardPayment', 'true', 'boolean', 'business', TRUE],
@@ -160,13 +168,12 @@ if (!function_exists('eh_ensure_site_settings_table')) {
             ['lowStockAlertEmail', '', 'string', 'business', FALSE],
             ['integrityDiscountThreshold', '5000', 'float', 'business', TRUE],
             ['integrityDiscountPct', '10', 'float', 'business', TRUE],
+            // Operational
             ['backupFrequency', 'daily', 'string', 'operational', FALSE],
             ['defaultItemsPerPage', '6', 'integer', 'operational', TRUE],
             ['homepageSectionTitle', '', 'string', 'operational', TRUE],
-            ['homepageFeaturedCategory', '', 'string', 'operational', TRUE],
-            ['orderReceiptFooterNote', '', 'string', 'operational', TRUE],
-            ['allowDoorToDoorDelivery', 'false', 'boolean', 'delivery', TRUE],
-            ['doorToDoorThreshold', '400', 'float', 'delivery', TRUE],
+            ['homepageFeaturedCategory', 'Featured Products', 'string', 'operational', TRUE],
+            ['orderReceiptFooterNote', 'Thank you for shopping with us', 'string', 'operational', TRUE],
             ['insightsShipWarnHours', '24', 'integer', 'operational', FALSE],
             ['insightsShipCriticalHours', '48', 'integer', 'operational', FALSE],
             ['insightsLowStockWarnCount', '5', 'integer', 'operational', FALSE],
@@ -177,11 +184,49 @@ if (!function_exists('eh_ensure_site_settings_table')) {
             ['insightsWeightStock', '25', 'float', 'operational', FALSE],
             ['insightsWeightOnline', '20', 'float', 'operational', FALSE],
             ['insightsWeightRepeat', '20', 'float', 'operational', FALSE],
+            // Delivery
+            ['allowDoorToDoorDelivery', 'false', 'boolean', 'delivery', TRUE],
+            ['doorToDoorThreshold', '400', 'float', 'delivery', TRUE],
+            // Identity
+            ['siteName', 'My Store', 'string', 'identity', TRUE],
+            ['siteEmail', 'hello@example.com', 'string', 'identity', TRUE],
+            ['phone1', '', 'string', 'identity', TRUE],
+            ['phone2', '', 'string', 'identity', TRUE],
+            ['whatsapp', '', 'string', 'identity', TRUE],
+            ['siteTagline', 'Shop online', 'string', 'identity', TRUE],
+            ['metaDescription', 'Shop quality products online with secure checkout and support.', 'string', 'identity', TRUE],
+            ['storeAddress', '', 'string', 'identity', TRUE],
+            ['businessHours', 'Mon-Fri, 9am-5pm', 'string', 'identity', TRUE],
+            ['socialInstagram', '', 'string', 'identity', TRUE],
+            ['socialTwitter', '', 'string', 'identity', TRUE],
+            ['socialFacebook', '', 'string', 'identity', TRUE],
+            ['socialTikTok', '', 'string', 'identity', TRUE],
+            ['socialYoutube', '', 'string', 'identity', TRUE],
+            // Branding
+            ['siteLogoUrl', '', 'string', 'branding', TRUE],
+            ['faviconUrl', '', 'string', 'branding', TRUE],
             ['primaryColor', '#3b82f6', 'string', 'branding', TRUE],
             ['accentColor', '#f59e0b', 'string', 'branding', TRUE],
             ['headerBg', '#0f172a', 'string', 'branding', TRUE],
-            ['fontFamily', '', 'string', 'branding', TRUE],
-            ['selectedTheme', 'iconic_blue', 'string', 'branding', TRUE],
+            ['fontFamily', 'Inter', 'string', 'branding', TRUE],
+            ['selectedTheme', 'iconic_blue', 'string', 'branding', FALSE],
+            ['buttonPrimaryHover', '#2563eb', 'string', 'branding', TRUE],
+            ['buttonSecondaryHover', '#475569', 'string', 'branding', TRUE],
+            ['buttonAccentHover', '#d97706', 'string', 'branding', TRUE],
+            ['linkHover', '#60a5fa', 'string', 'branding', TRUE],
+            ['cardHover', '#1e293b', 'string', 'branding', TRUE],
+            // Content
+            ['heroBannerTagline', '', 'string', 'content', TRUE],
+            ['heroBannerSubtext', '', 'string', 'content', TRUE],
+            ['heroCTAText', 'Shop Now', 'string', 'content', TRUE],
+            ['heroCTAUrl', '/products', 'string', 'content', TRUE],
+            // Email
+            ['emailProvider', 'smtp', 'string', 'email', FALSE],
+            ['emailProviderSmtpEnabled', 'true', 'boolean', 'email', FALSE],
+            ['emailProviderMailgunEnabled', 'false', 'boolean', 'email', FALSE],
+            ['emailProviderSendgridEnabled', 'false', 'boolean', 'email', FALSE],
+            // Availability
+            ['maintenanceMode', 'false', 'boolean', 'availability', TRUE],
         ];
 
         $stmt = $pdo->prepare("
