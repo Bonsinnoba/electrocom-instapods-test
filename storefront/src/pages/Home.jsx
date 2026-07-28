@@ -108,8 +108,11 @@ export default function Home({ products, onProductClick, searchQuery, loading })
   }, [filteredProducts, recommendedProducts, searchQuery]);
 
   const catalogProducts = useMemo(() => {
-    return eligibleProducts.slice(0, visibleCount);
-  }, [eligibleProducts, visibleCount]);
+    // On mobile (sidebar hidden), show all products including recommendations
+    // On desktop, show only eligible products (recommendations are in sidebar)
+    const allProducts = [...recommendedProducts, ...eligibleProducts];
+    return allProducts.slice(0, visibleCount);
+  }, [eligibleProducts, recommendedProducts, visibleCount]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>

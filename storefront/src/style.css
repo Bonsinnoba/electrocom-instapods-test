@@ -6241,13 +6241,7 @@ button.btn-login:hover {
 /* Logged-out sidebar content display on tablet/mobile */
 @media (max-width: 899px) {
     .home-side-recommendations {
-        position: static !important;
-        max-height: none !important;
-        overflow-y: visible !important;
-        grid-column: 1 !important;
-        grid-row: auto !important;
-        margin-bottom: 24px;
-        order: -1; /* Show sidebar content before main catalog on mobile */
+        display: none; /* Hide sidebar completely on mobile */
     }
 
     .home-layout-container {
