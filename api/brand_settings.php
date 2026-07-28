@@ -225,6 +225,10 @@ if (!function_exists('eh_ensure_site_settings_table')) {
             ['emailProviderSmtpEnabled', 'true', 'boolean', 'email', FALSE],
             ['emailProviderMailgunEnabled', 'false', 'boolean', 'email', FALSE],
             ['emailProviderSendgridEnabled', 'false', 'boolean', 'email', FALSE],
+            // Delivery (self-fleet / carrier provider switching)
+            ['activeDeliveryProviderMode', 'self_fleet', 'string', 'delivery', FALSE],
+            ['selfFleetEnabled', 'true', 'boolean', 'delivery', FALSE],
+            ['carrierFallbackEnabled', 'false', 'boolean', 'delivery', FALSE],
             // Availability
             ['maintenanceMode', 'false', 'boolean', 'availability', TRUE],
         ];

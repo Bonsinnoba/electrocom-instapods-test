@@ -4,6 +4,7 @@
 require_once 'cors_middleware.php';
 require_once 'db.php';
 require_once 'security.php';
+require_once __DIR__ . '/order_utils.php';
 
 header('Content-Type: application/json');
 
@@ -23,6 +24,8 @@ if (in_array($_SERVER['REQUEST_METHOD'], ['POST', 'PUT', 'DELETE'])) {
         exit;
     }
 }
+
+ensure_institutional_and_delivery_tables($pdo);
 
 $method = $_SERVER['REQUEST_METHOD'];
 

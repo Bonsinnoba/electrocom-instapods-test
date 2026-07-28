@@ -31,6 +31,8 @@ if (in_array($_SERVER['REQUEST_METHOD'], ['POST', 'PUT', 'DELETE'])) {
     }
 }
 
+ensure_institutional_and_delivery_tables($pdo);
+
 $method = $_SERVER['REQUEST_METHOD'];
 
 if ($method === 'GET') {

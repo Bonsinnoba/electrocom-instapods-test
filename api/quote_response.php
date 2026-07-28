@@ -30,6 +30,8 @@ if (in_array($_SERVER['REQUEST_METHOD'], ['POST', 'PUT', 'DELETE'])) {
     }
 }
 
+ensure_institutional_and_delivery_tables($pdo);
+
 function logQuoteEvent($quoteRequestId, $statusKey, $message, $actorId, $pdo)
 {
     try {
