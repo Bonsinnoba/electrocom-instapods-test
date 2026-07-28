@@ -3,6 +3,9 @@ import ProductCard from '../components/ProductCard';
 import HeroSlider from '../components/HeroSlider';
 import FlashSaleBanner from '../components/FlashSaleBanner';
 import ProductSkeleton from '../components/ProductSkeleton';
+import CouponBanner from '../components/CouponBanner';
+import AuthPrompt from '../components/AuthPrompt';
+import TrustBadges from '../components/TrustBadges';
 import { useSettings } from '../context/SettingsContext';
 import { useUser } from '../context/UserContext';
 
@@ -133,37 +136,47 @@ export default function Home({ products, onProductClick, searchQuery, loading })
             </div>
           </>
         ) : (
-          <div className={`home-layout-container ${(!searchQuery && recommendedProducts.length > 0) ? 'has-sidebar' : ''}`}>
+          <div className={`home-layout-container ${!searchQuery ? 'has-sidebar' : ''}`}>
             
-            {/* Recommendations Column */}
-            {!searchQuery && recommendedProducts.length > 0 && (
+            {/* Sidebar Column - Different content based on auth state */}
+            {!searchQuery && (
               <aside className="home-side-recommendations">
-                <h2 className="recommendations-title" style={{ fontSize: '22px', fontWeight: 800, marginBottom: '20px' }}>Recommended</h2>
-                <div className="recommendations-list">
-                  {recommendedProducts.map((p, idx) => (
-                    <div
-                      key={`rec-${p.id}`}
-                      className="animate-slide-up"
-                      style={{
-                        animationDelay: `${idx * 0.04}s`,
-                        animationFillMode: 'both'
-                      }}
-                    >
-                      <ProductCard
-                        id={p.id}
-                        name={p.name}
-                        price={p.price}
-                        image={p.image}
-                        rating={p.rating}
-                        discount_percent={p.discount_percent}
-                        sale_ends_at={p.sale_ends_at}
-                        stock_quantity={p.stock_quantity}
-                        description={p.description}
-                        onClick={() => onProductClick(p)}
-                      />
+                {user ? (
+                  <>
+                    <h2 className="recommendations-title" style={{ fontSize: '22px', fontWeight: 800, marginBottom: '20px' }}>Recommended</h2>
+                    <div className="recommendations-list">
+                      {recommendedProducts.map((p, idx) => (
+                        <div
+                          key={`rec-${p.id}`}
+                          className="animate-slide-up"
+                          style={{
+                            animationDelay: `${idx * 0.04}s`,
+                            animationFillMode: 'both'
+                          }}
+                        >
+                          <ProductCard
+                            id={p.id}
+                            name={p.name}
+                            price={p.price}
+                            image={p.image}
+                            rating={p.rating}
+                            discount_percent={p.discount_percent}
+                            sale_ends_at={p.sale_ends_at}
+                            stock_quantity={p.stock_quantity}
+                            description={p.description}
+                            onClick={() => onProductClick(p)}
+                          />
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  </>
+                ) : (
+                  <>
+                    <CouponBanner />
+                    <AuthPrompt />
+                    <TrustBadges />
+                  </>
+                )}
               </aside>
             )}
 

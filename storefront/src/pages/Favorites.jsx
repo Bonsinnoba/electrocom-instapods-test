@@ -1,14 +1,29 @@
-import React, { startTransition, useMemo } from 'react';
+import React, { startTransition, useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
 import { useWishlist } from '../context/WishlistContext';
 import { useUser } from '../context/UserContext';
-import { HeartOff, ShoppingBag, LogIn, SearchX } from 'lucide-react';
+import { HeartOff, ShoppingBag, LogIn, SearchX, Grid, List } from 'lucide-react';
 
 export default function Favorites({ onProductClick, searchQuery = '' }) {
   const { wishlistItems, toggleWishlist } = useWishlist();
   const { user, openAuthModal } = useUser();
   const navigate = useNavigate();
+  const [viewMode, setViewMode] = useState(() => {
+    try {
+      return localStorage.getItem('favoritesViewMode') || 'grid';
+    } catch {
+      return 'grid';
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('favoritesViewMode', viewMode);
+    } catch (e) {
+      console.warn('Failed to save view mode to localStorage', e);
+    }
+  }, [viewMode]);
 
   const safeWishlistItems = useMemo(() => {
     return Array.isArray(wishlistItems) ? wishlistItems : [];
@@ -60,8 +75,48 @@ export default function Favorites({ onProductClick, searchQuery = '' }) {
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px', width: '100%' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', flexWrap: 'wrap', gap: '12px' }}>
         <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0 }}>My Favorites</h1>
-        <div style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: 600, background: 'var(--bg-main)', padding: '6px 12px', borderRadius: '100px' }}>
-          {filteredItems.length} {filteredItems.length === 1 ? 'Item' : 'Items'}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: 600, background: 'var(--bg-main)', padding: '6px 12px', borderRadius: '100px' }}>
+            {filteredItems.length} {filteredItems.length === 1 ? 'Item' : 'Items'}
+          </div>
+          <div style={{ display: 'flex', gap: '4px', background: 'var(--bg-surface)', padding: '4px', borderRadius: '8px', border: '1px solid var(--border-light)' }}>
+            <button
+              onClick={() => setViewMode('grid')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '6px',
+                borderRadius: '6px',
+                border: 'none',
+                background: viewMode === 'grid' ? 'var(--primary-blue)' : 'transparent',
+                color: viewMode === 'grid' ? 'white' : 'var(--text-muted)',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+              title="Grid view"
+            >
+              <Grid size={18} />
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '6px',
+                borderRadius: '6px',
+                border: 'none',
+                background: viewMode === 'list' ? 'var(--primary-blue)' : 'transparent',
+                color: viewMode === 'list' ? 'white' : 'var(--text-muted)',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+              title="List view"
+            >
+              <List size={18} />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -125,7 +180,7 @@ export default function Favorites({ onProductClick, searchQuery = '' }) {
           </p>
         </div>
       ) : (
-        <div className="product-grid" style={{ boxSizing: 'border-box' }}>
+        <div className={viewMode === 'grid' ? 'favorites-grid' : 'favorites-list'} style={{ boxSizing: 'border-box' }}>
           {filteredItems.map((p, idx) => (
             <div
               key={p.id}
@@ -147,6 +202,7 @@ export default function Favorites({ onProductClick, searchQuery = '' }) {
                 description={p.description}
                 onClick={() => onProductClick?.(p)}
                 onRemove={() => toggleWishlist(p)}
+                viewMode={viewMode}
               />
             </div>
           ))}

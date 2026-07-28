@@ -8,7 +8,7 @@ import { useNotifications } from '../context/NotificationContext';
 import { useComparison } from '../context/ComparisonContext';
 
 
-function ProductCard({ id, name, price, image, rating, discount_percent, sale_ends_at, stock_quantity, status = 'active', onClick, onRemove, description }) {
+function ProductCard({ id, name, price, image, rating, discount_percent, sale_ends_at, stock_quantity, status = 'active', onClick, onRemove, description, viewMode = 'grid' }) {
   const [imgLoaded, setImgLoaded] = useState(false);
   const [isNotifying, setIsNotifying] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
@@ -197,7 +197,7 @@ function ProductCard({ id, name, price, image, rating, discount_percent, sale_en
         </button>
       )}
 
-      <div style={{ position: 'relative', width: '100%', borderRadius: 'var(--radius-sm)', overflow: 'hidden', aspectRatio: '1/1' }}>
+      <div style={{ position: 'relative', width: '100%', borderRadius: 'var(--radius-sm)', overflow: 'hidden', aspectRatio: viewMode === 'list' ? '4/3' : '1/1' }}>
         {!imgLoaded && (
           <div className="skeleton" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', borderRadius: 'inherit' }}></div>
         )}
