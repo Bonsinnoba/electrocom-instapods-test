@@ -3,11 +3,6 @@
 require_once 'security.php';
 require_once __DIR__ . '/brand_settings.php';
 
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception;
-
-require_once __DIR__ . '/vendor/autoload.php';
-
 /**
  * Centralized Notification Service
  */
@@ -55,11 +50,33 @@ class NotificationService
     }
 
     /**
-     * Send Email via PHPMailer with SMTP support
+     * Send Email via PHPMailer with SMTP support.
+     *
+     * PHPMailer is loaded lazily right here (not at file-load time) so that
+     * the 16 other files which merely need queueNotification()/sendSMS()/
+     * logAdminNotification() — none of which touch PHPMailer — can never be
+     * broken by a missing or misconfigured vendor/ folder. If it truly is
+     * missing, this degrades to a logged failure instead of a fatal error
+     * that takes down the entire request (which is what happened before:
+     * a wrong relative path here was crashing admin_chat.php, product
+     * management, missing-item reports, and password resets, none of which
+     * needed PHPMailer at all).
      */
     public function sendEmail($to, $subject, $message, $altBody = '')
     {
-        $mail = new PHPMailer(true);
+        $autoloadPath = __DIR__ . '/../vendor/autoload.php';
+        if (!file_exists($autoloadPath)) {
+            logger('error', 'EMAIL_SERVICE', "Cannot send email to {$to}: vendor/autoload.php not found at {$autoloadPath}.");
+            return false;
+        }
+        require_once $autoloadPath;
+
+        if (!class_exists('\PHPMailer\PHPMailer\PHPMailer')) {
+            logger('error', 'EMAIL_SERVICE', "Cannot send email to {$to}: PHPMailer class not found after loading autoloader.");
+            return false;
+        }
+
+        $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
 
         try {
             // Check if we should use SMTP
@@ -69,7 +86,7 @@ class NotificationService
                 $mail->SMTPAuth   = true;
                 $mail->Username   = $this->config['SMTP_USER'] ?? '';
                 $mail->Password   = $this->config['SMTP_PASS'] ?? '';
-                $mail->SMTPSecure = $this->config['SMTP_ENCRYPTION'] ?? PHPMailer::ENCRYPTION_STARTTLS;
+                $mail->SMTPSecure = $this->config['SMTP_ENCRYPTION'] ?? \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
                 $mail->Port       = $this->config['SMTP_PORT'] ?? 587;
                 logger('info', 'EMAIL_SERVICE', "SMTP configured, attempting to send to {$to}");
             } else {
@@ -92,7 +109,7 @@ class NotificationService
             $mail->send();
             logger('info', 'EMAIL_SERVICE', "Successfully sent email to {$to}");
             return true;
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             logger('error', 'EMAIL_SERVICE', "Failed to send email to {$to}: " . $mail->ErrorInfo);
             
             // In development, we might want to log the simulated email even on failure

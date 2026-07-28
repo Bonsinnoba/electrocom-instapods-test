@@ -4,7 +4,7 @@ require __DIR__ . '/cors_middleware.php';
 require __DIR__ . '/db.php';
 require __DIR__ . '/security.php';
 require_once __DIR__ . '/brand_settings.php';
-require __DIR__ . '/vendor/autoload.php';
+require __DIR__ . '/../vendor/autoload.php';
 
 use League\OAuth2\Client\Provider\GenericProvider;
 
