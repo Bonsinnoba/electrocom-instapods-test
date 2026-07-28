@@ -140,6 +140,34 @@ if (!function_exists('eh_ensure_site_settings_table')) {
             ENUM('security', 'business', 'operational', 'payment', 'delivery', 'identity', 'branding', 'content', 'email', 'insights', 'availability')
             NOT NULL DEFAULT 'operational'");
 
+        // Retroactively enforce the UNIQUE constraint on setting_key if it's
+        // missing. This matters: if the table was created by an earlier
+        // version of this exact self-heal (before the UNIQUE was added to
+        // the CREATE TABLE statement), CREATE TABLE IF NOT EXISTS is a no-op
+        // against the already-existing table, so the constraint never
+        // actually landed — meaning every settings save since then has been
+        // silently INSERTing a full duplicate row set instead of updating
+        // in place. Clean that up before (re-)adding the constraint.
+        $hasUniqueKey = (int)$pdo->query("
+            SELECT COUNT(*) FROM information_schema.STATISTICS
+            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'site_settings'
+              AND COLUMN_NAME = 'setting_key' AND NON_UNIQUE = 0
+        ")->fetchColumn();
+
+        if (!$hasUniqueKey) {
+            // Keep only the most recent row per setting_key, drop the rest.
+            $pdo->exec("
+                DELETE t1 FROM site_settings t1
+                INNER JOIN site_settings t2
+                WHERE t1.setting_key = t2.setting_key AND t1.id < t2.id
+            ");
+            try {
+                $pdo->exec("ALTER TABLE site_settings ADD UNIQUE KEY uniq_setting_key (setting_key)");
+            } catch (Throwable $e) {
+                error_log('eh_ensure_site_settings_table: could not add UNIQUE constraint - ' . $e->getMessage());
+            }
+        }
+
         // Seed defaults only if the table is empty (first-ever provisioning) —
         // never overwrite values an admin may have already saved.
         $count = (int)$pdo->query("SELECT COUNT(*) FROM site_settings")->fetchColumn();
@@ -225,10 +253,6 @@ if (!function_exists('eh_ensure_site_settings_table')) {
             ['emailProviderSmtpEnabled', 'true', 'boolean', 'email', FALSE],
             ['emailProviderMailgunEnabled', 'false', 'boolean', 'email', FALSE],
             ['emailProviderSendgridEnabled', 'false', 'boolean', 'email', FALSE],
-            // Delivery (self-fleet / carrier provider switching)
-            ['activeDeliveryProviderMode', 'self_fleet', 'string', 'delivery', FALSE],
-            ['selfFleetEnabled', 'true', 'boolean', 'delivery', FALSE],
-            ['carrierFallbackEnabled', 'false', 'boolean', 'delivery', FALSE],
             // Availability
             ['maintenanceMode', 'false', 'boolean', 'availability', TRUE],
         ];
