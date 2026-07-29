@@ -919,7 +919,11 @@ label {
 
 .dropdown-toggle.active {
     border-color: var(--primary-blue);
-    background: white;
+    background: linear-gradient(135deg,
+        rgba(var(--primary-blue-rgb), 0.12) 0%,
+        rgba(var(--primary-blue-rgb), 0.04) 60%,
+        transparent 100%),
+        white;
     box-shadow: 0 4px 12px rgba(var(--primary-blue-rgb), 0.05);
 }
 
@@ -2036,7 +2040,11 @@ button.btn-login:hover {
 }
 
 .product-card {
-    background: var(--glass-bg);
+    background: linear-gradient(135deg,
+        rgba(var(--primary-blue-rgb), 0.12) 0%,
+        rgba(var(--primary-blue-rgb), 0.04) 60%,
+        transparent 100%),
+        var(--glass-bg);
     backdrop-filter: blur(12px) saturate(180%);
     -webkit-backdrop-filter: blur(12px) saturate(180%);
     border: 1px solid var(--glass-border);
@@ -2072,7 +2080,11 @@ button.btn-login:hover {
 }
 
 .dark-mode .product-card:hover {
-    background: var(--bg-surface);
+    background: linear-gradient(135deg,
+        rgba(var(--primary-blue-rgb), 0.15) 0%,
+        rgba(var(--primary-blue-rgb), 0.06) 60%,
+        transparent 100%),
+        var(--bg-surface);
     box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.3);
 }
 
@@ -2421,7 +2433,11 @@ button.btn-login:hover {
 .auth-modal select:focus {
     outline: none;
     border-color: var(--primary-blue);
-    background: white;
+    background: linear-gradient(135deg,
+        rgba(var(--primary-blue-rgb), 0.12) 0%,
+        rgba(var(--primary-blue-rgb), 0.04) 60%,
+        transparent 100%),
+        white;
     box-shadow: 0 0 0 4px rgba(30, 58, 138, 0.1);
 }
 
@@ -2773,7 +2789,11 @@ button.btn-login:hover {
 
 .input-wrapper input:focus {
     border-color: var(--primary-blue);
-    background: white;
+    background: linear-gradient(135deg,
+        rgba(var(--primary-blue-rgb), 0.12) 0%,
+        rgba(var(--primary-blue-rgb), 0.04) 60%,
+        transparent 100%),
+        white;
     box-shadow: 0 0 0 4px rgba(30, 58, 138, 0.1);
 }
 
@@ -5964,7 +5984,11 @@ button.btn-login:hover {
 
 .wishlist-btn:hover {
     transform: scale(1.1);
-    background: white;
+    background: linear-gradient(135deg,
+        rgba(var(--primary-blue-rgb), 0.12) 0%,
+        rgba(var(--primary-blue-rgb), 0.04) 60%,
+        transparent 100%),
+        white;
     color: var(--danger);
     border-color: var(--danger-bg);
     box-shadow: 0 6px 15px rgba(239, 68, 68, 0.15);
