@@ -132,7 +132,7 @@ export default function RecentlyViewedProducts({ products }) {
           overflow: 'hidden'
         }}
         className="recently-viewed-grid">
-          {recentProducts.map((product, index) => (
+          {visibleProducts.map((product, index) => (
             <div
               key={`${product.id}-${index}`}
               className="recently-viewed-card glass"
@@ -142,6 +142,111 @@ export default function RecentlyViewedProducts({ products }) {
                 border: '1px solid var(--border-light)',
                 transition: 'all 0.3s ease',
                 cursor: 'pointer'
+              }}
+              onClick={() => handleProductClick(product)}
+            >
+              <div style={{
+                width: '100%',
+                height: '140px',
+                borderRadius: '12px',
+                overflow: 'hidden',
+                marginBottom: '12px',
+                background: 'var(--bg-surface-secondary)'
+              }}>
+                <img
+                  src={product.image}
+                  alt={product.name}
+                  loading="lazy"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    transition: 'transform 0.3s ease'
+                  }}
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                  }}
+                />
+              </div>
+              <h4 style={{
+                fontSize: '14px',
+                fontWeight: 700,
+                margin: '0 0 8px 0',
+                color: 'var(--text-main)',
+                lineHeight: '1.4',
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden'
+              }}>
+                {product.name}
+              </h4>
+              <div style={{
+                fontSize: '16px',
+                fontWeight: 800,
+                color: 'var(--primary-blue)',
+                marginBottom: '8px'
+              }}>
+                GH₵ {Number(product.price).toLocaleString()}
+              </div>
+              {product.discount_percent > 0 && (
+                <div style={{
+                  fontSize: '12px',
+                  color: 'var(--success)',
+                  fontWeight: 600
+                }}>
+                  {product.discount_percent}% OFF
+                </div>
+              )}
+              <button
+                onClick={(e) => handleAddToCompare(e, product)}
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  marginTop: '12px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border-light)',
+                  background: isInCompare(product.id) ? 'var(--primary-blue)' : 'var(--bg-surface)',
+                  color: isInCompare(product.id) ? 'white' : 'var(--text-main)',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                <GitCompareArrows size={14} />
+                {isInCompare(product.id) ? 'Added' : 'Compare'}
+              </button>
+            </div>
+          ))}
+        </div>
+
+        <div style={{
+          display: 'none',
+          overflowX: 'auto',
+          scrollSnapType: 'x mandatory',
+          gap: '16px',
+          paddingBottom: '8px',
+          WebkitOverflowScrolling: 'touch'
+        }}
+        className="recently-viewed-grid-mobile">
+          {recentProducts.map((product, index) => (
+            <div
+              key={`${product.id}-${index}`}
+              className="recently-viewed-card glass"
+              style={{
+                borderRadius: '16px',
+                padding: '16px',
+                border: '1px solid var(--border-light)',
+                transition: 'all 0.3s ease',
+                cursor: 'pointer',
+                flexShrink: 0,
+                width: '280px',
+                scrollSnapAlign: 'start'
               }}
               onClick={() => handleProductClick(product)}
             >
@@ -255,32 +360,25 @@ export default function RecentlyViewedProducts({ products }) {
             display: none;
           }
           .recently-viewed-grid {
-            display: flex;
-            overflow-x: auto;
-            scroll-snap-type: x mandatory;
-            gap: 16px;
-            padding-bottom: 8px;
-            -webkit-overflow-scrolling: touch;
+            display: none;
           }
-          .recently-viewed-grid::-webkit-scrollbar {
+          .recently-viewed-grid-mobile {
+            display: flex;
+          }
+          .recently-viewed-grid-mobile::-webkit-scrollbar {
             height: 4px;
           }
-          .recently-viewed-grid::-webkit-scrollbar-track {
+          .recently-viewed-grid-mobile::-webkit-scrollbar-track {
             background: var(--bg-surface-secondary);
             border-radius: 4px;
           }
-          .recently-viewed-grid::-webkit-scrollbar-thumb {
+          .recently-viewed-grid-mobile::-webkit-scrollbar-thumb {
             background: var(--border-light);
             border-radius: 4px;
           }
-          .recently-viewed-card {
-            flex-shrink: 0;
-            width: 280px;
-            scroll-snap-align: start;
-          }
         }
         @media (max-width: 480px) {
-          .recently-viewed-card {
+          .recently-viewed-grid-mobile .recently-viewed-card {
             width: 260px;
           }
         }
