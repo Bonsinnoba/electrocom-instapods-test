@@ -132,7 +132,7 @@ export default function RecentlyViewedProducts({ products }) {
           overflow: 'hidden'
         }}
         className="recently-viewed-grid">
-          {visibleProducts.map((product, index) => (
+          {recentProducts.map((product, index) => (
             <div
               key={`${product.id}-${index}`}
               className="recently-viewed-card glass"
@@ -251,14 +251,37 @@ export default function RecentlyViewedProducts({ products }) {
             align-items: flex-start;
             gap: 16px;
           }
+          .recently-viewed-container > div > div:first-child > div:last-child {
+            display: none;
+          }
           .recently-viewed-grid {
-            grid-template-columns: repeat(2, 1fr);
+            display: flex;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
             gap: 16px;
+            padding-bottom: 8px;
+            -webkit-overflow-scrolling: touch;
+          }
+          .recently-viewed-grid::-webkit-scrollbar {
+            height: 4px;
+          }
+          .recently-viewed-grid::-webkit-scrollbar-track {
+            background: var(--bg-surface-secondary);
+            border-radius: 4px;
+          }
+          .recently-viewed-grid::-webkit-scrollbar-thumb {
+            background: var(--border-light);
+            border-radius: 4px;
+          }
+          .recently-viewed-card {
+            flex-shrink: 0;
+            width: 280px;
+            scroll-snap-align: start;
           }
         }
         @media (max-width: 480px) {
-          .recently-viewed-grid {
-            grid-template-columns: 1fr;
+          .recently-viewed-card {
+            width: 260px;
           }
         }
       `}</style>
