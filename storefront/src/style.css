@@ -344,20 +344,25 @@ body {
 }
 
 /* Prevent horizontal page overflow on all screen sizes.
-   Scoped to html/body only - html/body already fully contain any
-   horizontal overflow for the whole page, so this doesn't need to be
-   repeated on nested wrapper divs. It used to be, though, and that was
-   a real bug: setting only overflow-x (with overflow-y left as the
-   'visible' default) makes the browser auto-upgrade overflow-y to
-   'auto' on that same element (per the CSS overflow spec, an element
-   can't mix 'visible' on one axis with a non-visible value on the
-   other). That silently turned .app-root, .main-wrapper, and
-   .dashboard-grid into scroll containers, and position:sticky
-   calculates its stuck position relative to the *nearest* scrolling
-   ancestor - so any sticky element nested inside them (like the
-   desktop filter sidebar on the Shop page) was anchoring to one of
-   those divs instead of the actual window scroll, and never stuck. */
-html,
+   IMPORTANT: overflow-x:hidden lives on body only, not html. Per the CSS
+   overflow spec, the browser only propagates body's overflow to the real
+   viewport when html itself is left fully 'visible' on both axes. Setting
+   overflow-x:hidden on html too (as this used to) forces html's own
+   overflow-y to auto-upgrade to 'auto' (mixing visible/non-visible on the
+   two axes isn't allowed), which breaks that propagation - html and body
+   each end up as their own separate (but same-sized, so invisible-looking)
+   scroll containers, and position:sticky then anchors to body instead of
+   the actual viewport, which is why it never stuck no matter what was
+   fixed further down the tree.
+   Earlier issue for context: setting only overflow-x on .app-root,
+   .main-wrapper, and .dashboard-grid caused the same auto-upgrade on
+   THOSE divs - already fixed below by not touching overflow on them. */
+html {
+    max-width: 100%;
+    background-color: var(--bg-main);
+    box-sizing: border-box;
+}
+
 body {
     max-width: 100%;
     overflow-x: hidden;
@@ -4305,6 +4310,11 @@ button.btn-login:hover {
         grid-template-columns: 1fr !important;
     }
 
+    .product-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 12px !important;
+    }
+
     .footer-grid {
         grid-template-columns: 1fr !important;
         gap: 24px;
@@ -4369,17 +4379,10 @@ button.btn-login:hover {
     }
 }
 
-@media (max-width: 329px) {
+@media (max-width: 480px) {
     .product-grid {
         grid-template-columns: 1fr !important;
         gap: 16px !important;
-    }
-}
-
-@media (min-width: 330px) and (max-width: 768px) {
-    .product-grid {
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 12px !important;
     }
 
     .btn-primary,
