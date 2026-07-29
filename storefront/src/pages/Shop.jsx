@@ -180,10 +180,11 @@ export default function Shop({ products, onProductClick, searchQuery, loading })
     <div className="shop-container" style={{ 
       display: 'grid', 
       gridTemplateColumns: '280px 1fr', 
-      gap: '24px'
+      gap: '24px',
+      alignItems: 'start'
     }}>
       {/* Desktop Filter Sidebar */}
-      <aside className="desktop-filters card glass custom-scrollbar" style={{ position: 'sticky', top: '24px', maxHeight: 'calc(100vh - 24px)', overflowY: 'auto' }}>
+      <aside className="desktop-filters card glass custom-scrollbar" style={{ position: 'sticky', top: '24px', maxHeight: 'calc(100vh - 24px)', overflowY: 'auto', alignSelf: 'start' }}>
         <FilterPanel
           filters={filters}
           setFilters={setFilters}
