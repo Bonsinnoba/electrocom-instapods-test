@@ -2080,6 +2080,13 @@ button.btn-login:hover {
     font-size: 14px;
     font-weight: 600;
     margin-bottom: 4px;
+    /* Clamp to 2 lines — prevents long names from growing card height */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    word-break: break-word;  /* handles unspaced product codes */
+    min-width: 0;            /* allows flex child to shrink below content size */
 }
 
 .product-info p {
@@ -4291,13 +4298,21 @@ button.btn-login:hover {
     }
 
     .hero-slider {
-        height: 312px !important;
+        height: 220px !important;
         margin-top: 10px;
     }
 
     .hero-slider .slide-content h2 {
-        font-size: 28px !important;
-        margin-bottom: 12px !important;
+        font-size: 22px !important;
+        margin-bottom: 8px !important;
+    }
+
+    .hero-slider .slide-content p {
+        font-size: 13px !important;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
     }
 
     /* Wallet Mobile Fixes */
@@ -5566,13 +5581,21 @@ button.btn-login:hover {
     }
 
     .hero-slider {
-        height: 324px !important;
+        height: 220px !important;
         margin-top: 10px;
     }
 
     .hero-slider .slide-content h2 {
-        font-size: 28px !important;
-        margin-bottom: 12px !important;
+        font-size: 22px !important;
+        margin-bottom: 8px !important;
+    }
+
+    .hero-slider .slide-content p {
+        font-size: 13px !important;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
     }
 }
 

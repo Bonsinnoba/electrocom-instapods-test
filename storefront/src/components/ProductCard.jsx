@@ -259,7 +259,7 @@ function ProductCard({ id, name, price, image, rating, discount_percent, sale_en
 
       <div className="product-info">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-            <h3 style={{ margin: 0 }}>{name}</h3>
+            <h3 style={{ margin: 0 }} title={name}>{name}</h3>
             <div style={{ display: 'flex', alignItems: 'center', gap: '2px', background: 'var(--warning-bg)', padding: '2px 6px', borderRadius: '4px' }}>
                 <Star size={10} fill="var(--warning)" color="var(--warning)" />
                 <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--warning)' }}>{safeRating.toFixed(1)}</span>
