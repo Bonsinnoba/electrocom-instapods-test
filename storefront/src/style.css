@@ -6162,6 +6162,72 @@ button.btn-login:hover {
     width: 100%;
 }
 
+/* ── Mobile / Toggled-Sidebar: products first, widget strip after ── */
+@media (max-width: 899px) {
+    .home-layout-container {
+        display: flex;
+        flex-direction: column;
+        gap: 28px;
+    }
+
+    .home-main-content {
+        order: 1; /* catalog renders first */
+    }
+
+    /* aside is a flex-column: label on top, scroll row below */
+    .home-side-recommendations {
+        order: 2;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 10px;
+        overflow: visible !important;
+    }
+
+    /* Mobile-only strip label */
+    .home-sidebar-strip-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        flex-shrink: 0;
+        width: 100%;
+    }
+
+    .home-sidebar-strip-label::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: var(--border-light);
+    }
+
+    /* Horizontal scroll row — the wrapper div in JSX */
+    .home-cards-row {
+        display: flex;
+        flex-direction: row;
+        gap: 14px;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding-bottom: 10px;
+    }
+
+    .home-cards-row::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* Each card ~85vw wide — next card peeks to signal swipeability */
+    .home-cards-row > * {
+        flex: 0 0 min(85vw, 300px);
+        scroll-snap-align: start;
+        box-sizing: border-box;
+    }
+}
+
 /* Default view (stacked on tablet/mobile) - acts as horizontal grid */
 .recommendations-list {
     display: grid;
@@ -6195,6 +6261,16 @@ button.btn-login:hover {
 @media (min-width: 900px) {
     .dashboard-grid.full-width {
         max-width: 1280px !important;
+    }
+
+    /* Hide the mobile-only strip label */
+    .home-sidebar-strip-label {
+        display: none;
+    }
+
+    /* On desktop, .home-cards-row is a transparent wrapper — no layout effect */
+    .home-cards-row {
+        display: contents;
     }
 
     .home-layout-container.has-sidebar {

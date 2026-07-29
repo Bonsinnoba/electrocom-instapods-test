@@ -144,42 +144,50 @@ export default function Home({ products, onProductClick, searchQuery, loading })
             {/* Sidebar Column - Different content based on auth state */}
             {!searchQuery && (
               <aside className="home-side-recommendations">
-                {user ? (
-                  <>
-                    <h2 className="recommendations-title" style={{ fontSize: '22px', fontWeight: 800, marginBottom: '20px' }}>Recommended</h2>
-                    <div className="recommendations-list">
-                      {recommendedProducts.map((p, idx) => (
-                        <div
-                          key={`rec-${p.id}`}
-                          className="animate-slide-up"
-                          style={{
-                            animationDelay: `${idx * 0.04}s`,
-                            animationFillMode: 'both'
-                          }}
-                        >
-                          <ProductCard
-                            id={p.id}
-                            name={p.name}
-                            price={p.price}
-                            image={p.image}
-                            rating={p.rating}
-                            discount_percent={p.discount_percent}
-                            sale_ends_at={p.sale_ends_at}
-                            stock_quantity={p.stock_quantity}
-                            description={p.description}
-                            onClick={() => onProductClick(p)}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <CouponBanner />
-                    <AuthPrompt />
-                    <TrustBadges />
-                  </>
-                )}
+                {/* Mobile-only label — hidden on desktop via CSS */}
+                <div className="home-sidebar-strip-label">
+                  {user ? 'Picks for you' : 'Deals & Info'}
+                </div>
+
+                {/* .home-cards-row is the horizontal scroll container on mobile */}
+                <div className="home-cards-row">
+                  {user ? (
+                    <>
+                      <h2 className="recommendations-title" style={{ fontSize: '22px', fontWeight: 800, marginBottom: '20px' }}>Recommended</h2>
+                      <div className="recommendations-list">
+                        {recommendedProducts.map((p, idx) => (
+                          <div
+                            key={`rec-${p.id}`}
+                            className="animate-slide-up"
+                            style={{
+                              animationDelay: `${idx * 0.04}s`,
+                              animationFillMode: 'both'
+                            }}
+                          >
+                            <ProductCard
+                              id={p.id}
+                              name={p.name}
+                              price={p.price}
+                              image={p.image}
+                              rating={p.rating}
+                              discount_percent={p.discount_percent}
+                              sale_ends_at={p.sale_ends_at}
+                              stock_quantity={p.stock_quantity}
+                              description={p.description}
+                              onClick={() => onProductClick(p)}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <CouponBanner />
+                      <AuthPrompt />
+                      <TrustBadges />
+                    </>
+                  )}
+                </div>
               </aside>
             )}
 
