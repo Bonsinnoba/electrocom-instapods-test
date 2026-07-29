@@ -3,21 +3,21 @@ import { Filter, X, RotateCcw, Star, Check, ChevronDown } from 'lucide-react';
 
 const labelStyle = {
   display: 'block',
-  marginBottom: '14px',
-  fontSize: '13px',
-  fontWeight: 800,
+  marginBottom: '8px',
+  fontSize: '12px',
+  fontWeight: 700,
   color: 'var(--text-muted)',
   textTransform: 'uppercase',
-  letterSpacing: '0.08em',
+  letterSpacing: '0.06em',
 };
 
 const dropdownTriggerStyle = {
   width: '100%',
-  padding: '12px 16px',
-  borderRadius: '12px',
-  border: '1.5px solid var(--border-light)',
-  background: 'var(--bg-surface-secondary)',
-  fontSize: '14px',
+  padding: '10px 12px',
+  borderRadius: '10px',
+  border: '1px solid var(--border-light)',
+  background: 'var(--bg-surface)',
+  fontSize: '13px',
   fontWeight: 600,
   color: 'var(--text-main)',
   outline: 'none',
@@ -59,7 +59,7 @@ const dropdownOptionStyle = {
 // by one place (the parent flex `gap`) rather than scattered magic numbers.
 const groupDividerStyle = {
   borderTop: '1px solid var(--border-light)',
-  paddingTop: '24px',
+  paddingTop: '18px',
 };
 
 export default function FilterPanel({ filters, setFilters, onReset, isMobile, onClose, categories = [], maxRange = 1000, priceValue, onPriceChange }) {
@@ -138,7 +138,7 @@ export default function FilterPanel({ filters, setFilters, onReset, isMobile, on
     <div className={`filter-panel ${isMobile ? 'mobile' : ''}`} style={{
       display: 'flex',
       flexDirection: 'column',
-      gap: isMobile ? '22px' : '28px',
+      gap: isMobile ? '16px' : '20px',
       height: '100%',
     }}>
       {isMobile && <div className="drawer-handle" style={{
@@ -151,8 +151,8 @@ export default function FilterPanel({ filters, setFilters, onReset, isMobile, on
       }} />}
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '10px', fontSize: '18px', fontWeight: 800, color: 'var(--text-main)' }}>
-          <Filter size={18} /> Filters
+        <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px', fontSize: '16px', fontWeight: 700, color: 'var(--text-main)' }}>
+          <Filter size={16} /> Filters
         </h3>
         {isMobile && (
           <button
@@ -218,11 +218,11 @@ export default function FilterPanel({ filters, setFilters, onReset, isMobile, on
 
       {/* Price Range */}
       <div className="filter-group" style={groupDividerStyle}>
-        <label style={{ ...labelStyle, marginBottom: '16px' }}>Price Range</label>
+        <label style={{ ...labelStyle, marginBottom: '12px' }}>Price Range</label>
 
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '18px' }}>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '12px' }}>
           <div style={{ position: 'relative', display: 'flex', alignItems: 'center', flex: 1 }}>
-            <span style={{ position: 'absolute', left: '12px', color: 'var(--text-muted)', fontWeight: 800, fontSize: '11px', pointerEvents: 'none', textTransform: 'uppercase' }}>Min</span>
+            <span style={{ position: 'absolute', left: '10px', color: 'var(--text-muted)', fontWeight: 700, fontSize: '10px', pointerEvents: 'none', textTransform: 'uppercase' }}>Min</span>
             <input
               type="number"
               min="0"
@@ -234,12 +234,12 @@ export default function FilterPanel({ filters, setFilters, onReset, isMobile, on
               }}
               style={{
                 width: '100%',
-                padding: '10px 14px 10px 42px',
-                borderRadius: '12px',
-                border: '1.5px solid var(--border-light)',
-                background: 'var(--bg-surface-secondary)',
-                fontSize: '14px',
-                fontWeight: 700,
+                padding: '8px 12px 8px 36px',
+                borderRadius: '8px',
+                border: '1px solid var(--border-light)',
+                background: 'var(--bg-surface)',
+                fontSize: '13px',
+                fontWeight: 600,
                 color: 'var(--text-main)',
                 outline: 'none',
                 transition: 'border-color 0.2s',
@@ -251,7 +251,7 @@ export default function FilterPanel({ filters, setFilters, onReset, isMobile, on
           <span style={{ color: 'var(--text-muted)', fontWeight: 700 }}>-</span>
 
           <div style={{ position: 'relative', display: 'flex', alignItems: 'center', flex: 1 }}>
-            <span style={{ position: 'absolute', left: '12px', color: 'var(--text-muted)', fontWeight: 800, fontSize: '11px', pointerEvents: 'none', textTransform: 'uppercase' }}>Max</span>
+            <span style={{ position: 'absolute', left: '10px', color: 'var(--text-muted)', fontWeight: 700, fontSize: '10px', pointerEvents: 'none', textTransform: 'uppercase' }}>Max</span>
             <input
               type="number"
               min="0"
@@ -279,12 +279,12 @@ export default function FilterPanel({ filters, setFilters, onReset, isMobile, on
               }}
               style={{
                 width: '100%',
-                padding: '10px 16px 10px 42px',
-                borderRadius: '12px',
-                border: '1.5px solid var(--border-light)',
-                background: 'var(--bg-surface-secondary)',
-                fontSize: '14px',
-                fontWeight: 700,
+                padding: '8px 12px 8px 36px',
+                borderRadius: '8px',
+                border: '1px solid var(--border-light)',
+                background: 'var(--bg-surface)',
+                fontSize: '13px',
+                fontWeight: 600,
                 color: 'var(--text-main)',
                 outline: 'none',
                 transition: 'border-color 0.2s',
@@ -294,7 +294,7 @@ export default function FilterPanel({ filters, setFilters, onReset, isMobile, on
           </div>
         </div>
 
-        <div className="slider-wrapper" style={{ position: 'relative', padding: '0 2px' }}>
+        <div className="slider-wrapper" style={{ position: 'relative', padding: '4px 0 0 0' }}>
           <input
             type="range"
             min="0"
@@ -306,7 +306,7 @@ export default function FilterPanel({ filters, setFilters, onReset, isMobile, on
             onTouchEnd={() => setFilters(prev => ({ ...prev, maxPrice: priceValue !== undefined ? priceValue : filters.maxPrice }))}
             className="filter-range-slider"
           />
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px', fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px', fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600 }}>
             <span>GH₵0</span>
             <span>GH₵{maxRange}</span>
           </div>
@@ -318,11 +318,11 @@ export default function FilterPanel({ filters, setFilters, onReset, isMobile, on
         <label style={labelStyle}>Min Rating</label>
         <div style={{
           display: 'flex',
-          gap: isMobile ? '6px' : '4px',
-          background: 'var(--bg-surface-secondary)',
-          padding: isMobile ? '12px' : '10px 16px',
-          borderRadius: '16px',
-          border: '1.5px solid var(--border-light)',
+          gap: isMobile ? '4px' : '3px',
+          background: 'transparent',
+          padding: '0',
+          borderRadius: '0',
+          border: 'none',
           justifyContent: 'space-between',
         }}>
           {[1, 2, 3, 4, 5].map(star => (
@@ -332,28 +332,28 @@ export default function FilterPanel({ filters, setFilters, onReset, isMobile, on
               className={`rating-btn ${filters.minRating >= star ? 'active' : ''}`}
             >
               <Star
-                size={isMobile ? 24 : 22}
+                size={isMobile ? 20 : 18}
                 fill={filters.minRating >= star ? "var(--warning)" : "none"}
                 stroke={filters.minRating >= star ? "var(--warning)" : "var(--text-muted)"}
-                strokeWidth={2.5}
+                strokeWidth={2}
               />
             </button>
           ))}
         </div>
         {filters.minRating > 0 && (
           <div style={{
-            marginTop: '12px',
+            marginTop: '8px',
             textAlign: 'center',
-            fontSize: '13px',
+            fontSize: '12px',
             fontWeight: 600,
             color: 'var(--warning)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '6px'
+            gap: '4px'
           }}>
-            <Star size={14} fill="var(--warning)" stroke="var(--warning)" />
-            {filters.minRating}+ stars and above
+            <Star size={12} fill="var(--warning)" stroke="var(--warning)" />
+            {filters.minRating}+ stars
           </div>
         )}
       </div>
@@ -425,9 +425,9 @@ export default function FilterPanel({ filters, setFilters, onReset, isMobile, on
       <div style={{
         display: 'flex',
         flexDirection: isMobile ? 'row' : 'column',
-        gap: '12px',
+        gap: '10px',
         marginTop: isMobile ? '4px' : 'auto',
-        paddingTop: '24px',
+        paddingTop: '18px',
         borderTop: '1px solid var(--border-light)',
       }}>
         <button
@@ -436,12 +436,12 @@ export default function FilterPanel({ filters, setFilters, onReset, isMobile, on
           style={{
             flex: isMobile ? 1 : 'none',
             width: isMobile ? 'auto' : '100%',
-            gap: '8px',
-            padding: '12px',
-            borderRadius: '16px',
-            fontWeight: 700,
-            border: '1.5px solid var(--border-light)',
-            fontSize: '14px',
+            gap: '6px',
+            padding: '10px',
+            borderRadius: '12px',
+            fontWeight: 600,
+            border: '1px solid var(--border-light)',
+            fontSize: '13px',
           }}
         >
           <RotateCcw size={16} /> Reset
@@ -453,10 +453,10 @@ export default function FilterPanel({ filters, setFilters, onReset, isMobile, on
             onClick={onClose}
             style={{
               flex: 2,
-              padding: '12px',
-              borderRadius: '16px',
-              fontWeight: 800,
-              fontSize: '14px'
+              padding: '10px',
+              borderRadius: '12px',
+              fontWeight: 700,
+              fontSize: '13px'
             }}
           >
             Apply Filters
