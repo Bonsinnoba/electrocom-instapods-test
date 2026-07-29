@@ -343,14 +343,32 @@ body {
     text-rendering: optimizeLegibility;
 }
 
-/* Prevent horizontal page overflow on all screen sizes */
+/* Prevent horizontal page overflow on all screen sizes.
+   Scoped to html/body only - html/body already fully contain any
+   horizontal overflow for the whole page, so this doesn't need to be
+   repeated on nested wrapper divs. It used to be, though, and that was
+   a real bug: setting only overflow-x (with overflow-y left as the
+   'visible' default) makes the browser auto-upgrade overflow-y to
+   'auto' on that same element (per the CSS overflow spec, an element
+   can't mix 'visible' on one axis with a non-visible value on the
+   other). That silently turned .app-root, .main-wrapper, and
+   .dashboard-grid into scroll containers, and position:sticky
+   calculates its stuck position relative to the *nearest* scrolling
+   ancestor - so any sticky element nested inside them (like the
+   desktop filter sidebar on the Shop page) was anchoring to one of
+   those divs instead of the actual window scroll, and never stuck. */
 html,
-body,
+body {
+    max-width: 100%;
+    overflow-x: hidden;
+    background-color: var(--bg-main);
+    box-sizing: border-box;
+}
+
 .app-root,
 .main-wrapper,
 .dashboard-grid {
     max-width: 100%;
-    overflow-x: hidden;
     background-color: var(--bg-main);
     box-sizing: border-box;
 }
@@ -919,11 +937,7 @@ label {
 
 .dropdown-toggle.active {
     border-color: var(--primary-blue);
-    background: linear-gradient(135deg,
-        rgba(var(--primary-blue-rgb), 0.12) 0%,
-        rgba(var(--primary-blue-rgb), 0.04) 60%,
-        transparent 100%),
-        white;
+    background: white;
     box-shadow: 0 4px 12px rgba(var(--primary-blue-rgb), 0.05);
 }
 
@@ -2004,53 +2018,14 @@ button.btn-login:hover {
     margin-bottom: 24px;
 }
 
-/* Favorites Grid - 4 columns on large screens */
-.favorites-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-    width: 100%;
-    margin-top: 8px;
-    margin-bottom: 24px;
-}
-
-/* Favorites List View - single column horizontal layout */
-.favorites-list {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    width: 100%;
-    margin-top: 8px;
-    margin-bottom: 24px;
-}
-
-.favorites-list .product-card {
-    display: grid;
-    grid-template-columns: 200px 1fr;
-    gap: 20px;
-    padding: 20px;
-    align-items: center;
-}
-
-.favorites-list .product-card .product-info {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 8px;
-}
-
 .product-card {
-    background: linear-gradient(135deg,
-        rgba(var(--primary-blue-rgb), 0.12) 0%,
-        rgba(var(--primary-blue-rgb), 0.04) 60%,
-        transparent 100%),
-        var(--glass-bg);
+    background: var(--glass-bg);
     backdrop-filter: blur(12px) saturate(180%);
     -webkit-backdrop-filter: blur(12px) saturate(180%);
     border: 1px solid var(--glass-border);
     border-radius: 16px;
     padding: 16px;
-    transition: all 0.3s ease;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     cursor: pointer;
     box-shadow: var(--glass-shadow);
     display: flex;
@@ -2073,19 +2048,15 @@ button.btn-login:hover {
 }
 
 .product-card:hover {
-    transform: translateY(-4px);
+    transform: translateY(-6px);
     background: var(--card-hover);
     border-color: var(--primary-blue);
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.1);
 }
 
 .dark-mode .product-card:hover {
-    background: linear-gradient(135deg,
-        rgba(var(--primary-blue-rgb), 0.15) 0%,
-        rgba(var(--primary-blue-rgb), 0.06) 60%,
-        transparent 100%),
-        var(--bg-surface);
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
+    background: var(--bg-surface);
+    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.3);
 }
 
 .product-image {
@@ -2094,7 +2065,7 @@ button.btn-login:hover {
     background: var(--bg-surface-secondary);
     border-radius: var(--radius-sm);
     object-fit: cover;
-    transition: transform 0.3s ease;
+    transition: transform 0.5s ease;
 }
 
 .product-card:hover .product-image {
@@ -2433,11 +2404,7 @@ button.btn-login:hover {
 .auth-modal select:focus {
     outline: none;
     border-color: var(--primary-blue);
-    background: linear-gradient(135deg,
-        rgba(var(--primary-blue-rgb), 0.12) 0%,
-        rgba(var(--primary-blue-rgb), 0.04) 60%,
-        transparent 100%),
-        white;
+    background: white;
     box-shadow: 0 0 0 4px rgba(30, 58, 138, 0.1);
 }
 
@@ -2789,11 +2756,7 @@ button.btn-login:hover {
 
 .input-wrapper input:focus {
     border-color: var(--primary-blue);
-    background: linear-gradient(135deg,
-        rgba(var(--primary-blue-rgb), 0.12) 0%,
-        rgba(var(--primary-blue-rgb), 0.04) 60%,
-        transparent 100%),
-        white;
+    background: white;
     box-shadow: 0 0 0 4px rgba(30, 58, 138, 0.1);
 }
 
@@ -4168,17 +4131,6 @@ button.btn-login:hover {
         gap: 16px;
     }
 
-    .favorites-grid {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 16px;
-    }
-
-    .favorites-list .product-card {
-        grid-template-columns: 150px 1fr;
-        gap: 16px;
-        padding: 16px;
-    }
-
     .footer-grid {
         grid-template-columns: 1fr 1fr;
         gap: 12px;
@@ -4358,17 +4310,6 @@ button.btn-login:hover {
         gap: 12px !important;
     }
 
-    .favorites-grid {
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 12px !important;
-    }
-
-    .favorites-list .product-card {
-        grid-template-columns: 120px 1fr !important;
-        gap: 12px !important;
-        padding: 12px !important;
-    }
-
     .footer-grid {
         grid-template-columns: 1fr !important;
         gap: 24px;
@@ -4437,17 +4378,6 @@ button.btn-login:hover {
     .product-grid {
         grid-template-columns: 1fr !important;
         gap: 16px !important;
-    }
-
-    .favorites-grid {
-        grid-template-columns: 1fr !important;
-        gap: 16px !important;
-    }
-
-    .favorites-list .product-card {
-        grid-template-columns: 100px 1fr !important;
-        gap: 12px !important;
-        padding: 12px !important;
     }
 
     .btn-primary,
@@ -5984,11 +5914,7 @@ button.btn-login:hover {
 
 .wishlist-btn:hover {
     transform: scale(1.1);
-    background: linear-gradient(135deg,
-        rgba(var(--primary-blue-rgb), 0.12) 0%,
-        rgba(var(--primary-blue-rgb), 0.04) 60%,
-        transparent 100%),
-        white;
+    background: white;
     color: var(--danger);
     border-color: var(--danger-bg);
     box-shadow: 0 6px 15px rgba(239, 68, 68, 0.15);
@@ -6262,21 +6188,6 @@ button.btn-login:hover {
     }
 }
 
-/* Logged-out sidebar content display on tablet/mobile */
-@media (max-width: 899px) {
-    .home-side-recommendations {
-        display: none; /* Hide sidebar completely on mobile */
-    }
-
-    .home-layout-container {
-        grid-template-columns: 1fr !important;
-    }
-
-    .home-main-content {
-        grid-column: 1 !important;
-    }
-}
-
 /* Desktop Dual-Column Split view (900px and up) */
 @media (min-width: 900px) {
     .dashboard-grid.full-width {
@@ -6297,8 +6208,7 @@ button.btn-login:hover {
         grid-row: 1;    /* Align on the first row */
         position: sticky;
         top: calc(var(--top-nav-height) + 16px);
-        max-height: calc(100vh - var(--top-nav-height) - 32px);
-        overflow-y: auto;
+        height: calc(2 * 390px + 24px) !important; /* Height of two vertical catalog cards + row gap */
         display: flex !important;
         flex-direction: column !important;
         background: var(--glass-bg);
@@ -7204,15 +7114,4 @@ button.btn-login:hover {
     padding: 6px 14px;
     font-size: 12px;
   }
-}
-
-/* ── Desktop Filters Sticky ── */
-.desktop-filters {
-    z-index: 10;
-}
-
-.filter-panel {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
 }
