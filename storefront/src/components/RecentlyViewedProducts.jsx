@@ -61,10 +61,7 @@ export default function RecentlyViewedProducts({ products }) {
       <div className="recently-viewed-container animate-fade-in" style={{
         padding: '32px 24px',
         background: 'var(--bg-main)',
-        borderTop: '1px solid var(--border-light)',
-        overflow: 'hidden',
-        width: '100%',
-        maxWidth: '100%'
+        borderTop: '1px solid var(--border-light)'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -228,113 +225,6 @@ export default function RecentlyViewedProducts({ products }) {
           ))}
         </div>
 
-        <div style={{
-          display: 'none',
-          overflowX: 'auto',
-          scrollSnapType: 'x mandatory',
-          gap: '16px',
-          paddingBottom: '8px',
-          WebkitOverflowScrolling: 'touch',
-          width: '100%'
-        }}
-        className="recently-viewed-grid-mobile">
-          {recentProducts.map((product, index) => (
-            <div
-              key={`${product.id}-${index}`}
-              className="recently-viewed-card glass"
-              style={{
-                borderRadius: '16px',
-                padding: '16px',
-                border: '1px solid var(--border-light)',
-                transition: 'all 0.3s ease',
-                cursor: 'pointer',
-                flexShrink: 0,
-                width: 'calc(90vw - 24px)',
-                maxWidth: '400px',
-                scrollSnapAlign: 'start'
-              }}
-              onClick={() => handleProductClick(product)}
-            >
-              <div style={{
-                width: '100%',
-                height: '140px',
-                borderRadius: '12px',
-                overflow: 'hidden',
-                marginBottom: '12px',
-                background: 'var(--bg-surface-secondary)'
-              }}>
-                <img
-                  src={product.image}
-                  alt={product.name}
-                  loading="lazy"
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    transition: 'transform 0.3s ease'
-                  }}
-                  onError={(e) => {
-                    e.target.style.display = 'none';
-                  }}
-                />
-              </div>
-              <h4 style={{
-                fontSize: '14px',
-                fontWeight: 700,
-                margin: '0 0 8px 0',
-                color: 'var(--text-main)',
-                lineHeight: '1.4',
-                display: '-webkit-box',
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: 'vertical',
-                overflow: 'hidden'
-              }}>
-                {product.name}
-              </h4>
-              <div style={{
-                fontSize: '16px',
-                fontWeight: 800,
-                color: 'var(--primary-blue)',
-                marginBottom: '8px'
-              }}>
-                GH₵ {Number(product.price).toLocaleString()}
-              </div>
-              {product.discount_percent > 0 && (
-                <div style={{
-                  fontSize: '12px',
-                  color: 'var(--success)',
-                  fontWeight: 600
-                }}>
-                  {product.discount_percent}% OFF
-                </div>
-              )}
-              <button
-                onClick={(e) => handleAddToCompare(e, product)}
-                style={{
-                  width: '100%',
-                  padding: '8px 12px',
-                  marginTop: '12px',
-                  borderRadius: '8px',
-                  border: '1px solid var(--border-light)',
-                  background: isInCompare(product.id) ? 'var(--primary-blue)' : 'var(--bg-surface)',
-                  color: isInCompare(product.id) ? 'white' : 'var(--text-main)',
-                  fontSize: '12px',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '6px',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                <GitCompareArrows size={14} />
-                {isInCompare(product.id) ? 'Added' : 'Compare'}
-              </button>
-            </div>
-          ))}
-        </div>
-
         <style>{`
         .recently-viewed-card:hover {
           transform: translateY(-4px);
@@ -355,49 +245,20 @@ export default function RecentlyViewedProducts({ products }) {
         @media (max-width: 768px) {
           .recently-viewed-container {
             padding: 20px 12px;
-            overflow: hidden;
-            width: 100%;
-            box-sizing: border-box;
-          }
-          .recently-viewed-container > div {
-            width: 100%;
-            max-width: 100%;
-            overflow: hidden;
           }
           .recently-viewed-container > div > div:first-child {
             flex-direction: column;
             align-items: flex-start;
             gap: 16px;
-            width: 100%;
-          }
-          .recently-viewed-container > div > div:first-child > div:last-child {
-            display: none;
           }
           .recently-viewed-grid {
-            display: none;
-          }
-          .recently-viewed-grid-mobile {
-            display: flex;
-            width: 100%;
-            max-width: 100%;
-            overflow-x: auto;
-            overflow-y: hidden;
-          }
-          .recently-viewed-grid-mobile::-webkit-scrollbar {
-            height: 4px;
-          }
-          .recently-viewed-grid-mobile::-webkit-scrollbar-track {
-            background: var(--bg-surface-secondary);
-            border-radius: 4px;
-          }
-          .recently-viewed-grid-mobile::-webkit-scrollbar-thumb {
-            background: var(--border-light);
-            border-radius: 4px;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
           }
         }
         @media (max-width: 480px) {
-          .recently-viewed-grid-mobile .recently-viewed-card {
-            width: calc(90vw - 24px);
+          .recently-viewed-grid {
+            grid-template-columns: 1fr;
           }
         }
       `}</style>
