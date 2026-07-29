@@ -184,7 +184,8 @@ export default function Home({ products, onProductClick, searchQuery, loading })
                     <>
                       <CouponBanner />
                       <AuthPrompt />
-                      <TrustBadges />
+                      <TrustBadges slice={[0, 3]} showFooter={false} />
+                      <TrustBadges slice={[3, 6]} showFooter={true} />
                     </>
                   )}
                 </div>

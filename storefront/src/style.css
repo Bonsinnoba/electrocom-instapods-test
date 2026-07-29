@@ -4314,6 +4314,13 @@ button.btn-login:hover {
         gap: 12px !important;
     }
 
+    /* Slightly tighter gap on narrow phones (330–480px) */
+    @media (max-width: 480px) {
+        .product-grid {
+            gap: 10px !important;
+        }
+    }
+
     .footer-grid {
         grid-template-columns: 1fr !important;
         gap: 24px;
@@ -4378,7 +4385,7 @@ button.btn-login:hover {
     }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 330px) {
     .product-grid {
         grid-template-columns: 1fr !important;
         gap: 16px !important;
