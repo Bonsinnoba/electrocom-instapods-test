@@ -1,6 +1,67 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Filter, X, RotateCcw, Star, Check, ChevronDown } from 'lucide-react';
 
+const labelStyle = {
+  display: 'block',
+  marginBottom: '14px',
+  fontSize: '13px',
+  fontWeight: 800,
+  color: 'var(--text-muted)',
+  textTransform: 'uppercase',
+  letterSpacing: '0.08em',
+};
+
+const dropdownTriggerStyle = {
+  width: '100%',
+  padding: '12px 16px',
+  borderRadius: '12px',
+  border: '1.5px solid var(--border-light)',
+  background: 'var(--bg-surface-secondary)',
+  fontSize: '14px',
+  fontWeight: 600,
+  color: 'var(--text-main)',
+  outline: 'none',
+  transition: 'border-color 0.2s',
+  cursor: 'pointer',
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+};
+
+const dropdownListStyle = {
+  position: 'absolute',
+  zIndex: 1000,
+  width: '100%',
+  maxHeight: '260px',
+  overflowY: 'auto',
+  background: 'var(--bg-surface)',
+  border: '1.5px solid var(--border-light)',
+  borderRadius: '12px',
+  marginTop: '8px',
+  padding: '8px',
+  boxShadow: '0 8px 28px rgba(0, 0, 0, 0.12)',
+};
+
+const dropdownOptionStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '10px',
+  padding: '10px 12px',
+  borderRadius: '8px',
+  cursor: 'pointer',
+  transition: 'background 0.15s',
+  fontWeight: 600,
+  color: 'var(--text-main)',
+};
+
+// Every group after the first gets a top divider + top padding instead of
+// each label carrying its own ad hoc margin - keeps vertical rhythm driven
+// by one place (the parent flex `gap`) rather than scattered magic numbers.
+const groupDividerStyle = {
+  borderTop: '1px solid var(--border-light)',
+  paddingTop: '24px',
+};
+
 export default function FilterPanel({ filters, setFilters, onReset, isMobile, onClose, categories = [], maxRange = 1000, priceValue, onPriceChange }) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isDiscountDropdownOpen, setIsDiscountDropdownOpen] = useState(false);
@@ -69,19 +130,23 @@ export default function FilterPanel({ filters, setFilters, onReset, isMobile, on
   };
 
   return (
+    // No padding here - the desktop <aside> (.card) and the mobile
+    // drawer (.mobile-filter-content) each already provide their own
+    // padding. Adding more here was doubling the inset on both, which
+    // is what forced the negative-margin/calc() compensation hacks
+    // that used to be scattered through this file.
     <div className={`filter-panel ${isMobile ? 'mobile' : ''}`} style={{
       display: 'flex',
       flexDirection: 'column',
-      gap: isMobile ? '20px' : '24px',
+      gap: isMobile ? '22px' : '28px',
       height: '100%',
-      padding: isMobile ? '0 8px' : '24px'
     }}>
       {isMobile && <div className="drawer-handle" style={{
         width: '40px',
         height: '4px',
         background: 'var(--border-light)',
         borderRadius: '2px',
-        margin: '-20px auto 10px',
+        margin: '0 auto',
         opacity: 0.6
       }} />}
 
@@ -90,15 +155,15 @@ export default function FilterPanel({ filters, setFilters, onReset, isMobile, on
           <Filter size={18} /> Filters
         </h3>
         {isMobile && (
-          <button 
-            className="btn-secondary" 
-            onClick={onClose} 
-            style={{ 
-              width: '32px', 
-              height: '32px', 
-              borderRadius: '50%', 
-              display: 'flex', 
-              alignItems: 'center', 
+          <button
+            className="btn-secondary"
+            onClick={onClose}
+            style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
               justifyContent: 'center',
               padding: 0
             }}
@@ -108,73 +173,32 @@ export default function FilterPanel({ filters, setFilters, onReset, isMobile, on
         )}
       </div>
 
-      <div className="filter-group" ref={dropdownRef} style={{ margin: '0 -30px' }}>
-        <label style={{ display: 'block', marginBottom: '14px', fontSize: '13px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 15px' }}>Category</label>
-        
-        <button
-          onClick={handleCategoryDropdownToggle}
-          style={{
-            width: 'calc(100% - 30px)',
-            padding: '12px 16px',
-            borderRadius: '12px',
-            border: '1.5px solid var(--border-light)',
-            background: 'var(--bg-surface-secondary)',
-            fontSize: '14px',
-            fontWeight: 600,
-            color: 'var(--text-main)',
-            outline: 'none',
-            transition: 'border-color 0.2s',
-            cursor: 'pointer',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            margin: '0 6px'
-          }}
-        >
+      {/* Category */}
+      <div className="filter-group" ref={dropdownRef} style={{ position: 'relative' }}>
+        <label style={labelStyle}>Category</label>
+
+        <button onClick={handleCategoryDropdownToggle} style={dropdownTriggerStyle}>
           <span>
             {isDropdownOpen && tempCategories.length > 0
               ? `${tempCategories.length} categor${tempCategories.length === 1 ? 'y' : 'ies'} selected`
-              : (filters.categories.length > 0 
+              : (filters.categories.length > 0
                   ? `${filters.categories.length} categor${filters.categories.length === 1 ? 'y' : 'ies'} selected`
                   : 'Select categories')}
           </span>
-          <ChevronDown size={18} style={{ 
+          <ChevronDown size={18} style={{
             transition: 'transform 0.2s ease',
             transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)'
           }} />
         </button>
 
         {isDropdownOpen && (
-          <div style={{
-            position: 'absolute',
-            zIndex: 1000,
-            width: 'calc(100% - 30px)',
-            maxHeight: '300px',
-            overflowY: 'auto',
-            background: 'var(--bg-surface)',
-            border: '1.5px solid var(--border-light)',
-            borderRadius: '12px',
-            marginTop: '8px',
-            padding: '8px',
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
-            margin: '8px 6px 0 6px'
-          }}>
+          <div style={dropdownListStyle}>
             {categories.map(cat => {
               const isActive = tempCategories.includes(cat);
               return (
                 <label
                   key={cat}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    padding: '10px 12px',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    transition: 'background 0.2s',
-                    fontWeight: 600,
-                    color: 'var(--text-main)'
-                  }}
+                  style={dropdownOptionStyle}
                   onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-surface-secondary)'}
                   onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                 >
@@ -182,13 +206,7 @@ export default function FilterPanel({ filters, setFilters, onReset, isMobile, on
                     type="checkbox"
                     checked={isActive}
                     onChange={() => handleCategoryChange(cat)}
-                    style={{
-                      width: '18px',
-                      height: '18px',
-                      borderRadius: '6px',
-                      accentColor: 'var(--primary-blue)',
-                      cursor: 'pointer'
-                    }}
+                    style={{ width: '18px', height: '18px', borderRadius: '6px', accentColor: 'var(--primary-blue)', cursor: 'pointer' }}
                   />
                   {cat}
                 </label>
@@ -198,24 +216,14 @@ export default function FilterPanel({ filters, setFilters, onReset, isMobile, on
         )}
       </div>
 
-      <div className="filter-group" style={{ margin: '0 -30px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '14px', alignItems: 'center', margin: '0 15px' }}>
-          <label style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '10px' }}>Price Range</label>
-        </div>
+      {/* Price Range */}
+      <div className="filter-group" style={groupDividerStyle}>
+        <label style={{ ...labelStyle, marginBottom: '16px' }}>Price Range</label>
 
-        {/* Min / Max Inputs */}
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '16px', margin: '0 6px' }}>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '18px' }}>
           <div style={{ position: 'relative', display: 'flex', alignItems: 'center', flex: 1 }}>
-            <span style={{ 
-              position: 'absolute', 
-              left: '10px', 
-              color: 'var(--text-muted)', 
-              fontWeight: 800,
-              fontSize: '11px',
-              pointerEvents: 'none',
-              textTransform: 'uppercase'
-            }}>Min</span>
-            <input 
+            <span style={{ position: 'absolute', left: '12px', color: 'var(--text-muted)', fontWeight: 800, fontSize: '11px', pointerEvents: 'none', textTransform: 'uppercase' }}>Min</span>
+            <input
               type="number"
               min="0"
               max={maxRange}
@@ -226,7 +234,7 @@ export default function FilterPanel({ filters, setFilters, onReset, isMobile, on
               }}
               style={{
                 width: '100%',
-                padding: '8px 15px 8px 40px',
+                padding: '10px 14px 10px 42px',
                 borderRadius: '12px',
                 border: '1.5px solid var(--border-light)',
                 background: 'var(--bg-surface-secondary)',
@@ -243,16 +251,8 @@ export default function FilterPanel({ filters, setFilters, onReset, isMobile, on
           <span style={{ color: 'var(--text-muted)', fontWeight: 700 }}>-</span>
 
           <div style={{ position: 'relative', display: 'flex', alignItems: 'center', flex: 1 }}>
-            <span style={{ 
-              position: 'absolute', 
-              left: '10px', 
-              color: 'var(--text-muted)', 
-              fontWeight: 800,
-              fontSize: '11px',
-              pointerEvents: 'none',
-              textTransform: 'uppercase'
-            }}>Max</span>
-            <input 
+            <span style={{ position: 'absolute', left: '12px', color: 'var(--text-muted)', fontWeight: 800, fontSize: '11px', pointerEvents: 'none', textTransform: 'uppercase' }}>Max</span>
+            <input
               type="number"
               min="0"
               max={maxRange}
@@ -279,7 +279,7 @@ export default function FilterPanel({ filters, setFilters, onReset, isMobile, on
               }}
               style={{
                 width: '100%',
-                padding: '8px 18px 8px 40px',
+                padding: '10px 16px 10px 42px',
                 borderRadius: '12px',
                 border: '1.5px solid var(--border-light)',
                 background: 'var(--bg-surface-secondary)',
@@ -294,11 +294,11 @@ export default function FilterPanel({ filters, setFilters, onReset, isMobile, on
           </div>
         </div>
 
-        <div className="slider-wrapper" style={{ position: 'relative', padding: '0 2px', margin: '0 6px' }}>
-          <input 
-            type="range" 
-            min="0" 
-            max={maxRange} 
+        <div className="slider-wrapper" style={{ position: 'relative', padding: '0 2px' }}>
+          <input
+            type="range"
+            min="0"
+            max={maxRange}
             step="1"
             value={priceValue !== undefined ? priceValue : filters.maxPrice}
             onChange={(e) => onPriceChange?.(parseInt(e.target.value))}
@@ -306,57 +306,45 @@ export default function FilterPanel({ filters, setFilters, onReset, isMobile, on
             onTouchEnd={() => setFilters(prev => ({ ...prev, maxPrice: priceValue !== undefined ? priceValue : filters.maxPrice }))}
             className="filter-range-slider"
           />
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px', fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px', fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>
             <span>GH₵0</span>
             <span>GH₵{maxRange}</span>
           </div>
         </div>
       </div>
 
-      <div className="filter-group" style={{ margin: '0 -30px' }}>
-        <label style={{ display: 'block', marginBottom: '18px', fontSize: '14px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 15px' }}>Min Rating</label>
+      {/* Min Rating */}
+      <div className="filter-group" style={groupDividerStyle}>
+        <label style={labelStyle}>Min Rating</label>
         <div style={{
           display: 'flex',
           gap: isMobile ? '6px' : '4px',
           background: 'var(--bg-surface-secondary)',
-          padding: isMobile ? '12px' : '4px 100px',
+          padding: isMobile ? '12px' : '10px 16px',
           borderRadius: '16px',
           border: '1.5px solid var(--border-light)',
-          justifyContent: 'center',
-          margin: '0 6px'
+          justifyContent: 'space-between',
         }}>
           {[1, 2, 3, 4, 5].map(star => (
             <button
               key={star}
               onClick={() => handleRatingChange(star)}
               className={`rating-btn ${filters.minRating >= star ? 'active' : ''}`}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                padding: isMobile ? '6px' : '6px',
-                cursor: 'pointer',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                transform: filters.minRating >= star ? 'scale(1.1)' : 'scale(1)',
-                filter: filters.minRating >= star ? 'drop-shadow(0 2px 8px rgba(251, 191, 36, 0.4))' : 'none'
-              }}
             >
-              <Star 
-                size={isMobile ? 24 : 22} 
-                fill={filters.minRating >= star ? "var(--warning)" : "none"} 
+              <Star
+                size={isMobile ? 24 : 22}
+                fill={filters.minRating >= star ? "var(--warning)" : "none"}
                 stroke={filters.minRating >= star ? "var(--warning)" : "var(--text-muted)"}
                 strokeWidth={2.5}
-                style={{
-                  transition: 'all 0.3s ease'
-                }}
               />
             </button>
           ))}
         </div>
         {filters.minRating > 0 && (
-          <div style={{ 
-            marginTop: '10px', 
-            textAlign: 'center', 
-            fontSize: '13px', 
+          <div style={{
+            marginTop: '12px',
+            textAlign: 'center',
+            fontSize: '13px',
             fontWeight: 600,
             color: 'var(--warning)',
             display: 'flex',
@@ -370,71 +358,30 @@ export default function FilterPanel({ filters, setFilters, onReset, isMobile, on
         )}
       </div>
 
-      <div className="filter-group" ref={discountDropdownRef}>
-        <label style={{ display: 'block', marginBottom: '18px', fontSize: '14px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 15px' }}>Min Discount</label>
-        
-        <button
-          onClick={handleDiscountDropdownToggle}
-          style={{
-            width: 'calc(100% - 30px)',
-            padding: '12px 16px',
-            borderRadius: '12px',
-            border: '1.5px solid var(--border-light)',
-            background: 'var(--bg-surface-secondary)',
-            fontSize: '14px',
-            fontWeight: 600,
-            color: 'var(--text-main)',
-            outline: 'none',
-            transition: 'border-color 0.2s',
-            cursor: 'pointer',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            margin: '0 6px'
-          }}
-        >
+      {/* Min Discount */}
+      <div className="filter-group" ref={discountDropdownRef} style={{ ...groupDividerStyle, position: 'relative' }}>
+        <label style={labelStyle}>Min Discount</label>
+
+        <button onClick={handleDiscountDropdownToggle} style={dropdownTriggerStyle}>
           <span>
             {isDiscountDropdownOpen && tempDiscount > 0
               ? `${tempDiscount}%+ discount`
-              : (filters.minDiscount > 0 
+              : (filters.minDiscount > 0
                   ? `${filters.minDiscount}%+ discount`
                   : 'All discounts')}
           </span>
-          <ChevronDown size={18} style={{ 
+          <ChevronDown size={18} style={{
             transition: 'transform 0.2s ease',
             transform: isDiscountDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)'
           }} />
         </button>
 
         {isDiscountDropdownOpen && (
-          <div style={{
-            position: 'absolute',
-            zIndex: 1000,
-            width: 'calc(100% - 30px)',
-            maxHeight: '300px',
-            overflowY: 'auto',
-            background: 'var(--bg-surface)',
-            border: '1.5px solid var(--border-light)',
-            borderRadius: '12px',
-            marginTop: '8px',
-            padding: '8px',
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
-            margin: '8px 6px 0 6px'
-          }}>
+          <div style={dropdownListStyle}>
             {[0, 10, 20, 30, 50].map(discount => (
               <label
                 key={discount}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
-                  padding: '10px 12px',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  transition: 'background 0.2s',
-                  fontWeight: 600,
-                  color: 'var(--text-main)'
-                }}
+                style={dropdownOptionStyle}
                 onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-surface-secondary)'}
                 onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
               >
@@ -443,13 +390,7 @@ export default function FilterPanel({ filters, setFilters, onReset, isMobile, on
                   name="discount"
                   checked={tempDiscount === discount}
                   onChange={() => handleDiscountChange(discount)}
-                  style={{
-                    width: '18px',
-                    height: '18px',
-                    borderRadius: '50%',
-                    accentColor: 'var(--primary-blue)',
-                    cursor: 'pointer'
-                  }}
+                  style={{ width: '18px', height: '18px', borderRadius: '50%', accentColor: 'var(--primary-blue)', cursor: 'pointer' }}
                 />
                 {discount === 0 ? 'All' : `${discount}%+`}
               </label>
@@ -458,8 +399,9 @@ export default function FilterPanel({ filters, setFilters, onReset, isMobile, on
         )}
       </div>
 
-      <div className="filter-group" style={{ margin: '0 -30px' }}>
-        <label style={{ display: 'block', marginBottom: '18px', fontSize: '14px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 15px' }}>Availability</label>
+      {/* Availability */}
+      <div className="filter-group" style={groupDividerStyle}>
+        <label style={labelStyle}>Availability</label>
         <label style={{
           display: 'flex',
           alignItems: 'center',
@@ -469,54 +411,47 @@ export default function FilterPanel({ filters, setFilters, onReset, isMobile, on
           fontSize: '14px',
           fontWeight: 600,
           userSelect: 'none',
-          margin: '0 6px'
         }}>
-          <input 
-            type="checkbox" 
-            checked={filters.inStockOnly} 
+          <input
+            type="checkbox"
+            checked={filters.inStockOnly}
             onChange={(e) => setFilters(prev => ({ ...prev, inStockOnly: e.target.checked }))}
-            style={{
-              width: '18px',
-              height: '18px',
-              borderRadius: '6px',
-              accentColor: 'var(--primary-blue)',
-              cursor: 'pointer'
-            }}
+            style={{ width: '18px', height: '18px', borderRadius: '6px', accentColor: 'var(--primary-blue)', cursor: 'pointer' }}
           />
           Show In-Stock Only
         </label>
       </div>
 
-      <div style={{ 
-        display: 'flex', 
-        flexDirection: isMobile ? 'row' : 'column', 
-        gap: '12px', 
-        marginTop: isMobile ? '12px' : 'auto',
-        margin: '0 -30px'
+      <div style={{
+        display: 'flex',
+        flexDirection: isMobile ? 'row' : 'column',
+        gap: '12px',
+        marginTop: isMobile ? '4px' : 'auto',
+        paddingTop: '24px',
+        borderTop: '1px solid var(--border-light)',
       }}>
-        <button 
-          className="btn-secondary" 
+        <button
+          className="btn-secondary"
           onClick={onReset}
-          style={{ 
+          style={{
             flex: isMobile ? 1 : 'none',
-            width: isMobile ? 'auto' : 'calc(100% - 30px)', 
-            gap: '8px', 
+            width: isMobile ? 'auto' : '100%',
+            gap: '8px',
             padding: '12px',
             borderRadius: '16px',
             fontWeight: 700,
             border: '1.5px solid var(--border-light)',
             fontSize: '14px',
-            margin: '0 6px'
           }}
         >
           <RotateCcw size={16} /> Reset
         </button>
 
         {isMobile && (
-          <button 
-            className="btn-primary" 
+          <button
+            className="btn-primary"
             onClick={onClose}
-            style={{ 
+            style={{
               flex: 2,
               padding: '12px',
               borderRadius: '16px',

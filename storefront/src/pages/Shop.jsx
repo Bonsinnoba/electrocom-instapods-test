@@ -183,7 +183,7 @@ export default function Shop({ products, onProductClick, searchQuery, loading })
       gap: '24px'
     }}>
       {/* Desktop Filter Sidebar */}
-      <aside className="desktop-filters card glass" style={{ height: 'fit-content', position: 'sticky', top: '24px', maxHeight: 'calc(100vh - 100px)', overflowY: 'auto' }}>
+      <aside className="desktop-filters card glass custom-scrollbar" style={{ position: 'sticky', top: '24px', maxHeight: 'calc(100vh - 48px)', overflowY: 'auto' }}>
         <FilterPanel
           filters={filters}
           setFilters={setFilters}
