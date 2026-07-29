@@ -129,19 +129,114 @@ class FileCacheBackend implements CacheBackend {
 }
 
 /**
+ * Database-backed cache (default). Unlike the file-based backend, this is
+ * guaranteed to be visible to every request regardless of which container
+ * instance handles it, and survives redeploys — the same reliability every
+ * other piece of durable data in this app already gets from using the
+ * database instead of the local filesystem.
+ */
+class DatabaseCacheBackend implements CacheBackend {
+    private $pdo;
+    private static $tableEnsured = false;
+
+    public function __construct(PDO $pdo) {
+        $this->pdo = $pdo;
+        if (!self::$tableEnsured) {
+            self::$tableEnsured = true;
+            $this->pdo->exec("CREATE TABLE IF NOT EXISTS object_cache (
+                cache_key VARCHAR(191) NOT NULL,
+                cache_group VARCHAR(100) NOT NULL DEFAULT 'default',
+                cache_value LONGBLOB,
+                expires_at DATETIME DEFAULT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (cache_group, cache_key),
+                INDEX idx_expires_at (expires_at)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+        }
+    }
+
+    public function get(string $key, string $group = 'default') {
+        try {
+            $stmt = $this->pdo->prepare("
+                SELECT cache_value, expires_at FROM object_cache
+                WHERE cache_group = ? AND cache_key = ?
+            ");
+            $stmt->execute([$group, $key]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$row) {
+                return false;
+            }
+            if ($row['expires_at'] !== null && strtotime($row['expires_at']) < time()) {
+                $this->delete($key, $group);
+                return false;
+            }
+            return unserialize($row['cache_value']);
+        } catch (Throwable $e) {
+            return false;
+        }
+    }
+
+    public function set(string $key, $data, string $group = 'default', int $expire = 0): bool {
+        try {
+            $expiresAt = $expire > 0 ? date('Y-m-d H:i:s', time() + $expire) : null;
+            $stmt = $this->pdo->prepare("
+                INSERT INTO object_cache (cache_group, cache_key, cache_value, expires_at)
+                VALUES (?, ?, ?, ?)
+                ON DUPLICATE KEY UPDATE cache_value = VALUES(cache_value), expires_at = VALUES(expires_at)
+            ");
+            return $stmt->execute([$group, $key, serialize($data), $expiresAt]);
+        } catch (Throwable $e) {
+            return false;
+        }
+    }
+
+    public function delete(string $key, string $group = 'default'): bool {
+        try {
+            $stmt = $this->pdo->prepare("DELETE FROM object_cache WHERE cache_group = ? AND cache_key = ?");
+            return $stmt->execute([$group, $key]);
+        } catch (Throwable $e) {
+            return false;
+        }
+    }
+
+    public function flush(): bool {
+        try {
+            $this->pdo->exec("TRUNCATE TABLE object_cache");
+            return true;
+        } catch (Throwable $e) {
+            return false;
+        }
+    }
+
+    public function exists(string $key, string $group = 'default'): bool {
+        return $this->get($key, $group) !== false;
+    }
+}
+
+/**
  * Redis cache backend (optional)
  */
 class RedisCacheBackend implements CacheBackend {
     private $redis;
     private $prefix;
     
-    public function __construct(string $host = '127.0.0.1', int $port = 6379, string $prefix = 'eh_') {
+    public function __construct(string $host = '127.0.0.1', int $port = 6379, string $prefix = 'eh_', ?string $password = null, bool $useTls = false) {
         if (!class_exists('Redis')) {
             throw new Exception('Redis extension not installed');
         }
         
         $this->redis = new Redis();
-        $this->redis->connect($host, $port);
+        $connectHost = $useTls ? "tls://{$host}" : $host;
+        $connected = $this->redis->connect($connectHost, $port, 2.5); // 2.5s timeout
+        if (!$connected) {
+            throw new Exception("Could not connect to Redis at {$host}:{$port}");
+        }
+        if ($password !== null && $password !== '') {
+            if (!$this->redis->auth($password)) {
+                throw new Exception('Redis authentication failed');
+            }
+        }
         $this->prefix = $prefix;
     }
     
@@ -202,7 +297,7 @@ $cacheBackend = null;
  * Initialize cache backend
  */
 function eh_cache_init(): CacheBackend {
-    global $cacheBackend;
+    global $cacheBackend, $pdo;
     
     if ($cacheBackend !== null) {
         return $cacheBackend;
@@ -210,20 +305,29 @@ function eh_cache_init(): CacheBackend {
     
     // Check if Redis is configured
     $redisHost = getenv('REDIS_HOST') ?: '127.0.0.1';
-    $redisPort = getenv('REDIS_PORT') ?: 6379;
+    $redisPort = (int)(getenv('REDIS_PORT') ?: 6379);
+    $redisPassword = getenv('REDIS_PASSWORD') ?: null;
+    $redisTls = getenv('REDIS_TLS') === 'true';
     $useRedis = getenv('USE_REDIS') === 'true';
     
     if ($useRedis && class_exists('Redis')) {
         try {
-            $cacheBackend = new RedisCacheBackend($redisHost, $redisPort);
+            $cacheBackend = new RedisCacheBackend($redisHost, $redisPort, 'eh_', $redisPassword, $redisTls);
             return $cacheBackend;
         } catch (Exception $e) {
-            // Fall back to file cache if Redis fails
-            error_log('Redis cache failed, falling back to file cache: ' . $e->getMessage());
+            // Fall back to DB cache if Redis fails
+            error_log('Redis cache failed, falling back to database cache: ' . $e->getMessage());
         }
     }
-    
-    // Default to file-based cache
+
+    // Default to database-backed cache — reliable across container instances
+    // and redeploys, unlike the file-based backend (kept below as a last-resort
+    // fallback only if $pdo genuinely isn't available for some reason).
+    if (isset($pdo) && $pdo instanceof PDO) {
+        $cacheBackend = new DatabaseCacheBackend($pdo);
+        return $cacheBackend;
+    }
+
     $cacheBackend = new FileCacheBackend();
     return $cacheBackend;
 }
