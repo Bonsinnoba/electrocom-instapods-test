@@ -231,7 +231,8 @@ export default function RecentlyViewedProducts({ products }) {
           scrollSnapType: 'x mandatory',
           gap: '16px',
           paddingBottom: '8px',
-          WebkitOverflowScrolling: 'touch'
+          WebkitOverflowScrolling: 'touch',
+          width: '100%'
         }}
         className="recently-viewed-grid-mobile">
           {recentProducts.map((product, index) => (
@@ -245,7 +246,8 @@ export default function RecentlyViewedProducts({ products }) {
                 transition: 'all 0.3s ease',
                 cursor: 'pointer',
                 flexShrink: 0,
-                width: '280px',
+                width: 'calc(90vw - 24px)',
+                maxWidth: '400px',
                 scrollSnapAlign: 'start'
               }}
               onClick={() => handleProductClick(product)}
@@ -350,6 +352,7 @@ export default function RecentlyViewedProducts({ products }) {
         @media (max-width: 768px) {
           .recently-viewed-container {
             padding: 20px 12px;
+            overflow: visible;
           }
           .recently-viewed-container > div > div:first-child {
             flex-direction: column;
@@ -364,6 +367,8 @@ export default function RecentlyViewedProducts({ products }) {
           }
           .recently-viewed-grid-mobile {
             display: flex;
+            width: 100%;
+            max-width: 100%;
           }
           .recently-viewed-grid-mobile::-webkit-scrollbar {
             height: 4px;
@@ -379,7 +384,7 @@ export default function RecentlyViewedProducts({ products }) {
         }
         @media (max-width: 480px) {
           .recently-viewed-grid-mobile .recently-viewed-card {
-            width: 260px;
+            width: calc(90vw - 24px);
           }
         }
       `}</style>
