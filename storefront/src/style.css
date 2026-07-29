@@ -4305,11 +4305,6 @@ button.btn-login:hover {
         grid-template-columns: 1fr !important;
     }
 
-    .product-grid {
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 12px !important;
-    }
-
     .footer-grid {
         grid-template-columns: 1fr !important;
         gap: 24px;
@@ -4374,10 +4369,17 @@ button.btn-login:hover {
     }
 }
 
-@media (max-width: 330px) {
+@media (max-width: 329px) {
     .product-grid {
         grid-template-columns: 1fr !important;
         gap: 16px !important;
+    }
+}
+
+@media (min-width: 330px) and (max-width: 768px) {
+    .product-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 12px !important;
     }
 
     .btn-primary,
