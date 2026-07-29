@@ -1,11 +1,14 @@
 <?php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+ob_start(); // MUST be first — buffers any stray PHP warnings before headers are sent
 // backend/db.php
 // Secure Database Connection Configuration using PDO
 
-ob_start();
+// NOTE: display_errors is intentionally OFF by default to prevent HTML error output
+// corrupting JSON API responses. Debug mode re-enables it conditionally below via isDebugEnabled().
+ini_set('display_errors', 0);
+ini_set('display_startup_errors', 0);
+error_reporting(E_ALL); // Still track all errors, just don't display them
+
 date_default_timezone_set('GMT');
 
 // Include centralized configuration loader
