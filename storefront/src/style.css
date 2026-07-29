@@ -2050,7 +2050,7 @@ button.btn-login:hover {
     border: 1px solid var(--glass-border);
     border-radius: 16px;
     padding: 16px;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.3s ease;
     cursor: pointer;
     box-shadow: var(--glass-shadow);
     display: flex;
@@ -2073,10 +2073,10 @@ button.btn-login:hover {
 }
 
 .product-card:hover {
-    transform: translateY(-6px);
+    transform: translateY(-4px);
     background: var(--card-hover);
     border-color: var(--primary-blue);
-    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
 }
 
 .dark-mode .product-card:hover {
@@ -2085,7 +2085,7 @@ button.btn-login:hover {
         rgba(var(--primary-blue-rgb), 0.06) 60%,
         transparent 100%),
         var(--bg-surface);
-    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
 }
 
 .product-image {
@@ -2094,7 +2094,7 @@ button.btn-login:hover {
     background: var(--bg-surface-secondary);
     border-radius: var(--radius-sm);
     object-fit: cover;
-    transition: transform 0.5s ease;
+    transition: transform 0.3s ease;
 }
 
 .product-card:hover .product-image {
@@ -7204,4 +7204,15 @@ button.btn-login:hover {
     padding: 6px 14px;
     font-size: 12px;
   }
+}
+
+/* ── Desktop Filters Sticky ── */
+.desktop-filters {
+    z-index: 10;
+}
+
+.filter-panel {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
 }
