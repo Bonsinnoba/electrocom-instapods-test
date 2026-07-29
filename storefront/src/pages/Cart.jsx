@@ -233,28 +233,27 @@ export default function Cart() {
                     </div>
 
                     <div className="cart-item-details">
-                      {/* Left column: name, color, unit price, quantity */}
-                      <div className="cart-item-left">
-                        <div className="cart-item-info">
-                          <h4 className="cart-item-name">{item.name}</h4>
-                          <div className="cart-item-meta">
-                            <span className={`cart-item-color ${(!item.selectedColor || item.selectedColor.toLowerCase() === 'default') ? 'default-badge' : 'color-badge'}`}>
-                              {item.selectedColor || 'Default'}
-                            </span>
-                            <span className="cart-item-unit-price">{formatPrice(parseFloat(item.price))} each</span>
-                          </div>
-                        </div>
-
-                        <div className="cart-qty-wrapper">
-                          <div className="cart-qty-control">
-                            <button onClick={() => updateQuantity(item.id, item.selectedColor, -1)} className="btn-qty btn" title="Decrease Quantity"><Minus size={14} /></button>
-                            <span className="qty-display">{item.quantity}</span>
-                            <button onClick={() => updateQuantity(item.id, item.selectedColor, 1)} className="btn-qty btn" title="Increase Quantity"><Plus size={14} /></button>
-                          </div>
+                      {/* Middle: name, color, unit price */}
+                      <div className="cart-item-middle">
+                        <h4 className="cart-item-name">{item.name}</h4>
+                        <div className="cart-item-meta">
+                          <span className={`cart-item-color ${(!item.selectedColor || item.selectedColor.toLowerCase() === 'default') ? 'default-badge' : 'color-badge'}`}>
+                            {item.selectedColor || 'Default'}
+                          </span>
+                          <span className="cart-item-unit-price">{formatPrice(parseFloat(item.price))} each</span>
                         </div>
                       </div>
 
-                      {/* Right column: subtotal, discount, actions */}
+                      {/* Quantity controls */}
+                      <div className="cart-qty-wrapper">
+                        <div className="cart-qty-control">
+                          <button onClick={() => updateQuantity(item.id, item.selectedColor, -1)} className="btn-qty btn" title="Decrease Quantity"><Minus size={14} /></button>
+                          <span className="qty-display">{item.quantity}</span>
+                          <button onClick={() => updateQuantity(item.id, item.selectedColor, 1)} className="btn-qty btn" title="Increase Quantity"><Plus size={14} /></button>
+                        </div>
+                      </div>
+
+                      {/* Right: price and actions */}
                       <div className="cart-item-right">
                         <div className="cart-item-price-wrapper">
                           <div className="item-total-price" style={{ color: item.discount_percent > 0 ? 'var(--success)' : 'inherit' }}>
