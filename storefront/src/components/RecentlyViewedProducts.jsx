@@ -61,7 +61,10 @@ export default function RecentlyViewedProducts({ products }) {
       <div className="recently-viewed-container animate-fade-in" style={{
         padding: '32px 24px',
         background: 'var(--bg-main)',
-        borderTop: '1px solid var(--border-light)'
+        borderTop: '1px solid var(--border-light)',
+        overflow: 'hidden',
+        width: '100%',
+        maxWidth: '100%'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -352,12 +355,20 @@ export default function RecentlyViewedProducts({ products }) {
         @media (max-width: 768px) {
           .recently-viewed-container {
             padding: 20px 12px;
-            overflow: visible;
+            overflow: hidden;
+            width: 100%;
+            box-sizing: border-box;
+          }
+          .recently-viewed-container > div {
+            width: 100%;
+            max-width: 100%;
+            overflow: hidden;
           }
           .recently-viewed-container > div > div:first-child {
             flex-direction: column;
             align-items: flex-start;
             gap: 16px;
+            width: 100%;
           }
           .recently-viewed-container > div > div:first-child > div:last-child {
             display: none;
@@ -369,6 +380,8 @@ export default function RecentlyViewedProducts({ products }) {
             display: flex;
             width: 100%;
             max-width: 100%;
+            overflow-x: auto;
+            overflow-y: hidden;
           }
           .recently-viewed-grid-mobile::-webkit-scrollbar {
             height: 4px;
