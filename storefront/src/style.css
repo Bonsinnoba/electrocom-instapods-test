@@ -4374,7 +4374,7 @@ button.btn-login:hover {
     }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 330px) {
     .product-grid {
         grid-template-columns: 1fr !important;
         gap: 16px !important;
