@@ -8,10 +8,11 @@ function FlashSaleBanner({ products, onProductClick }) {
   const { formatPrice, homepageBoot } = useSettings();
   const bannerSettings = homepageBoot?.flashSaleBannerSettings || null;
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   // 1. Scan catalog for active discounted products with future end times
-  const featuredProduct = useMemo(() => {
-    if (!products || !Array.isArray(products)) return null;
+  const discountedProducts = useMemo(() => {
+    if (!products || !Array.isArray(products)) return [];
 
     const discounted = products.filter(p => {
       const discount = parseInt(p.discount_percent) || 0;
@@ -20,15 +21,20 @@ function FlashSaleBanner({ products, onProductClick }) {
       return discount > 0 && isAvailable && hasFutureDate;
     });
 
-    if (discounted.length === 0) return null;
+    if (discounted.length === 0) return [];
 
-    // Spotlight the product with the highest discount percentage
-    return discounted.reduce((max, current) => {
-      const maxDisc = parseInt(max.discount_percent) || 0;
-      const curDisc = parseInt(current.discount_percent) || 0;
-      return curDisc > maxDisc ? current : max;
-    }, discounted[0]);
+    // Sort by discount percentage (highest first) and take top 7
+    return discounted
+      .sort((a, b) => {
+        const discA = parseInt(a.discount_percent) || 0;
+        const discB = parseInt(b.discount_percent) || 0;
+        return discB - discA;
+      })
+      .slice(0, 7);
   }, [products]);
+
+  // Get current featured product from rotation
+  const featuredProduct = discountedProducts[currentIndex] || null;
 
   // 2. Fallback: Get useful content when no flash sales
   const fallbackContent = useMemo(() => {
@@ -164,6 +170,17 @@ function FlashSaleBanner({ products, onProductClick }) {
     return () => clearInterval(intervalId);
   }, [targetTime]);
 
+  // Product rotation effect - rotate every 5 seconds
+  useEffect(() => {
+    if (discountedProducts.length <= 1) return;
+
+    const rotationInterval = setInterval(() => {
+      setCurrentIndex(prev => (prev + 1) % discountedProducts.length);
+    }, 5000);
+
+    return () => clearInterval(rotationInterval);
+  }, [discountedProducts.length]);
+
   // Don't show if disabled in settings or no content
   if (bannerSettings && !bannerSettings.is_enabled) return null;
   if (!bannerContent) return null;
@@ -197,7 +214,7 @@ function FlashSaleBanner({ products, onProductClick }) {
       onClick={handleBannerAction}
       style={{
         position: 'relative',
-        padding: '24px 32px',
+        padding: '16px 20px',
         borderRadius: '24px',
         overflow: 'hidden',
         cursor: 'pointer',
@@ -242,7 +259,7 @@ function FlashSaleBanner({ products, onProductClick }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{
             background: `${bannerContent.color}25`,
-            padding: '8px',
+            padding: '6px',
             borderRadius: '12px',
             color: bannerContent.color,
             display: 'flex',
@@ -250,7 +267,7 @@ function FlashSaleBanner({ products, onProductClick }) {
             justifyContent: 'center',
             boxShadow: `0 0 15px ${bannerContent.color}4D`
           }} className="flame-icon-pulse">
-            <IconComponent size={20} fill={bannerContent.type === 'flash_sale' ? 'currentColor' : 'none'} />
+            <IconComponent size={16} fill={bannerContent.type === 'flash_sale' ? 'currentColor' : 'none'} />
           </div>
           <span style={{
             fontSize: '13px',
@@ -265,10 +282,10 @@ function FlashSaleBanner({ products, onProductClick }) {
         </div>
 
         <div>
-          <h2 style={{ fontSize: '26px', fontWeight: 800, margin: '4px 0 0 0', letterSpacing: '-0.8px', color: 'var(--text-main)' }}>
+          <h2 style={{ fontSize: '20px', fontWeight: 800, margin: '4px 0 0 0', letterSpacing: '-0.8px', color: 'var(--text-main)' }}>
             {bannerContent.subtitle}
           </h2>
-          <p style={{ margin: '6px 0 0 0', fontSize: '14px', color: 'var(--text-muted)' }}>
+          <p style={{ margin: '6px 0 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
             {bannerContent.type === 'flash_sale' && 'Incredible savings on premium electronics. Grab it before stock runs out!'}
             {bannerContent.type === 'new_arrivals' && 'Discover our latest additions to the catalog'}
             {bannerContent.type === 'low_stock' && 'Limited availability - act fast before they sell out'}
@@ -307,12 +324,12 @@ function FlashSaleBanner({ products, onProductClick }) {
                     background: 'rgba(0, 0, 0, 0.25)',
                     border: '1px solid rgba(255, 255, 255, 0.05)',
                     borderRadius: '12px',
-                    width: '54px',
-                    height: '52px',
+                    width: '44px',
+                    height: '42px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: '22px',
+                    fontSize: '18px',
                     fontWeight: 900,
                     color: 'var(--primary-gold)',
                     boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.2)'
@@ -353,8 +370,8 @@ function FlashSaleBanner({ products, onProductClick }) {
           }} className="banner-product-card">
             {/* Image */}
             <div style={{
-              width: '52px',
-              height: '52px',
+              width: '42px',
+              height: '42px',
               borderRadius: '12px',
               overflow: 'hidden',
               background: '#ffffff',
@@ -430,7 +447,7 @@ function FlashSaleBanner({ products, onProductClick }) {
         <button 
           className="btn-primary banner-cta-button"
           style={{
-            height: '48px',
+            height: '40px',
             padding: '0 24px',
             borderRadius: '14px',
             fontWeight: 800,
@@ -471,15 +488,15 @@ function FlashSaleBanner({ products, onProductClick }) {
         }
         @media (max-width: 768px) {
           .flash-sale-banner {
-            padding: 16px !important;
+            padding: 12px !important;
             gap: 14px !important;
           }
           .flash-sale-banner h2 {
-            font-size: 18px !important;
+            font-size: 14px !important;
             letter-spacing: -0.4px !important;
           }
           .flash-sale-banner p {
-            font-size: 12px !important;
+            font-size: 10px !important;
             margin-top: 4px !important;
             display: -webkit-box;
             -webkit-line-clamp: 2;
@@ -487,15 +504,15 @@ function FlashSaleBanner({ products, onProductClick }) {
             overflow: hidden;
           }
           .countdown-box {
-            width: 40px !important;
-            height: 38px !important;
-            font-size: 16px !important;
+            width: 32px !important;
+            height: 30px !important;
+            font-size: 13px !important;
             border-radius: 8px !important;
           }
           .banner-cta-button {
-            height: 38px !important;
-            padding: 0 16px !important;
-            font-size: 13px !important;
+            height: 30px !important;
+            padding: 0 12px !important;
+            font-size: 11px !important;
           }
         }
       `}} />
