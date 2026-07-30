@@ -66,8 +66,8 @@ function HeroSlider() {
   const [sliderHeight, setSliderHeight] = useState(() => {
     const width = window.innerWidth;
     if (width <= 768) return 312; // Mobile - keep as is
-    if (width <= 1200) return 288; // Tablet - 60% of 480
-    return 336; // Desktop - 70% of 480
+    if (width <= 1200) return 317; // Tablet - 66% of 480 (+10%)
+    return 403; // Desktop - 84% of 480 (+20%)
   });
 
   useEffect(() => {
@@ -76,9 +76,9 @@ function HeroSlider() {
       if (width <= 768) {
         setSliderHeight(312); // Mobile
       } else if (width <= 1200) {
-        setSliderHeight(288); // Tablet - 60%
+        setSliderHeight(317); // Tablet - +10%
       } else {
-        setSliderHeight(336); // Desktop - 70%
+        setSliderHeight(403); // Desktop - +20%
       }
     };
     window.addEventListener('resize', handleResize);

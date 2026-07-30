@@ -186,17 +186,19 @@ function FlashSaleBanner({ products, onProductClick }) {
   if (!bannerContent) return null;
 
   const handleBannerAction = () => {
-    if (bannerContent.featuredProduct) {
+    if (featuredProduct) {
+      if (onProductClick) onProductClick(featuredProduct);
+    } else if (bannerContent.featuredProduct) {
       if (onProductClick) onProductClick(bannerContent.featuredProduct);
     } else {
       startTransition(() => navigate('/shop'));
     }
   };
 
-  // Pre-calculate prices
-  const discount = bannerContent.featuredProduct ? parseInt(bannerContent.featuredProduct.discount_percent) || 0 : 0;
-  const originalPrice = bannerContent.featuredProduct ? parseFloat(bannerContent.featuredProduct.price) || 0 : 0;
-  const promoPrice = bannerContent.featuredProduct ? originalPrice * (1 - discount / 100) : 0;
+  // Pre-calculate prices using rotating featuredProduct
+  const discount = featuredProduct ? parseInt(featuredProduct.discount_percent) || 0 : (bannerContent.featuredProduct ? parseInt(bannerContent.featuredProduct.discount_percent) || 0 : 0);
+  const originalPrice = featuredProduct ? parseFloat(featuredProduct.price) || 0 : (bannerContent.featuredProduct ? parseFloat(bannerContent.featuredProduct.price) || 0 : 0);
+  const promoPrice = featuredProduct ? originalPrice * (1 - discount / 100) : (bannerContent.featuredProduct ? originalPrice * (1 - discount / 100) : 0);
 
   // Icon mapping
   const iconMap = {
@@ -356,7 +358,7 @@ function FlashSaleBanner({ products, onProductClick }) {
         )}
 
         {/* Featured Product Info OR Generic Promo Details */}
-        {bannerContent.featuredProduct ? (
+        {featuredProduct ? (
           <div style={{
             background: 'rgba(255, 255, 255, 0.03)',
             border: '1px solid rgba(255, 255, 255, 0.05)',
@@ -381,8 +383,8 @@ function FlashSaleBanner({ products, onProductClick }) {
               border: '1px solid rgba(255, 255, 255, 0.1)'
             }}>
               <img 
-                src={bannerContent.featuredProduct.image} 
-                alt={bannerContent.featuredProduct.name} 
+                src={featuredProduct.image} 
+                alt={featuredProduct.name} 
                 style={{ width: '100%', height: '100%', objectFit: 'contain' }}
               />
             </div>
@@ -401,7 +403,7 @@ function FlashSaleBanner({ products, onProductClick }) {
               )}
               {bannerContent.type !== 'flash_sale' && (
                 <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-main)' }}>
-                  {bannerContent.featuredProduct.name}
+                  {featuredProduct.name}
                 </span>
               )}
             </div>
