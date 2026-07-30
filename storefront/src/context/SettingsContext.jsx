@@ -91,42 +91,52 @@ export const SettingsProvider = ({ children }) => {
 
   useEffect(() => {
     const loadHomepageBoot = async () => {
-      try {
-        const data = await fetchHomepageBoot();
+      const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+      const maxAttempts = 3;
 
-        if (data.csrf_token) {
-          sessionStorage.setItem('csrf_token', data.csrf_token);
-        }
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+          const data = await fetchHomepageBoot();
 
-        if (data.site_settings) {
-          const cleanedData = {};
-          Object.keys(data.site_settings).forEach(key => {
-            const val = data.site_settings[key];
-            if (val !== null && val !== undefined && String(val).trim() !== '') {
-              cleanedData[key] = val;
-            }
+          if (data.csrf_token) {
+            sessionStorage.setItem('csrf_token', data.csrf_token);
+          }
+
+          if (data.site_settings) {
+            const cleanedData = {};
+            Object.keys(data.site_settings).forEach(key => {
+              const val = data.site_settings[key];
+              if (val !== null && val !== undefined && String(val).trim() !== '') {
+                cleanedData[key] = val;
+              }
+            });
+
+            if (cleanedData.siteLogoUrl) cleanedData.siteLogoUrl = formatImageUrl(cleanedData.siteLogoUrl);
+            if (cleanedData.faviconUrl) cleanedData.faviconUrl = formatImageUrl(cleanedData.faviconUrl);
+            setSiteSettings(prev => ({ ...prev, ...cleanedData }));
+          }
+
+          setHomepageBoot({
+            slides: Array.isArray(data.slides)
+              ? data.slides.map(slide => ({ ...slide, image_url: formatImageUrl(slide.image_url) }))
+              : [],
+            partners: Array.isArray(data.partners)
+              ? data.partners.map(partner => ({ ...partner, logo_url: formatImageUrl(partner.logo_url) }))
+              : [],
+            flashSaleBannerSettings: data.flash_sale_banner_settings || null
           });
-
-          if (cleanedData.siteLogoUrl) cleanedData.siteLogoUrl = formatImageUrl(cleanedData.siteLogoUrl);
-          if (cleanedData.faviconUrl) cleanedData.faviconUrl = formatImageUrl(cleanedData.faviconUrl);
-          setSiteSettings(prev => ({ ...prev, ...cleanedData }));
+          return; // success — done, skip the legacy fallback entirely
+        } catch (error) {
+          console.error(`Failed loading homepage boot payload (attempt ${attempt}/${maxAttempts}):`, error);
+          if (attempt < maxAttempts) {
+            await sleep(attempt * 700); // 700ms, then 1400ms
+          }
         }
-
-        setHomepageBoot({
-          slides: Array.isArray(data.slides)
-            ? data.slides.map(slide => ({ ...slide, image_url: formatImageUrl(slide.image_url) }))
-            : [],
-          partners: Array.isArray(data.partners)
-            ? data.partners.map(partner => ({ ...partner, logo_url: formatImageUrl(partner.logo_url) }))
-            : [],
-          flashSaleBannerSettings: data.flash_sale_banner_settings || null
-        });
-        return;
-      } catch (error) {
-        console.error('Failed loading homepage boot payload:', error);
       }
 
-      // Fallback to legacy site settings endpoint if boot fails
+      // All attempts failed — fall back to the legacy site settings endpoint.
+      // Note this still won't provide slides/partners/flash sale banner data;
+      // it's a last resort for at least keeping site identity/branding correct.
       try {
         const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
         const response = await fetch(`${base}/get_site_settings.php`);

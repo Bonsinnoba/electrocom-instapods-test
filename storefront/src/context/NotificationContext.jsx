@@ -22,18 +22,18 @@ export const NotificationProvider = ({ children }) => {
   const pollingIntervalRef = useRef(null);
   const isPollingActiveRef = useRef(false);
 
-  const addToast = (text, type = 'info') => {
+  const removeToast = useCallback((id) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  }, []);
+
+  const addToast = useCallback((text, type = 'info') => {
     const id = Date.now();
     const newToast = { id, text, type };
     setToasts(prev => [...prev, newToast]);
     setTimeout(() => {
       removeToast(id);
     }, 3000);
-  };
-
-  const removeToast = (id) => {
-    setToasts(prev => prev.filter(t => t.id !== id));
-  };
+  }, [removeToast]);
 
   const stopPolling = useCallback(() => {
     if (pollingIntervalRef.current) {
@@ -113,7 +113,7 @@ export const NotificationProvider = ({ children }) => {
     };
   }, [stopPolling]);
 
-  const addNotification = (text, type = 'info') => {
+  const addNotification = useCallback((text, type = 'info') => {
     // This adds a temporary local notification, usually for UI actions
     // Real persistent notifications from the server will be fetched next poll
     const newNotif = {
@@ -124,9 +124,9 @@ export const NotificationProvider = ({ children }) => {
       type
     };
     setNotifications(prev => [newNotif, ...prev]);
-  };
+  }, []);
 
-  const markAsRead = async (id) => {
+  const markAsRead = useCallback(async (id) => {
     // Optimistic update
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
     
@@ -148,16 +148,16 @@ export const NotificationProvider = ({ children }) => {
             console.error("Failed to mark notification as read on server", error);
         }
     }
-  };
+  }, []);
 
-  const markAllAsRead = () => {
+  const markAllAsRead = useCallback(() => {
     setNotifications(prev => prev.map(n => {
         if (!n.read) markAsRead(n.id);
         return { ...n, read: true };
     }));
-  };
+  }, [markAsRead]);
 
-  const deleteNotification = (id) => {
+  const deleteNotification = useCallback((id) => {
     setNotifications(prev => prev.filter(n => n.id !== id));
 
     if (typeof id === 'number' && id < 1000000000000) {
@@ -175,11 +175,11 @@ export const NotificationProvider = ({ children }) => {
         console.error("Failed to delete notification on server", error);
       });
     }
-  };
+  }, []);
 
-  const clearAllNotifications = () => {
+  const clearAllNotifications = useCallback(() => {
     setNotifications([]);
-  };
+  }, []);
 
   const unreadCount = notifications.filter(n => !n.read).length;
 

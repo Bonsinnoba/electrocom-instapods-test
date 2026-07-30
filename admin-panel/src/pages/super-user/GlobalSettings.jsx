@@ -644,12 +644,9 @@ export default function GlobalSettings() {
             </Field>
 
             <SectionHeader title="Flash Sale Banner" />
-            <Field label="Enable Flash Sale Banner" description="Show or hide the flash sale banner on the homepage." icon={<ToggleLeft size={14} />}>
-              <Toggle
-                checked={!!settings.flashSaleBannerEnabled}
-                onChange={set('flashSaleBannerEnabled')}
-              />
-            </Field>
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '-8px', marginBottom: '16px' }}>
+              The flash sale banner is configured under <strong>Hero Slider → Flash Sale Banner tab</strong>, not here.
+            </p>
 
             <SectionHeader title="Typography" />
             <Field label="Font Family" description="Primary typeface applied site-wide. Google Fonts are loaded automatically." icon={<Type size={14} />}>
