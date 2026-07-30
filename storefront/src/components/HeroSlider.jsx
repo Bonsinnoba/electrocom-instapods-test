@@ -63,13 +63,23 @@ function HeroSlider() {
     return () => clearInterval(timer);
   }, [slides.length]);
 
-  const [sliderHeight, setSliderHeight] = useState(() =>
-    window.innerWidth <= 768 ? 312 : 480
-  );
+  const [sliderHeight, setSliderHeight] = useState(() => {
+    const width = window.innerWidth;
+    if (width <= 768) return 312; // Mobile - keep as is
+    if (width <= 1200) return 288; // Tablet - 60% of 480
+    return 336; // Desktop - 70% of 480
+  });
 
   useEffect(() => {
     const handleResize = () => {
-      setSliderHeight(window.innerWidth <= 768 ? 312 : 480);
+      const width = window.innerWidth;
+      if (width <= 768) {
+        setSliderHeight(312); // Mobile
+      } else if (width <= 1200) {
+        setSliderHeight(288); // Tablet - 60%
+      } else {
+        setSliderHeight(336); // Desktop - 70%
+      }
     };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
