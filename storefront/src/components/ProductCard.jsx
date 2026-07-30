@@ -258,12 +258,8 @@ function ProductCard({ id, name, price, image, rating, discount_percent, sale_en
       </div>
 
       <div className="product-info">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+        <div style={{ marginBottom: '4px' }}>
             <h3 style={{ margin: 0 }} title={name}>{name}</h3>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '2px', background: 'var(--warning-bg)', padding: '2px 6px', borderRadius: '4px' }}>
-                <Star size={10} fill="var(--warning)" color="var(--warning)" />
-                <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--warning)' }}>{safeRating.toFixed(1)}</span>
-            </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
             <p style={{ margin: 0, fontWeight: 700, color: isSaleActive ? 'var(--success)' : 'inherit', fontSize: '16px' }}>
@@ -279,6 +275,10 @@ function ProductCard({ id, name, price, image, rating, discount_percent, sale_en
                   </span>
                 </div>
             )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '2px', background: 'var(--warning-bg)', padding: '2px 6px', borderRadius: '4px', marginLeft: 'auto' }}>
+                <Star size={10} fill="var(--warning)" color="var(--warning)" />
+                <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--warning)' }}>{safeRating.toFixed(1)}</span>
+            </div>
         </div>
         {stockQty !== null && stockQty > 0 && !isOutOfStock && (
           stockQty <= 5 ? (
