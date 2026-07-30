@@ -181,7 +181,8 @@ if (in_array('users', $requestedResources)) {
 if (in_array('logs', $requestedResources)) {
     try {
         $userId = authenticate($pdo, false);
-        if ($userId) {
+        $role = $userId ? getUserRole($userId, $pdo) : null;
+        if ($userId && $role === 'super') {
             $stmt = $pdo->query("SELECT * FROM admin_audit_logs ORDER BY created_at DESC LIMIT 100");
             $logs = $stmt->fetchAll();
             $response['data']['logs'] = $logs;

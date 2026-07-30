@@ -137,12 +137,10 @@ export const loginUser = async (credentials) => {
 
 export const fetchBatch = async (resources) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/batch.php`, {
+        const result = await authFetch('/batch.php', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ resources })
         });
-        const result = await response.json();
         return result.success ? result.data : {};
     } catch (error) {
         console.error('Batch fetch error:', error);

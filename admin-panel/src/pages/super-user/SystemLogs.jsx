@@ -33,8 +33,8 @@ export default function SystemLogs() {
   const load = async () => {
     setLoading(true);
     try {
-      const data = await fetchBatch(['logs']);
-      setLogs(data.logs || []);
+      const res = await fetchLogs();
+      setLogs(res.data || []);
     } catch (e) {
       console.error(e);
       setLogs([]);
