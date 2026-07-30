@@ -317,12 +317,12 @@ button.btn:active {
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
     border-color: var(--primary-blue);
     z-index: 10;
-    background: var(--bg-surface);
+    background: var(--bg-surface) !important;
 }
 
 .dark-mode .product-card:hover {
     box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4);
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.08) !important;
 }
 
 /* Ensure icons inside buttons inherit the correct color in dark mode */

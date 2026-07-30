@@ -102,7 +102,7 @@ function ProductCard({ id, name, price, image, rating, discount_percent, sale_en
     <div
       className="product-card animate-scale-in"
       onClick={onClick}
-      style={{ position: 'relative' }}
+      style={{ position: 'relative', background: 'var(--bg-surface)' }}
       onMouseEnter={() => setShowTooltip(true)}
       onMouseLeave={() => setShowTooltip(false)}
     >
