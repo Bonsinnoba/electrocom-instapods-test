@@ -147,7 +147,18 @@ function ProductCard({ id, name, price, image, rating, discount_percent, sale_en
               style={{
                 background: 'var(--warning)',
                 cursor: isNotifying ? 'not-allowed' : 'pointer',
-                opacity: isNotifying ? 0.7 : 1
+                opacity: isNotifying ? 0.7 : 1,
+                position: 'absolute',
+                top: '12px',
+                left: '12px',
+                width: '36px',
+                height: '36px',
+                borderRadius: '50%',
+                border: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 15
               }}
             >
               <Bell size={18} />
@@ -158,6 +169,19 @@ function ProductCard({ id, name, price, image, rating, discount_percent, sale_en
               className="add-to-cart-btn"
               title="Add to cart"
               aria-label="Add to cart"
+              style={{
+                position: 'absolute',
+                top: '12px',
+                left: '12px',
+                width: '36px',
+                height: '36px',
+                borderRadius: '50%',
+                border: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 15
+              }}
             >
               <ShoppingCart size={18} />
             </button>
