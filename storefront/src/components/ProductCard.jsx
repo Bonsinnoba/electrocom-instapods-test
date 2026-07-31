@@ -246,8 +246,8 @@ function ProductCard({ id, name, price, image, rating, discount_percent, sale_en
       </div>
 
       <div className="product-info">
-        <div style={{ marginBottom: '4px', height: '36px', display: 'flex', alignItems: 'center', width: '100%', minWidth: 0, overflow: 'hidden' }}>
-            <h3 style={{ margin: 0, width: '100%', minWidth: 0 }} title={name}>{name}</h3>
+        <div style={{ marginBottom: '4px', width: '100%', minWidth: 0, overflow: 'hidden' }}>
+            <h3 style={{ margin: 0 }} title={name}>{name}</h3>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px', flexWrap: 'nowrap' }}>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '5px', minWidth: 0, overflow: 'hidden' }}>
