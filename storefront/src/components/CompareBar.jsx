@@ -47,7 +47,7 @@ export default function CompareBar() {
           backdropFilter: 'blur(16px)',
         }}
       >
-        {/* Icon + Title */}
+        {/* Icon + Count */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
           <div style={{
             background: 'rgba(var(--primary-blue-rgb), 0.1)',
@@ -58,14 +58,9 @@ export default function CompareBar() {
           }}>
             <GitCompareArrows size={18} />
           </div>
-          <div>
-            <p style={{ margin: 0, fontSize: '13px', fontWeight: 800, color: 'var(--text-main)' }}>
-              Compare
-            </p>
-            <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-muted)' }}>
-              {compareList.length} / 3 selected
-            </p>
-          </div>
+          <span style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-main)' }}>
+            {compareList.length}/3
+          </span>
         </div>
 
         {/* Product Slots */}
@@ -172,7 +167,7 @@ export default function CompareBar() {
             disabled={compareList.length < 2}
             className="btn-primary"
             style={{
-              padding: '8px 20px',
+              padding: '8px 14px',
               borderRadius: '10px',
               fontSize: '13px',
               fontWeight: 800,
@@ -184,7 +179,7 @@ export default function CompareBar() {
             }}
           >
             <GitCompareArrows size={15} />
-            Compare Now
+            Compare
           </button>
         </div>
       </div>
