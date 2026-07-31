@@ -5,8 +5,8 @@ import { formatImageUrl } from '../services/api';
 import { 
   LayoutDashboard, Package, ShoppingCart, Users, Settings, Tag,
   LogOut, MapPin, ShieldAlert, Database, Globe, Zap, Activity, ShieldCheck,
-  Star, Bell, ShoppingBag, RotateCcw, ClipboardList, MessageSquare, Truck, Megaphone,
-  BookOpen, Mail, Layout, Layers, Images, Send, BarChart3, Building2, FileText, Bike
+  Star, Bell, ShoppingBag, RotateCcw, ClipboardList, MessageSquare, Megaphone,
+  BookOpen, Mail, Layout, Layers, Images, Send, BarChart3
 } from 'lucide-react';
 import { useAdminSettings } from '../context/AdminSettingsContext';
 import { useConfirm } from '../context/ConfirmContext';
@@ -20,7 +20,6 @@ export default function Sidebar() {
   const isAccountant = role === 'accountant';
   const isPicker = role === 'picker';
   const isMarketing = role === 'marketing';
-  const isSales = role === 'sales';
   const isManager = role === 'store_manager' || role === 'super';
 
   // Define visibility for items based on role
@@ -30,11 +29,6 @@ export default function Sidebar() {
     { icon: <ShoppingCart size={20} />, label: isPicker ? 'Picker Workflow' : 'Sales & Fulfillment', path: '/sales', visible: !isMarketing },
     { icon: <Zap size={20} />, label: 'POS Checkout', path: '/pos', visible: !isMarketing && !isAccountant && !isPicker },
     { icon: <Users size={20} />, label: isAccountant ? 'Billing List' : 'Customers', path: '/customers', visible: !isMarketing && !isPicker },
-    { icon: <Building2 size={20} />, label: 'Institutions', path: '/institutions', visible: isSales || isSuper },
-    { icon: <FileText size={20} />, label: 'Quotes', path: '/quotes', visible: isSales || isSuper },
-    { icon: <MapPin size={20} />, label: 'Shipping Zones', path: '/shipping-zones', visible: isManager },
-    { icon: <Bike size={20} />, label: 'Delivery Fleet', path: '/riders', visible: isManager },
-    { icon: <Truck size={20} />, label: 'Shipments', path: '/shipments', visible: isManager },
     { icon: <Megaphone size={20} />, label: 'Marketing & Growth', path: '/marketing', visible: isMarketing },
     { icon: <Images size={20} />, label: 'Hero Sliders', path: '/sliders', visible: isManager && !isPicker },
     { icon: <Send size={20} />, label: 'Broadcast Hub', path: '/broadcast', visible: isManager && !isPicker },
