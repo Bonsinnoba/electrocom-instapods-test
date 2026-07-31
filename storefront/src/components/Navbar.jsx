@@ -261,7 +261,7 @@ export default function Navbar({
         <div className="sidebar-icon btn nav-notif-btn" style={{ position: 'relative' }} onClick={onNotificationsClick} role="button" aria-label={`View Notifications, ${unreadCount} unread`} tabIndex={0}>
           <Bell size={20} />
           {unreadCount > 0 && (
-            <span key={unreadCount} className="badge-premium badge-notif">
+            <span key={unreadCount} className="badge-premium badge-notif badge-count-pop">
               {unreadCount}
             </span>
           )}
@@ -281,7 +281,7 @@ export default function Navbar({
         >
           <ShoppingCart size={20} />
           {cartCount > 0 && (
-            <span key={cartCount} className="badge-premium badge-cart">
+            <span key={cartCount} className="badge-premium badge-cart badge-count-pop">
               {cartCount}
             </span>
           )}

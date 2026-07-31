@@ -240,7 +240,7 @@ function FlashSaleBanner({ products, onProductClick }) {
         width: '250px',
         height: '250px',
         borderRadius: '50%',
-        background: `radial-gradient(circle, ${bannerContent.color}25 0%, ${bannerContent.color}00 70%)`,
+        background: 'radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%)',
         pointerEvents: 'none',
         zIndex: 0
       }}></div>
@@ -251,7 +251,7 @@ function FlashSaleBanner({ products, onProductClick }) {
         width: '250px',
         height: '250px',
         borderRadius: '50%',
-        background: `radial-gradient(circle, ${bannerContent.color}20 0%, ${bannerContent.color}00 70%)`,
+        background: 'radial-gradient(circle, rgba(59, 130, 246, 0.12) 0%, transparent 70%)',
         pointerEvents: 'none',
         zIndex: 0
       }}></div>
@@ -260,14 +260,14 @@ function FlashSaleBanner({ products, onProductClick }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', zIndex: 1, flex: '1 1 300px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{
-            background: `${bannerContent.color}25`,
+            background: 'rgba(255, 255, 255, 0.15)',
             padding: '6px',
             borderRadius: '12px',
             color: bannerContent.color,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: `0 0 15px ${bannerContent.color}4D`
+            boxShadow: '0 0 15px rgba(59, 130, 246, 0.4)'
           }} className="flame-icon-pulse">
             <IconComponent size={16} fill={bannerContent.type === 'flash_sale' ? 'currentColor' : 'none'} />
           </div>
@@ -277,7 +277,7 @@ function FlashSaleBanner({ products, onProductClick }) {
             textTransform: 'uppercase',
             letterSpacing: '2px',
             color: bannerContent.color,
-            textShadow: `0 0 10px ${bannerContent.color}33`
+            textShadow: '0 0 10px rgba(59, 130, 246, 0.3)'
           }}>
             {bannerContent.title}
           </span>
@@ -420,7 +420,7 @@ function FlashSaleBanner({ products, onProductClick }) {
                 fontWeight: 900,
                 padding: '4px 8px',
                 borderRadius: '100px',
-                boxShadow: `0 4px 10px ${bannerContent.color}66`,
+                boxShadow: '0 4px 10px rgba(239, 68, 68, 0.4)',
                 border: '1px solid rgba(255, 255, 255, 0.2)',
                 letterSpacing: '0.5px'
               }}>
@@ -457,7 +457,7 @@ function FlashSaleBanner({ products, onProductClick }) {
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
-            boxShadow: `0 8px 20px ${bannerContent.color}40`,
+            boxShadow: '0 8px 20px rgba(59, 130, 246, 0.4)',
             background: bannerContent.color,
             border: 'none',
             color: '#ffffff',
@@ -468,58 +468,6 @@ function FlashSaleBanner({ products, onProductClick }) {
           {bannerContent.cta} <ArrowRight size={16} />
         </button>
       </div>
-
-      {/* Styled Micro-Animations & Responsive Queries */}
-      <style dangerouslySetInnerHTML={{ __html: `
-        .flash-sale-banner:hover {
-          transform: translateY(-4px);
-          border-color: ${bannerContent.color}33 !important;
-          box-shadow: 0 25px 50px ${bannerContent.color}26 !important;
-        }
-        .flash-sale-banner:hover .banner-cta-button {
-          transform: scale(1.04);
-          box-shadow: 0 10px 24px ${bannerContent.color}66 !important;
-        }
-        .flame-icon-pulse {
-          animation: flame-pulse 1.5s infinite ease-in-out;
-        }
-        @keyframes flame-pulse {
-          0% { transform: scale(1); filter: drop-shadow(0 0 2px ${bannerContent.color}80); }
-          50% { transform: scale(1.12); filter: drop-shadow(0 0 12px ${bannerContent.color}); }
-          100% { transform: scale(1); filter: drop-shadow(0 0 2px ${bannerContent.color}80); }
-        }
-        @media (max-width: 768px) {
-          .flash-sale-banner {
-            padding: 8px 12px !important;
-            gap: 8px !important;
-            border-radius: 16px !important;
-          }
-          .flash-sale-banner h2 {
-            font-size: 13px !important;
-            letter-spacing: -0.4px !important;
-            line-height: 1.2 !important;
-          }
-          .flash-sale-banner p {
-            font-size: 10px !important;
-            margin-top: 2px !important;
-            display: -webkit-box;
-            -webkit-line-clamp: 1;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-          }
-          .countdown-box {
-            width: 28px !important;
-            height: 26px !important;
-            font-size: 12px !important;
-            border-radius: 6px !important;
-          }
-          .banner-cta-button {
-            height: 26px !important;
-            padding: 0 10px !important;
-            font-size: 10px !important;
-          }
-        }
-      `}} />
     </div>
   );
 }

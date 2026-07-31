@@ -211,13 +211,13 @@ export default function RecentlyViewedProducts({ products }) {
           border-radius: 16px;
           padding: 14px;
           border: 1px solid var(--border-light);
-          transition: all 0.3s ease;
+          transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease;
           cursor: pointer;
           box-sizing: border-box;
         }
         .recently-viewed-card:hover {
-          transform: translateY(-4px);
-          box-shadow: 0 12px 24px rgba(0,0,0,0.1);
+          transform: translateY(-6px) scale(1.008);
+          box-shadow: 0 20px 40px -10px rgba(0,0,0,0.1), 0 0 0 1px rgba(var(--primary-blue-rgb), 0.25);
           border-color: var(--primary-blue);
         }
         .rv-card-image {

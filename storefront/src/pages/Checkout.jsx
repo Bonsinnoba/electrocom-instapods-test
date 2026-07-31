@@ -522,40 +522,34 @@ export default function Checkout() {
         </div>
       </div>
 
-      <div className="checkout-steps" style={{ display: 'flex', gap: '24px', marginBottom: '40px', borderBottom: '1px solid var(--border-light)', paddingBottom: '20px' }}>
+      <div className="checkout-steps">
         {[
           { icon: <Truck size={18} />, label: 'Shipping' },
           { icon: <CreditCard size={18} />, label: 'Payment' },
           { icon: <CheckCircle size={18} />, label: 'Review' }
         ].map((s, i) => (
-          <div key={i} style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '8px', 
+          <div key={i} className="checkout-step-item" style={{ 
             color: step === i + 1 ? 'var(--primary-blue)' : 'var(--text-muted)',
             fontWeight: step === i + 1 ? 700 : 500,
             transition: 'all 0.3s'
           }}>
-            <div style={{ 
-              width: '32px', 
-              height: '32px', 
+            <div className="checkout-step-num" style={{ 
               borderRadius: '50%', 
               background: step === i + 1 ? 'var(--primary-blue)' : 'var(--bg-main)',
               color: step === i + 1 ? 'white' : 'var(--text-muted)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '14px'
             }}>
               {i + 1}
             </div>
             <span>{s.label}</span>
-            {i < 2 && <ChevronRight size={16} color="var(--border-light)" />}
+            {i < 2 && <ChevronRight size={16} color="var(--border-light)" style={{ flexShrink: 0 }} />}
           </div>
         ))}
       </div>
 
-      <div className="checkout-content" style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: '40px' }}>
+      <div className="checkout-content">
         <div className="form-section">
           {step === 1 && (
             <div className="animate-fade-in">

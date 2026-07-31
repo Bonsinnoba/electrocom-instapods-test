@@ -165,7 +165,7 @@ function ProductCard({ id, name, price, image, rating, discount_percent, sale_en
           style={{ opacity: imgLoaded ? 1 : 0, transition: 'opacity 0.3s ease-in-out', width: '100%', height: '100%', objectFit: 'cover' }}
         />
         {isSaleActive && (
-          <div style={{
+          <div className="sale-badge-animated" style={{
             position: 'absolute',
             bottom: '10px',
             left: '10px',
