@@ -2037,7 +2037,15 @@ button.btn-login:hover {
     flex-direction: column;
     gap: 12px;
     position: relative;
-    /* Ensure relative for pseudo-element */
+    height: 100%;
+    box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+    .product-card {
+        padding: 12px !important;
+        gap: 8px !important;
+    }
 }
 
 /* Add a pseudo-element to catch hover even when the card moves up */
@@ -2075,6 +2083,15 @@ button.btn-login:hover {
 
 .product-card:hover .product-image {
     transform: scale(1.05);
+}
+
+.product-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .product-info h3 {

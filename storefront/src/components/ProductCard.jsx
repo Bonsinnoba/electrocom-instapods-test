@@ -152,51 +152,6 @@ function ProductCard({ id, name, price, image, rating, discount_percent, sale_en
         )
       )}
 
-      {/* Compare Toggle Button */}
-      {!onRemove && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            inCompare ? removeFromCompare(id) : addToCompare({ id, name, price, image, rating, discount_percent, sale_ends_at, stock_quantity, status, category: undefined });
-          }}
-          title={compareAtMax ? 'Max 3 products' : inCompare ? 'Remove from compare' : 'Add to compare'}
-          aria-label={inCompare ? 'Remove from compare' : 'Add to compare'}
-          style={{
-            position: 'absolute',
-            bottom: '12px',
-            right: '12px',
-            width: '32px', height: '32px',
-            borderRadius: '8px',
-            border: 'none',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: compareAtMax ? 'not-allowed' : 'pointer',
-            background: inCompare ? 'var(--primary-blue)' : 'var(--bg-surface)',
-            color: inCompare ? '#fff' : 'var(--text-muted)',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
-            opacity: compareAtMax ? 0.4 : 1,
-            transition: 'all 0.2s',
-            zIndex: 12,
-          }}
-        >
-          <GitCompareArrows size={14} />
-        </button>
-      )}
-
-      
-      {onRemove && (
-        <button 
-          onClick={(e) => {
-            e.stopPropagation();
-            onRemove();
-          }}
-          className="wishlist-btn" 
-          title="Remove from favorites"
-          aria-label="Remove from favorites"
-        >
-          <X size={18} />
-        </button>
-      )}
-
       <div style={{ position: 'relative', width: '100%', borderRadius: 'var(--radius-sm)', overflow: 'hidden', aspectRatio: viewMode === 'list' ? '4/3' : '1/1' }}>
         {!imgLoaded && (
           <div className="skeleton" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', borderRadius: 'inherit' }}></div>
@@ -212,11 +167,11 @@ function ProductCard({ id, name, price, image, rating, discount_percent, sale_en
         {isSaleActive && (
           <div style={{
             position: 'absolute',
-            bottom: '12px',
-            left: '12px',
+            bottom: '10px',
+            left: '10px',
             background: 'var(--danger)',
             color: 'white',
-            padding: '4px 10px',
+            padding: '4px 9px',
             borderRadius: '100px',
             fontSize: '11px',
             fontWeight: 800,
@@ -226,6 +181,39 @@ function ProductCard({ id, name, price, image, rating, discount_percent, sale_en
           }}>
             {discount}% OFF
           </div>
+        )}
+        {/* Compare Toggle Button — overlay on image bottom-right */}
+        {!onRemove && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              inCompare ? removeFromCompare(id) : addToCompare({ id, name, price, image, rating, discount_percent, sale_ends_at, stock_quantity, status, category: undefined });
+            }}
+            title={compareAtMax ? 'Max 3 products' : inCompare ? 'Remove from compare' : 'Add to compare'}
+            aria-label={inCompare ? 'Remove from compare' : 'Add to compare'}
+            style={{
+              position: 'absolute',
+              bottom: '10px',
+              right: '10px',
+              width: '30px',
+              height: '30px',
+              borderRadius: '8px',
+              border: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: compareAtMax ? 'not-allowed' : 'pointer',
+              background: inCompare ? 'var(--primary-blue)' : 'rgba(255, 255, 255, 0.92)',
+              color: inCompare ? '#fff' : 'var(--text-main)',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+              opacity: compareAtMax ? 0.4 : 1,
+              transition: 'all 0.2s',
+              zIndex: 10,
+              backdropFilter: 'blur(4px)'
+            }}
+          >
+            <GitCompareArrows size={14} />
+          </button>
         )}
         {isOutOfStock && (
           <div style={{
@@ -239,7 +227,7 @@ function ProductCard({ id, name, price, image, rating, discount_percent, sale_en
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            zIndex: 5
+            zIndex: 11
           }}>
             <span style={{
               background: 'white',
