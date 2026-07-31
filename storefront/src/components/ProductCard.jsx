@@ -106,52 +106,6 @@ function ProductCard({ id, name, price, image, rating, discount_percent, sale_en
       onMouseEnter={() => setShowTooltip(true)}
       onMouseLeave={() => setShowTooltip(false)}
     >
-
-      {/* Heart Toggle Button - Shown on all cards if onRemove is NOT present (Shop view) */}
-      {!onRemove && (
-        <button 
-          onClick={handleWishlistClick}
-          className={`wishlist-btn ${inWishlist ? 'active' : ''}`}
-          title={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
-          aria-label={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
-        >
-          <Heart 
-            size={18} 
-            fill={inWishlist ? "currentColor" : "none"} 
-            strokeWidth={inWishlist ? 0 : 2}
-          />
-        </button>
-      )}
-
-      {/* Add to Cart / Notify Me Button - Shown on all cards if onRemove is NOT present (Shop view) */}
-      {!onRemove && (
-        isOutOfStock ? (
-          <button
-            onClick={handleNotifyMe}
-            className="add-to-cart-btn"
-            title="Notify me when in stock"
-            aria-label="Notify me when in stock"
-            disabled={isNotifying}
-            style={{
-              background: 'var(--warning)',
-              cursor: isNotifying ? 'not-allowed' : 'pointer',
-              opacity: isNotifying ? 0.7 : 1
-            }}
-          >
-            <Bell size={18} />
-          </button>
-        ) : (
-          <button
-            onClick={handleAddToCart}
-            className="add-to-cart-btn"
-            title="Add to cart"
-            aria-label="Add to cart"
-          >
-            <ShoppingCart size={18} />
-          </button>
-        )
-      )}
-
       <div style={{ position: 'relative', width: '100%', borderRadius: 'var(--radius-sm)', overflow: 'hidden', aspectRatio: viewMode === 'list' ? '4/3' : '1/1' }}>
         {!imgLoaded && (
           <div className="skeleton" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', borderRadius: 'inherit' }}></div>
@@ -164,6 +118,52 @@ function ProductCard({ id, name, price, image, rating, discount_percent, sale_en
           onLoad={() => setImgLoaded(true)}
           style={{ opacity: imgLoaded ? 1 : 0, transition: 'opacity 0.3s ease-in-out', width: '100%', height: '100%', objectFit: 'cover' }}
         />
+
+        {/* Heart Toggle Button - Shown on all cards if onRemove is NOT present (Shop view) */}
+        {!onRemove && (
+          <button 
+            onClick={handleWishlistClick}
+            className={`wishlist-btn ${inWishlist ? 'active' : ''}`}
+            title={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
+            aria-label={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
+          >
+            <Heart 
+              size={18} 
+              fill={inWishlist ? "currentColor" : "none"} 
+              strokeWidth={inWishlist ? 0 : 2}
+            />
+          </button>
+        )}
+
+        {/* Add to Cart / Notify Me Button - Shown on all cards if onRemove is NOT present (Shop view) */}
+        {!onRemove && (
+          isOutOfStock ? (
+            <button
+              onClick={handleNotifyMe}
+              className="add-to-cart-btn"
+              title="Notify me when in stock"
+              aria-label="Notify me when in stock"
+              disabled={isNotifying}
+              style={{
+                background: 'var(--warning)',
+                cursor: isNotifying ? 'not-allowed' : 'pointer',
+                opacity: isNotifying ? 0.7 : 1
+              }}
+            >
+              <Bell size={18} />
+            </button>
+          ) : (
+            <button
+              onClick={handleAddToCart}
+              className="add-to-cart-btn"
+              title="Add to cart"
+              aria-label="Add to cart"
+            >
+              <ShoppingCart size={18} />
+            </button>
+          )
+        )}
+
         {isSaleActive && (
           <div className="sale-badge-animated" style={{
             position: 'absolute',
