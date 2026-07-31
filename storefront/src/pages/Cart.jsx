@@ -213,7 +213,7 @@ export default function Cart() {
                   <div
                     key={`${item.id}-${item.selectedColor}-${index}`}
                     className={`cart-item-card animate-slide-up ${isSelected ? 'selected' : ''}`}
-                    style={{ animationDelay:`${index * 0.05}s`, animationFillMode:'both', opacity: isSelected ? 1 : 0.5, transition:'all 0.3s ease' }}
+                    style={{ animationDelay:`${index * 0.05}s`, animationFillMode:'both', opacity: isSelected ? 1 : 0.65, transition:'all 0.3s ease' }}
                   >
                     {/* Checkbox */}
                     <button
@@ -221,9 +221,10 @@ export default function Cart() {
                       title={isSelected ? 'Deselect' : 'Select'}
                       className={`cart-item-checkbox ${isSelected ? 'selected' : ''}`}
                     >
-                      {isSelected ? <CheckSquare size={20} /> : <Square size={20} />}
+                      {isSelected ? <CheckSquare size={18} /> : <Square size={18} />}
                     </button>
 
+                    {/* Product Image */}
                     <div className="cart-item-image-wrapper">
                       <img
                         src={formatImageUrl(item.image || item.image_url)}
@@ -233,40 +234,38 @@ export default function Cart() {
                     </div>
 
                     <div className="cart-item-details">
-                      {/* Left column: name, color, unit price, quantity */}
+                      {/* Left side: Name & Qty Pill */}
                       <div className="cart-item-left">
-                        <div className="cart-item-info">
-                          <h4 className="cart-item-name">{item.name}</h4>
-                          <div className="cart-item-meta">
-                            <span className={`cart-item-color ${(!item.selectedColor || item.selectedColor.toLowerCase() === 'default') ? 'default-badge' : 'color-badge'}`}>
-                              {item.selectedColor || 'Default'}
-                            </span>
-                            <span className="cart-item-unit-price">{formatPrice(parseFloat(item.price))} each</span>
-                          </div>
-                        </div>
-
-                        <div className="cart-qty-wrapper">
-                          <div className="cart-qty-control">
-                            <button onClick={() => updateQuantity(item.id, item.selectedColor, -1)} className="btn-qty btn" title="Decrease Quantity"><Minus size={14} /></button>
-                            <span className="qty-display">{item.quantity}</span>
-                            <button onClick={() => updateQuantity(item.id, item.selectedColor, 1)} className="btn-qty btn" title="Increase Quantity"><Plus size={14} /></button>
-                          </div>
+                        <h4 className="cart-item-name" title={item.name}>{item.name}</h4>
+                        <div className="cart-qty-pill">
+                          <button 
+                            onClick={() => updateQuantity(item.id, item.selectedColor, -1)} 
+                            className="btn-qty-mini" 
+                            title="Decrease"
+                          >
+                            <Minus size={11} />
+                          </button>
+                          <span className="qty-pill-text">Qty: {item.quantity}</span>
+                          <button 
+                            onClick={() => updateQuantity(item.id, item.selectedColor, 1)} 
+                            className="btn-qty-mini" 
+                            title="Increase"
+                          >
+                            <Plus size={11} />
+                          </button>
                         </div>
                       </div>
 
-                      {/* Right column: subtotal, discount, actions */}
+                      {/* Right side: Price & Action buttons */}
                       <div className="cart-item-right">
                         <div className="cart-item-price-wrapper">
-                          <div className="item-total-price" style={{ color: item.discount_percent > 0 ? 'var(--success)' : 'inherit' }}>
+                          <div className="item-total-price">
                             {formatPrice(parseFloat(item.price) * item.quantity)}
                           </div>
                           {item.discount_percent > 0 && (
                             <div className="cart-item-discount-row">
                               <span className="original-price-strike">
                                 {formatPrice(parseFloat(item.original_price || item.price) * item.quantity)}
-                              </span>
-                              <span className="discount-badge-percent">
-                                -{item.discount_percent}%
                               </span>
                             </div>
                           )}
@@ -281,10 +280,10 @@ export default function Cart() {
                             className={`btn-wishlist-cart ${inWish ? 'active' : ''}`}
                             title={inWish ? 'Remove from Wishlist' : 'Save to Wishlist'}
                           >
-                            <Heart size={18} fill={inWish ? 'var(--danger)' : 'none'} color={inWish ? 'var(--danger)' : 'currentColor'} />
+                            <Heart size={15} fill={inWish ? 'var(--danger)' : 'none'} color={inWish ? 'var(--danger)' : 'currentColor'} />
                           </button>
                           <button onClick={() => setConfirmDelete(item)} className="btn-remove-cart" title="Remove Item">
-                            <Trash2 size={18} />
+                            <Trash2 size={15} />
                           </button>
                         </div>
                       </div>

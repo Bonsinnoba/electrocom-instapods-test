@@ -47,15 +47,15 @@ export default function TrustBadges({ slice, showFooter }) {
 
   return (
     <div className="glass" style={{
-      padding: '20px',
+      padding: '16px',
       borderRadius: '16px',
       background: 'var(--bg-surface)',
       border: '1px solid var(--border-light)'
     }}>
       <h3 style={{
-        fontSize: '16px',
+        fontSize: '15px',
         fontWeight: 700,
-        margin: '0 0 16px',
+        margin: '0 0 12px',
         color: 'var(--text-main)',
         textAlign: 'center'
       }}>
