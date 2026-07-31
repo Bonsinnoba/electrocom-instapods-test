@@ -2016,7 +2016,7 @@ button.btn-login:hover {
 
 .product-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 24px;
     width: 100%;
     margin-top: 8px;
@@ -2098,13 +2098,16 @@ button.btn-login:hover {
     font-size: 14px;
     font-weight: 600;
     margin-bottom: 4px;
-    /* Clamp to 2 lines — prevents long names from growing card height */
+    /* Clamp to 2 lines — prevents long names from expanding card width or height */
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    word-break: break-word;  /* handles unspaced product codes */
-    min-width: 0;            /* allows flex child to shrink below content size */
+    text-overflow: ellipsis;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    min-width: 0;
+    width: 100%;
 }
 
 .product-info p {
