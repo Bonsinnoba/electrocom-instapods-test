@@ -189,28 +189,10 @@ function ProductCard({ id, name, price, image, rating, discount_percent, sale_en
               e.stopPropagation();
               inCompare ? removeFromCompare(id) : addToCompare({ id, name, price, image, rating, discount_percent, sale_ends_at, stock_quantity, status, category: undefined });
             }}
+            className={`compare-btn ${inCompare ? 'active' : ''}`}
             title={compareAtMax ? 'Max 3 products' : inCompare ? 'Remove from compare' : 'Add to compare'}
             aria-label={inCompare ? 'Remove from compare' : 'Add to compare'}
-            style={{
-              position: 'absolute',
-              bottom: '10px',
-              right: '10px',
-              width: '30px',
-              height: '30px',
-              borderRadius: '8px',
-              border: 'none',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: compareAtMax ? 'not-allowed' : 'pointer',
-              background: inCompare ? 'var(--primary-blue)' : 'rgba(255, 255, 255, 0.92)',
-              color: inCompare ? '#fff' : 'var(--text-main)',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-              opacity: compareAtMax ? 0.4 : 1,
-              transition: 'all 0.2s',
-              zIndex: 10,
-              backdropFilter: 'blur(4px)'
-            }}
+            disabled={compareAtMax}
           >
             <GitCompareArrows size={14} />
           </button>

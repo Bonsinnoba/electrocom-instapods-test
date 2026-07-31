@@ -5940,6 +5940,56 @@ button.btn-login:hover {
     background: rgba(15, 23, 42, 0.6);
 }
 
+/* Compare Overlay Button */
+.compare-btn {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    margin: 0;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.95);
+    color: #1e293b;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.compare-btn:hover:not(:disabled) {
+    transform: scale(1.1);
+    border-color: var(--primary-blue);
+    color: var(--primary-blue);
+    box-shadow: 0 6px 16px rgba(var(--primary-blue-rgb), 0.35);
+}
+
+.compare-btn.active {
+    background: var(--primary-blue) !important;
+    color: #ffffff !important;
+    border-color: var(--primary-blue) !important;
+    box-shadow: 0 4px 14px rgba(var(--primary-blue-rgb), 0.5);
+}
+
+.compare-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.dark-mode .compare-btn:not(.active) {
+    background: rgba(15, 23, 42, 0.88);
+    color: #f8fafc;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+}
+
 /* ========================================= */
 /*       IMAGE LOADING & SKELETONS           */
 /* ========================================= */
