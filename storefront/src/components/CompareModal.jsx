@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, ShoppingCart, Star, Trophy, GitCompareArrows } from 'lucide-react';
+import { X, ShoppingCart, Star, Trophy, GitCompareArrows, Trash2 } from 'lucide-react';
 import { useComparison } from '../context/ComparisonContext';
 import { useSettings } from '../context/SettingsContext';
 import { useCart } from '../context/CartContext';
@@ -125,7 +125,9 @@ export default function CompareModal() {
             <span style={{ fontSize: '12px', color: 'var(--text-muted)', background: 'var(--bg-main)', padding: '2px 8px', borderRadius: '20px', fontWeight: 600 }}>{compareList.length} products</span>
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
-            <button onClick={clearCompare} style={{ background: 'var(--danger-bg)', color: 'var(--danger)', border: 'none', borderRadius: '8px', padding: '7px 14px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>Clear All</button>
+            <button onClick={clearCompare} style={{ background: 'var(--danger-bg)', color: 'var(--danger)', border: 'none', borderRadius: '8px', padding: '7px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Clear All">
+              <Trash2 size={16} />
+            </button>
             <button onClick={closeModal} style={{ background: 'var(--bg-main)', border: '1px solid var(--border-light)', borderRadius: '8px', padding: '7px 10px', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}><X size={16} /></button>
           </div>
         </div>

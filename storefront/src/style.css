@@ -5847,7 +5847,7 @@ button.btn-login:hover {
 
 .add-to-cart-btn {
     position: absolute;
-    top: 12px;
+    bottom: 12px;
     left: 12px;
     width: 36px;
     height: 36px;
@@ -5984,6 +5984,13 @@ button.btn-login:hover {
     z-index: 20;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+@media (min-width: 1200px) {
+    .wishlist-btn {
+        top: 12px;
+        right: 12px;
+    }
 }
 
 .wishlist-btn:hover {
