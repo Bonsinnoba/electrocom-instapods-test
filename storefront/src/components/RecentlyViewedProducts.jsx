@@ -5,6 +5,11 @@ import { useComparison } from '../context/ComparisonContext';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 
+// Mirrors ProductCard logic — a sale is only active if not yet expired
+const isSaleActiveFor = (p) =>
+  (parseInt(p.discount_percent) || 0) > 0 &&
+  (!p.sale_ends_at || new Date(p.sale_ends_at) > new Date());
+
 export default function RecentlyViewedProducts({ products }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -66,11 +71,14 @@ export default function RecentlyViewedProducts({ products }) {
       </div>
       <h4 className="rv-card-name">{product.name}</h4>
       <div className="rv-card-price">
-        GH₵ {Number(product.price).toLocaleString()}
+        {isSaleActiveFor(product)
+          ? `GH₵ ${(product.price * (1 - parseInt(product.discount_percent) / 100)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+          : `GH₵ ${Number(product.price).toLocaleString()}`
+        }
       </div>
-      {product.discount_percent > 0 && (
+      {isSaleActiveFor(product) && (
         <div className="rv-card-discount">
-          {product.discount_percent}% OFF
+          {parseInt(product.discount_percent)}% OFF
         </div>
       )}
       <button
@@ -333,9 +341,10 @@ export default function RecentlyViewedProducts({ products }) {
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           onAddToCart={(product) => {
-            const discount = parseInt(product.discount_percent) || 0;
             const price = parseFloat(product.price) || 0;
-            const effectivePrice = discount > 0 ? price * (1 - discount / 100) : price;
+            const effectivePrice = isSaleActiveFor(product)
+              ? price * (1 - (parseInt(product.discount_percent) || 0) / 100)
+              : price;
             addToCart({ ...product, price: effectivePrice, original_price: price });
           }}
           onAddToWishlist={(product) => { addToWishlist(product); }}
