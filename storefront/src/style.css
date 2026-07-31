@@ -5857,7 +5857,7 @@ button.btn-login:hover {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    z-index: 10;
+    z-index: 15;
     background: rgba(255, 255, 255, 0.8);
     color: var(--primary-blue);
     backdrop-filter: blur(8px);
