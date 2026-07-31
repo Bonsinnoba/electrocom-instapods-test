@@ -490,31 +490,33 @@ function FlashSaleBanner({ products, onProductClick }) {
         }
         @media (max-width: 768px) {
           .flash-sale-banner {
-            padding: 12px !important;
-            gap: 14px !important;
+            padding: 8px 12px !important;
+            gap: 8px !important;
+            border-radius: 16px !important;
           }
           .flash-sale-banner h2 {
-            font-size: 14px !important;
+            font-size: 13px !important;
             letter-spacing: -0.4px !important;
+            line-height: 1.2 !important;
           }
           .flash-sale-banner p {
             font-size: 10px !important;
-            margin-top: 4px !important;
+            margin-top: 2px !important;
             display: -webkit-box;
-            -webkit-line-clamp: 2;
+            -webkit-line-clamp: 1;
             -webkit-box-orient: vertical;
             overflow: hidden;
           }
           .countdown-box {
-            width: 32px !important;
-            height: 30px !important;
-            font-size: 13px !important;
-            border-radius: 8px !important;
+            width: 28px !important;
+            height: 26px !important;
+            font-size: 12px !important;
+            border-radius: 6px !important;
           }
           .banner-cta-button {
-            height: 30px !important;
-            padding: 0 12px !important;
-            font-size: 11px !important;
+            height: 26px !important;
+            padding: 0 10px !important;
+            font-size: 10px !important;
           }
         }
       `}} />
