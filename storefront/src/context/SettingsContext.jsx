@@ -89,79 +89,93 @@ export const SettingsProvider = ({ children }) => {
     flashSaleBannerSettings: null
   });
 
-  useEffect(() => {
-    const loadHomepageBoot = async () => {
-      const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-      const maxAttempts = 3;
+  const loadHomepageBoot = async () => {
+    const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+    const maxAttempts = 3;
 
-      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-        try {
-          const data = await fetchHomepageBoot();
-
-          if (data.csrf_token) {
-            sessionStorage.setItem('csrf_token', data.csrf_token);
-          }
-
-          if (data.site_settings) {
-            const cleanedData = {};
-            Object.keys(data.site_settings).forEach(key => {
-              const val = data.site_settings[key];
-              if (val !== null && val !== undefined && String(val).trim() !== '') {
-                cleanedData[key] = val;
-              }
-            });
-
-            if (cleanedData.siteLogoUrl) cleanedData.siteLogoUrl = formatImageUrl(cleanedData.siteLogoUrl);
-            if (cleanedData.faviconUrl) cleanedData.faviconUrl = formatImageUrl(cleanedData.faviconUrl);
-            setSiteSettings(prev => ({ ...prev, ...cleanedData }));
-          }
-
-          setHomepageBoot({
-            slides: Array.isArray(data.slides)
-              ? data.slides.map(slide => ({ ...slide, image_url: formatImageUrl(slide.image_url) }))
-              : [],
-            partners: Array.isArray(data.partners)
-              ? data.partners.map(partner => ({ ...partner, logo_url: formatImageUrl(partner.logo_url) }))
-              : [],
-            flashSaleBannerSettings: data.flash_sale_banner_settings || null
-          });
-          return; // success — done, skip the legacy fallback entirely
-        } catch (error) {
-          console.error(`Failed loading homepage boot payload (attempt ${attempt}/${maxAttempts}):`, error);
-          if (attempt < maxAttempts) {
-            await sleep(attempt * 700); // 700ms, then 1400ms
-          }
-        }
-      }
-
-      // All attempts failed — fall back to the legacy site settings endpoint.
-      // Note this still won't provide slides/partners/flash sale banner data;
-      // it's a last resort for at least keeping site identity/branding correct.
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
-        const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
-        const response = await fetch(`${base}/get_site_settings.php`);
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const text = await response.text();
-        let result;
-        try { result = JSON.parse(text); } catch { throw new Error('Invalid JSON from settings endpoint'); }
-        if (result.success && result.data) {
-          const data = result.data;
+        const data = await fetchHomepageBoot();
+
+        if (data.csrf_token) {
+          sessionStorage.setItem('csrf_token', data.csrf_token);
+        }
+
+        if (data.site_settings) {
           const cleanedData = {};
-          Object.keys(data).forEach(key => {
-            const val = data[key];
+          Object.keys(data.site_settings).forEach(key => {
+            const val = data.site_settings[key];
             if (val !== null && val !== undefined && String(val).trim() !== '') {
               cleanedData[key] = val;
             }
           });
+
           if (cleanedData.siteLogoUrl) cleanedData.siteLogoUrl = formatImageUrl(cleanedData.siteLogoUrl);
           if (cleanedData.faviconUrl) cleanedData.faviconUrl = formatImageUrl(cleanedData.faviconUrl);
           setSiteSettings(prev => ({ ...prev, ...cleanedData }));
         }
-      } catch (error) {
-        console.error('Error loading site settings fallback:', error);
-      }
-    };
 
+        const parsedSlides = Array.isArray(data.slides)
+          ? data.slides.map(slide => ({ ...slide, image_url: formatImageUrl(slide.image_url) }))
+          : [];
+
+        setHomepageBoot({
+          slides: parsedSlides,
+          partners: Array.isArray(data.partners)
+            ? data.partners.map(partner => ({ ...partner, logo_url: formatImageUrl(partner.logo_url) }))
+            : [],
+          flashSaleBannerSettings: data.flash_sale_banner_settings || null
+        });
+
+        // If slides came back empty, reset guard after 3 seconds so subsequent page interactions can retry
+        if (parsedSlides.length === 0) {
+          setTimeout(() => {
+            hasFetchedSiteSettings.current = false;
+          }, 3000);
+        }
+        return;
+      } catch (error) {
+        console.error(`Failed loading homepage boot payload (attempt ${attempt}/${maxAttempts}):`, error);
+        if (attempt < maxAttempts) {
+          await sleep(attempt * 700);
+        }
+      }
+    }
+
+    // All attempts failed - allow retrying on next component mount/page visit
+    hasFetchedSiteSettings.current = false;
+
+    try {
+      const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+      const response = await fetch(`${base}/get_site_settings.php`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const text = await response.text();
+      let result;
+      try { result = JSON.parse(text); } catch { throw new Error('Invalid JSON from settings endpoint'); }
+      if (result.success && result.data) {
+        const data = result.data;
+        const cleanedData = {};
+        Object.keys(data).forEach(key => {
+          const val = data[key];
+          if (val !== null && val !== undefined && String(val).trim() !== '') {
+            cleanedData[key] = val;
+          }
+        });
+        if (cleanedData.siteLogoUrl) cleanedData.siteLogoUrl = formatImageUrl(cleanedData.siteLogoUrl);
+        if (cleanedData.faviconUrl) cleanedData.faviconUrl = formatImageUrl(cleanedData.faviconUrl);
+        setSiteSettings(prev => ({ ...prev, ...cleanedData }));
+      }
+    } catch (error) {
+      console.error('Error loading site settings fallback:', error);
+    }
+  };
+
+  const refetchHomepageBoot = () => {
+    hasFetchedSiteSettings.current = false;
+    return loadHomepageBoot();
+  };
+
+  useEffect(() => {
     if (!hasFetchedSiteSettings.current) {
       hasFetchedSiteSettings.current = true;
       loadHomepageBoot();
@@ -287,7 +301,7 @@ export const SettingsProvider = ({ children }) => {
   };
 
   return (
-    <SettingsContext.Provider value={{ siteSettings, settings, updateSetting, homepageBoot, formatImageUrl, formatPrice }}>
+    <SettingsContext.Provider value={{ siteSettings, settings, updateSetting, homepageBoot, refetchHomepageBoot, formatImageUrl, formatPrice }}>
       {children}
     </SettingsContext.Provider>
   );

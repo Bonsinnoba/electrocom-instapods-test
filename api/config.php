@@ -43,17 +43,22 @@ if (empty($dbHost) || empty($dbPass) || $dbHost === 'localhost') {
         : ['.env', '.env.production'];
 
     foreach ($envFiles as $envFile) {
-        if (!is_file(dirname(__DIR__) . '/' . $envFile)) {
-            continue;
-        }
+        $candidatePaths = [
+            __DIR__ . '/' . $envFile,
+            dirname(__DIR__) . '/' . $envFile
+        ];
 
-        try {
-            $dotenv = Dotenv::createImmutable(dirname(__DIR__), $envFile);
-            $dotenv->load();
-            error_log("Loaded from $envFile");
-            break;
-        } catch (Exception $e) {
-            error_log("Unable to load $envFile");
+        foreach ($candidatePaths as $fullPath) {
+            if (is_file($fullPath)) {
+                try {
+                    $dotenv = Dotenv::createImmutable(dirname($fullPath), basename($fullPath));
+                    $dotenv->load();
+                    error_log("Loaded from $fullPath");
+                    break 2;
+                } catch (Exception $e) {
+                    error_log("Unable to load $fullPath: " . $e->getMessage());
+                }
+            }
         }
     }
 } else {

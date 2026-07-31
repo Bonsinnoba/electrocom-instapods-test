@@ -128,7 +128,7 @@ try {
         'flash_sale_banner_settings' => $flashSaleSettings ?: null
     ];
 
-    if ($cached === false) {
+    if ($cached === false && !empty($slides)) {
         eh_cache_set($cacheKey, $responseData, $cacheGroup, 300);
     }
 
