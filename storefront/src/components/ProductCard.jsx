@@ -258,42 +258,43 @@ function ProductCard({ id, name, price, image, rating, discount_percent, sale_en
       </div>
 
       <div className="product-info">
-        <div style={{ marginBottom: '4px' }}>
+        <div style={{ marginBottom: '4px', height: '36px', display: 'flex', alignItems: 'center' }}>
             <h3 style={{ margin: 0 }} title={name}>{name}</h3>
         </div>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-            <p style={{ margin: 0, fontWeight: 700, color: isSaleActive ? 'var(--success)' : 'inherit', fontSize: '16px' }}>
-                {formatPrice(effectivePrice)}
-            </p>
-            {isSaleActive && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-muted)', textDecoration: 'line-through', opacity: 0.7 }}>
-                      {formatPrice(price)}
-                  </p>
-                  <span style={{ fontSize: '11px', color: 'var(--danger)', fontWeight: 700 }}>
-                    -{discount}%
-                  </span>
-                </div>
-            )}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '2px', background: 'var(--warning-bg)', padding: '2px 6px', borderRadius: '4px', marginLeft: 'auto' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px', flexWrap: 'nowrap' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '5px', minWidth: 0, overflow: 'hidden' }}>
+              <p style={{ margin: 0, fontWeight: 800, color: isSaleActive ? 'var(--success)' : 'inherit', fontSize: '15px', whiteSpace: 'nowrap' }}>
+                  {formatPrice(effectivePrice)}
+              </p>
+              {isSaleActive && (
+                <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)', textDecoration: 'line-through', opacity: 0.75, whiteSpace: 'nowrap' }}>
+                    {formatPrice(price)}
+                </p>
+              )}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '2px', background: 'var(--warning-bg)', padding: '2px 5px', borderRadius: '4px', flexShrink: 0, marginLeft: 'auto' }}>
                 <Star size={10} fill="var(--warning)" color="var(--warning)" />
                 <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--warning)' }}>{safeRating.toFixed(1)}</span>
             </div>
         </div>
-        {stockQty !== null && stockQty > 0 && !isOutOfStock && (
+        {stockQty !== null && stockQty > 0 && !isOutOfStock ? (
           stockQty <= 5 ? (
             <p className="stock-urgency-pulse" style={{ margin: '6px 0 0', fontSize: '11px', color: 'var(--danger)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '4px' }}>
               <span style={{ fontSize: '12px' }}>🔥</span> Only {stockQty} left!
             </p>
           ) : stockQty <= 10 ? (
             <p style={{ margin: '6px 0 0', fontSize: '11px', color: 'var(--warning)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <span style={{ fontSize: '12px' }}>⚡</span> Selling fast
+              <span style={{ fontSize: '12px' }}>⚡</span> {stockQty} left
             </p>
           ) : (
-            <p style={{ margin: '6px 0 0', fontSize: '11px', color: 'var(--success)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', opacity: 0.8 }}>
-              ✓ In Stock
+            <p style={{ margin: '6px 0 0', fontSize: '11px', color: 'var(--success)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', opacity: 0.9 }}>
+              ✓ {stockQty} In Stock
             </p>
           )
+        ) : (
+          <p style={{ margin: '6px 0 0', fontSize: '11px', color: 'var(--success)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', opacity: 0.9 }}>
+            ✓ In Stock
+          </p>
         )}
       </div>
 
