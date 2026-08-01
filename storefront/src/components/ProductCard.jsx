@@ -149,7 +149,7 @@ function ProductCard({ id, name, price, image, rating, discount_percent, sale_en
                 cursor: isNotifying ? 'not-allowed' : 'pointer',
                 opacity: isNotifying ? 0.7 : 1,
                 position: 'absolute',
-                bottom: '12px',
+                top: '12px',
                 left: '12px',
                 width: '36px',
                 height: '36px',
@@ -171,7 +171,7 @@ function ProductCard({ id, name, price, image, rating, discount_percent, sale_en
               aria-label="Add to cart"
               style={{
                 position: 'absolute',
-                bottom: '12px',
+                top: '12px',
                 left: '12px',
                 width: '36px',
                 height: '36px',
