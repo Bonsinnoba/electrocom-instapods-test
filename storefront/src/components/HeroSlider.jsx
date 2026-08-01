@@ -303,21 +303,45 @@ function HeroSlider() {
         <ChevronRight size={24} />
       </button>
 
-      <div style={{ position: 'absolute', bottom: '20px', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: '8px', zIndex: 10 }}>
-        {slides.map((_, i) => (
-          <div
-            key={i}
-            onClick={() => setCurrentSlide(i)}
-            style={{
-              width: '10px',
-              height: '10px',
-              borderRadius: '50%',
-              background: i === currentSlide ? 'white' : 'rgba(255,255,255,0.4)',
-              cursor: 'pointer',
-              transition: 'background 0.3s'
-            }}
-          />
-        ))}
+      {/* Slide Pagination Pills */}
+      <div 
+        style={{ 
+          position: 'absolute', 
+          bottom: '20px', 
+          left: '50%', 
+          transform: 'translateX(-50%)', 
+          display: 'flex', 
+          alignItems: 'center',
+          gap: '8px', 
+          padding: '6px 14px',
+          background: 'rgba(15, 23, 42, 0.35)',
+          backdropFilter: 'blur(12px)',
+          borderRadius: '20px',
+          border: '1px solid rgba(255, 255, 255, 0.15)',
+          zIndex: 10 
+        }}
+      >
+        {slides.map((_, i) => {
+          const isCurrent = i === currentSlide;
+          return (
+            <button
+              key={i}
+              onClick={() => setCurrentSlide(i)}
+              aria-label={`Go to slide ${i + 1}`}
+              className={`hero-pill-indicator ${isCurrent ? 'active' : ''}`}
+              style={{
+                width: isCurrent ? '26px' : '8px',
+                height: '8px',
+                borderRadius: '10px',
+                background: isCurrent ? 'var(--primary-blue)' : 'rgba(255, 255, 255, 0.5)',
+                border: 'none',
+                padding: 0,
+                cursor: 'pointer',
+                boxShadow: isCurrent ? '0 0 10px rgba(59, 130, 246, 0.6)' : 'none'
+              }}
+            />
+          );
+        })}
       </div>
     </div>
   );
