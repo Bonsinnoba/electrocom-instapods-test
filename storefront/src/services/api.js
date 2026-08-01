@@ -92,6 +92,17 @@ export const fetchHomepageBoot = async () => {
     return result.data;
 };
 
+// Dedicated hero-slides fetch, deliberately decoupled from fetchHomepageBoot —
+// a slow/failing fetch of flash-sale settings, partners, or site settings
+// should never hold the slider hostage, and vice versa.
+export const fetchHeroSlides = async () => {
+    const response = await fetch(`${API_BASE_URL}/get_hero_slides.php`);
+    if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+    const result = await response.json();
+    if (!result.success) throw new Error(result.message || 'API error');
+    return result.data;
+};
+
 /**
  * Get CSRF token from localStorage or fetch new one
  */

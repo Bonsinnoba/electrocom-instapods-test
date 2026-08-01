@@ -2,6 +2,7 @@ import React, { useState, useEffect, memo, useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useSettings } from '../context/SettingsContext';
+import { fetchHeroSlides, formatImageUrl } from '../services/api';
 
 const isVideo = (url) => url && (url.match(/\.(mp4|webm)$/i) || url.startsWith('data:video'));
 
@@ -41,8 +42,38 @@ const sanitizeContentBlock = (block) => {
 };
 
 function HeroSlider() {
-  const { siteSettings, homepageBoot } = useSettings();
-  const slides = homepageBoot?.slides || [];
+  const { siteSettings } = useSettings();
+  const [slides, setSlides] = useState([]);
+  const hasFetched = useRef(false);
+
+  useEffect(() => {
+    if (hasFetched.current) return;
+    hasFetched.current = true;
+
+    const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+    const maxAttempts = 3;
+
+    const loadSlides = async () => {
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+          const data = await fetchHeroSlides();
+          const formatted = Array.isArray(data)
+            ? data.map(slide => ({ ...slide, image_url: formatImageUrl(slide.image_url) }))
+            : [];
+          setSlides(formatted);
+          return; // success
+        } catch (error) {
+          console.error(`Failed loading hero slides (attempt ${attempt}/${maxAttempts}):`, error);
+          if (attempt < maxAttempts) {
+            await sleep(attempt * 700); // 700ms, then 1400ms
+          }
+        }
+      }
+    };
+
+    loadSlides();
+  }, []);
+
   const [currentSlide, setCurrentSlide] = React.useState(0);
 
   useEffect(() => {
@@ -85,72 +116,38 @@ function HeroSlider() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  if (slides.length === 0) {
-    return (
-      <div 
-        className="hero-slider" 
-        style={{ 
-          position: 'relative', 
-          height: `${sliderHeight}px`, 
-          overflow: 'hidden', 
-          borderRadius: '16px',
-          background: 'var(--bg-surface)',
-          border: '1px solid var(--border-light)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          boxShadow: '0 8px 30px rgba(0, 0, 0, 0.04)'
-        }}
-      >
-        <div className="skeleton" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }} />
-        <div 
-          style={{ 
-            position: 'relative', 
-            zIndex: 2, 
-            textAlign: 'center', 
-            padding: '24px', 
-            maxWidth: '540px',
-            background: 'var(--glass-bg)',
-            backdropFilter: 'blur(16px)',
-            borderRadius: '16px',
-            border: '1px solid var(--glass-border)',
-            boxShadow: '0 12px 40px rgba(0, 0, 0, 0.1)'
-          }}
-        >
-          <div className="skeleton" style={{ height: '36px', width: '70%', margin: '0 auto 16px', borderRadius: '8px' }} />
-          <div className="skeleton" style={{ height: '16px', width: '85%', margin: '0 auto 24px', borderRadius: '6px' }} />
-          <div className="skeleton" style={{ height: '42px', width: '140px', margin: '0 auto', borderRadius: '10px' }} />
-        </div>
-      </div>
-    );
-  }
+  if (slides.length === 0) return null;
 
   const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % slides.length);
   const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
 
+  // OPTION A: If any slide contains a video, use it as a persistent, global background 
+  // while the text/content wrapper continues to slide over it.
   const globalVideoSlide = slides.find(s => isVideo(s.image_url));
 
   const getSidePadding = () => {
     const width = window.innerWidth;
-    if (width <= 480) return '44px';
-    if (width <= 768) return '48px';
-    if (width <= 1200) return '56px';
-    return '80px';
+    if (width <= 768) return '20px'; // Mobile
+    if (width <= 1200) return '40px'; // Tablet/Medium
+    return '80px'; // Desktop
   };
 
   const getPositionStyles = (pos) => {
     const sidePadding = getSidePadding();
     const config = {
-        left: { justifyContent: 'flex-start', alignItems: 'center', textAlign: 'left', padding: `0 ${sidePadding}`, gradient: 'linear-gradient(to right, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0) 100%)' },
-        right: { justifyContent: 'flex-end', alignItems: 'center', textAlign: 'right', padding: `0 ${sidePadding}`, gradient: 'linear-gradient(to left, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0) 100%)' },
-        center: { justifyContent: 'center', alignItems: 'center', textAlign: 'center', padding: '0 20px', gradient: 'radial-gradient(circle, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0) 80%)' },
-        top: { justifyContent: 'center', alignItems: 'flex-start', textAlign: 'center', padding: '60px 20px', gradient: 'linear-gradient(to bottom, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0) 100%)' },
+        left: { justifyContent: 'flex-start', alignItems: 'center', textAlign: 'left', padding: `0 ${sidePadding}`, gradient: 'linear-gradient(to right, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%)' },
+        right: { justifyContent: 'flex-end', alignItems: 'center', textAlign: 'right', padding: `0 ${sidePadding}`, gradient: 'linear-gradient(to left, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%)' },
+        center: { justifyContent: 'center', alignItems: 'center', textAlign: 'center', padding: '0 20px', gradient: 'radial-gradient(circle, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 80%)' },
+        top: { justifyContent: 'center', alignItems: 'flex-start', textAlign: 'center', padding: '60px 20px', gradient: 'linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%)' },
+        bottom: { justifyContent: 'center', alignItems: 'flex-end', textAlign: 'center', padding: '60px 20px', gradient: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%)' }
     };
     return config[pos] || config.left;
   };
 
+
+
   return (
-    <div className="hero-slider" style={{ position: 'relative', height: `${sliderHeight}px`, overflow: 'hidden', borderRadius: '16px', boxShadow: '0 12px 40px rgba(0, 0, 0, 0.1)' }}>
+    <div className="hero-slider" style={{ position: 'relative', height: `${sliderHeight}px`, overflow: 'hidden', borderRadius: '16px' }}>
       
       {/* GLOBAL VIDEO BACKGROUND */}
       {globalVideoSlide && (
@@ -167,7 +164,7 @@ function HeroSlider() {
           display: 'flex', 
           width: '100%', 
           height: '100%', 
-          transition: 'transform 0.7s cubic-bezier(0.16, 1, 0.3, 1)',
+          transition: 'transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
           transform: `translateX(-${currentSlide * 100}%)`,
           position: 'relative',
           zIndex: 1
@@ -176,28 +173,24 @@ function HeroSlider() {
         {slides.map((slide, index) => {
           const styles = getPositionStyles(slide.text_position);
           const isActive = index === currentSlide;
+          
+          // If we are using a global video, we don't render individual slide backgrounds.
           const hasGlobalVideo = !!globalVideoSlide;
 
           return (
             <div
-              key={slide.id || index}
+              key={slide.id}
               style={{
                 flex: "0 0 100%",
                 height: '100%',
+                backgroundImage: (hasGlobalVideo || isVideo(slide.image_url)) ? 'none' : `url(${slide.image_url})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
                 position: 'relative',
-                overflow: 'hidden',
+                overflow: 'hidden'
               }}
             >
-              {/* Slide Background Image with Ken-Burns Motion */}
-              {!(hasGlobalVideo || isVideo(slide.image_url)) && (
-                <div 
-                  className={`hero-slide-bg ${isActive ? 'ken-burns' : ''}`}
-                  style={{
-                    backgroundImage: `url(${slide.image_url})`,
-                  }}
-                />
-              )}
-
+              {/* Individual Slide Video (Fallback if not using Global) */}
               {!hasGlobalVideo && isVideo(slide.image_url) && (
                  <video 
                     src={slide.image_url}
@@ -227,49 +220,40 @@ function HeroSlider() {
                     color: 'white', 
                     textAlign: styles.textAlign,
                     opacity: isActive ? 1 : 0,
-                    transform: isActive ? 'translateY(0) scale(1)' : 'translateY(30px) scale(0.95)',
+                    transform: isActive ? 'translateY(0)' : 'translateY(40px)',
                     transition: 'all 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.15s'
                   }}
                 >
                   {(slide.title || siteSettings.heroBannerTagline) && (
-                    <h2 style={{ fontSize: 'clamp(28px, 4vw, 48px)', fontWeight: 800, marginBottom: '16px', lineHeight: 1.1, textShadow: '0 4px 20px rgba(0, 0, 0, 0.5)' }}>
+                    <h2 style={{ fontSize: '48px', fontWeight: 800, marginBottom: '16px', lineHeight: 1.1 }}>
                       {slide.title || siteSettings.heroBannerTagline}
                     </h2>
                   )}
                   {(slide.subtitle || siteSettings.heroBannerSubtext) && (
-                    <p style={{ fontSize: 'clamp(14px, 2vw, 18px)', marginBottom: '24px', opacity: 0.95, textShadow: '0 2px 10px rgba(0, 0, 0, 0.5)' }}>
+                    <p style={{ fontSize: '18px', marginBottom: '24px', opacity: 0.9 }}>
                       {slide.subtitle || siteSettings.heroBannerSubtext}
                     </p>
                   )}
                   
-                  <Link 
-                    to={slide.button_link || siteSettings.heroCTAUrl || '/shop'} 
-                    className="btn-primary hero-cta-btn" 
-                    style={{ 
-                      padding: '14px 34px', 
-                      fontSize: '16px', 
-                      marginTop: '16px', 
-                      display: 'inline-block',
-                      borderRadius: '12px',
-                      boxShadow: '0 8px 24px rgba(59, 130, 246, 0.4)'
-                    }}
-                  >
+                  <Link to={slide.button_link || siteSettings.heroCTAUrl || '/shop'} className="btn-primary" style={{ padding: '12px 32px', fontSize: '16px', marginTop: '16px', display: 'inline-block' }}>
                     {slide.button_text || siteSettings.heroCTAText || 'Shop Now'}
                   </Link>
                 </div>
   
-                {/* Custom Content Blocks */}
+                {/* Individual Text Blocks with Custom Positions */}
                 {(() => {
                     let blocks = [];
                     try {
                         const raw = slide.content_blocks;
                         blocks = typeof raw === 'string' ? JSON.parse(raw) : (Array.isArray(raw) ? raw : []);
                     } catch(e) { 
+                        console.warn("Malformed Hero Slide content blocks:", e);
                         blocks = []; 
                     }
                     
                     if (!Array.isArray(blocks)) return null;
 
+                    // Sanitize all blocks before rendering
                     const sanitizedBlocks = blocks.map(sanitizeContentBlock).filter(Boolean);
   
                     return sanitizedBlocks.map((block, i) => {
@@ -286,19 +270,19 @@ function HeroSlider() {
                             fontSize: block.fontSize || '16px',
                             color: block.color || '#ffffff',
                             textAlign: block.textAlign || 'center',
-                            opacity: isActive ? (block.type === 'paragraph' ? 0.85 : 1) : 0,
+                            opacity: isActive ? (block.type === 'paragraph' ? 0.8 : 1) : 0,
                             fontWeight: block.type === 'heading' ? 800 : (block.type === 'subheading' ? 600 : 400),
                             lineHeight: 1.4,
                             maxWidth: '90%',
                             zIndex: 5,
-                            textShadow: '0 2px 15px rgba(0, 0, 0, 0.6)',
+                            textShadow: '0 2px 15px rgba(0,0,0,0.6)',
                             transition: `all 0.8s cubic-bezier(0.16, 1, 0.3, 1) ${0.3 + i * 0.1}s`
                         };
  
                         if (block.type === 'heading') return <h3 key={i} style={{ ...blockStyle, fontSize: block.fontSize || '38px', marginBottom: '0.4em' }}>{block.text}</h3>;
                         if (block.type === 'subheading') return <h4 key={i} style={{ ...blockStyle, fontSize: block.fontSize || '20px' }}>{block.text}</h4>;
                         if (block.type === 'cta') return (
-                          <Link key={i} to={block.link || '#'} className="btn-primary hero-cta-btn" style={{ ...blockStyle, position: 'absolute', top: `${top}%`, left: `${left}%`, padding: '10px 24px', whiteSpace: 'nowrap' }}>
+                          <Link key={i} to={block.link || '#'} className="btn-primary" style={{ ...blockStyle, position: 'absolute', top: `${top}%`, left: `${left}%`, padding: '10px 24px', whiteSpace: 'nowrap' }}>
                             {block.text || 'Learn More'}
                           </Link>
                         );
@@ -311,97 +295,29 @@ function HeroSlider() {
         })}
       </div>
 
-      <button 
-        onClick={prevSlide} 
-        aria-label="Previous Slide"
-        className="hero-nav-btn"
-        style={{ 
-          position: 'absolute', 
-          top: '50%', 
-          left: '16px', 
-          transform: 'translateY(-50%)', 
-          zIndex: 10, 
-          background: 'rgba(15, 23, 42, 0.4)', 
-          backdropFilter: 'blur(10px)',
-          border: '1px solid rgba(255, 255, 255, 0.2)', 
-          borderRadius: '50%', 
-          width: '44px', 
-          height: '44px', 
-          color: 'white', 
-          cursor: 'pointer', 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center',
-        }}
-      >
-        <ChevronLeft size={22} />
+      <button onClick={prevSlide} style={{ position: 'absolute', top: '50%', left: '20px', transform: 'translateY(-50%)', zIndex: 10, background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '50%', width: '40px', height: '40px', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <ChevronLeft size={24} />
       </button>
 
-      <button 
-        onClick={nextSlide} 
-        aria-label="Next Slide"
-        className="hero-nav-btn"
-        style={{ 
-          position: 'absolute', 
-          top: '50%', 
-          right: '16px', 
-          transform: 'translateY(-50%)', 
-          zIndex: 10, 
-          background: 'rgba(15, 23, 42, 0.4)', 
-          backdropFilter: 'blur(10px)',
-          border: '1px solid rgba(255, 255, 255, 0.2)', 
-          borderRadius: '50%', 
-          width: '44px', 
-          height: '44px', 
-          color: 'white', 
-          cursor: 'pointer', 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center',
-        }}
-      >
-        <ChevronRight size={22} />
+      <button onClick={nextSlide} style={{ position: 'absolute', top: '50%', right: '20px', transform: 'translateY(-50%)', zIndex: 10, background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '50%', width: '40px', height: '40px', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <ChevronRight size={24} />
       </button>
 
-      {/* Slide Pagination Pills */}
-      <div 
-        style={{ 
-          position: 'absolute', 
-          bottom: '20px', 
-          left: '50%', 
-          transform: 'translateX(-50%)', 
-          display: 'flex', 
-          alignItems: 'center',
-          gap: '8px', 
-          padding: '6px 14px',
-          background: 'rgba(15, 23, 42, 0.35)',
-          backdropFilter: 'blur(12px)',
-          borderRadius: '20px',
-          border: '1px solid rgba(255, 255, 255, 0.15)',
-          zIndex: 10 
-        }}
-      >
-        {slides.map((_, i) => {
-          const isCurrent = i === currentSlide;
-          return (
-            <button
-              key={i}
-              onClick={() => setCurrentSlide(i)}
-              aria-label={`Go to slide ${i + 1}`}
-              className={`hero-pill-indicator ${isCurrent ? 'active' : ''}`}
-              style={{
-                width: isCurrent ? '26px' : '8px',
-                height: '8px',
-                borderRadius: '10px',
-                background: isCurrent ? 'var(--primary-blue)' : 'rgba(255, 255, 255, 0.5)',
-                border: 'none',
-                padding: 0,
-                cursor: 'pointer',
-                boxShadow: isCurrent ? '0 0 10px rgba(59, 130, 246, 0.6)' : 'none'
-              }}
-            />
-          );
-        })}
+      <div style={{ position: 'absolute', bottom: '20px', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: '8px', zIndex: 10 }}>
+        {slides.map((_, i) => (
+          <div
+            key={i}
+            onClick={() => setCurrentSlide(i)}
+            style={{
+              width: '10px',
+              height: '10px',
+              borderRadius: '50%',
+              background: i === currentSlide ? 'white' : 'rgba(255,255,255,0.4)',
+              cursor: 'pointer',
+              transition: 'background 0.3s'
+            }}
+          />
+        ))}
       </div>
     </div>
   );
