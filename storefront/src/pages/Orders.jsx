@@ -673,14 +673,16 @@ export default function Orders() {
               <button
                 onClick={closeReturnModal}
                 disabled={isSubmittingReturn}
-                style={{ flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid var(--border-light)', background: 'var(--bg-main)', fontWeight: 600, cursor: 'pointer' }}
+                className="flex-1"
+                style={{ padding: '12px', borderRadius: '8px', border: '1px solid var(--border-light)', background: 'var(--bg-main)', fontWeight: 600, cursor: 'pointer' }}
               >
                 Cancel
               </button>
               <button
                 onClick={handleSubmitReturn}
                 disabled={isSubmittingReturn}
-                style={{ flex: 1, padding: '12px', borderRadius: '8px', border: 'none', background: 'var(--primary-blue)', color: 'white', fontWeight: 600, cursor: 'pointer', opacity: isSubmittingReturn ? 0.7 : 1 }}
+                className="flex-1"
+                style={{ padding: '12px', borderRadius: '8px', border: 'none', background: 'var(--primary-blue)', color: 'white', fontWeight: 600, cursor: 'pointer', opacity: isSubmittingReturn ? 0.7 : 1 }}
               >
                 {isSubmittingReturn ? 'Submitting...' : 'Submit Request'}
               </button>

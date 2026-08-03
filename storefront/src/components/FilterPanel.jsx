@@ -232,6 +232,7 @@ export default function FilterPanel({ filters, setFilters, onReset, isMobile, on
                 const val = e.target.value === '' ? 0 : parseInt(e.target.value);
                 setFilters(prev => ({ ...prev, minPrice: Math.max(0, val) }));
               }}
+              className="input-with-icon"
               style={{
                 width: '100%',
                 padding: '8px 12px 8px 36px',
@@ -277,6 +278,7 @@ export default function FilterPanel({ filters, setFilters, onReset, isMobile, on
                   setFilters(prev => ({ ...prev, maxPrice: finalVal }));
                 }
               }}
+              className="input-with-icon"
               style={{
                 width: '100%',
                 padding: '8px 12px 8px 36px',

@@ -149,16 +149,7 @@ export default function Locations() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '24px' }}>
         {/* Search Bar */}
         <div style={{ position: 'relative' }}>
-          <Search 
-            size={20} 
-            style={{ 
-              position: 'absolute', 
-              left: '16px', 
-              top: '50%', 
-              transform: 'translateY(-50%)',
-              color: 'var(--text-muted)'
-            }} 
-          />
+          <Search size={20} className="search-icon" />
           <input
             type="text"
             placeholder="Search by city, name, or address..."

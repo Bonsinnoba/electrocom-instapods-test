@@ -108,7 +108,7 @@ export default function ResetPassword() {
       )}
 
       {(!token || !email) ? (
-        <button className="btn-primary" onClick={() => navigate('/')} style={{ width: '100%' }}>
+        <button className="btn-primary w-full" onClick={() => navigate('/') }>
           Back to Home
         </button>
       ) : status.type === 'success' ? (
@@ -159,11 +159,11 @@ export default function ResetPassword() {
             </div>
           </div>
 
-          <button type="submit" className="btn-primary" style={{ width: '100%', padding: '14px' }} disabled={loading}>
+          <button type="submit" className="btn-primary w-full" style={{ padding: '14px' }} disabled={loading}>
             {loading ? <Loader className="animate-spin" size={18} /> : 'Update Password'}
           </button>
           
-          <button type="button" className="btn-ghost" onClick={() => navigate('/')} style={{ width: '100%', marginTop: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+          <button type="button" className="btn-ghost w-full" onClick={() => navigate('/')} style={{ marginTop: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
             <ArrowLeft size={16} /> Cancel
           </button>
         </form>
