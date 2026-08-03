@@ -740,11 +740,11 @@ export default function Checkout() {
 
 
               <div style={{ display: 'flex', gap: '16px', marginTop: '32px' }}>
-                <button className="btn-secondary flex-1" onClick={() => setStep(1)}>
+                <button className="btn-secondary" style={{ flex: 1 }} onClick={() => setStep(1)}>
                   <ArrowLeft size={18} />
                   Back
                 </button>
-                <button className="btn-primary flex-2" onClick={() => setStep(3)}>
+                <button className="btn-primary" style={{ flex: 2 }} onClick={() => setStep(3)}>
                   Review Order
                   <ShieldCheck size={18} />
                 </button>
@@ -812,18 +812,18 @@ export default function Checkout() {
                   <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '12px', lineHeight: 1.5 }}>
                     You can safely try again. If Paystack closed or your bank timed out, use the button below to reopen checkout.
                   </p>
-                  <button type="button" className="btn-primary w-full" onClick={() => { setPaymentInterrupted(false); handleCompletePurchase(); }}>
+                  <button type="button" className="btn-primary" style={{ width: '100%' }} onClick={() => { setPaymentInterrupted(false); handleCompletePurchase(); }}>
                     Retry payment
                   </button>
                 </div>
               )}
 
               <div style={{ display: 'flex', gap: '16px', marginTop: '32px' }}>
-                <button className="btn-secondary flex-1" onClick={() => setStep(2)}>
+                <button className="btn-secondary" style={{ flex: 1 }} onClick={() => setStep(2)}>
                   <ArrowLeft size={18} />
                   Back
                 </button>
-                <button className="btn-primary flex-2" onClick={handleCompletePurchase} disabled={loading}>
+                <button className="btn-primary" style={{ flex: 2 }} onClick={handleCompletePurchase} disabled={loading}>
                   <CheckCircle size={18} />
                   {loading ? 'Processing...' : 'Complete Purchase'}
                 </button>

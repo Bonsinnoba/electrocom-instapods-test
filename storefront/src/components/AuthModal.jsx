@@ -384,7 +384,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'signin' }) {
                         />
                       </div>
                     </div>
-                    <button type="submit" className="btn-primary w-full" disabled={loading}>
+                    <button type="submit" className="btn-primary" style={{ width: '100%' }} disabled={loading}>
                       {loading ? <Loader className="animate-spin" size={18} /> : 'Verify Account'}
                     </button>
                   </div>
@@ -404,7 +404,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'signin' }) {
                             <input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="Email" required />
                           </div>
                         </div>
-                        <button type="button" className="btn-primary w-full" onClick={handleNextStep} style={{ marginTop: '10px' }}>Next Step</button>
+                        <button type="button" className="btn-primary" onClick={handleNextStep} style={{ width: '100%', marginTop: '10px' }}>Next Step</button>
                       </div>
                     ) : step === 2 ? (
                       <div className="animate-slide-down">
@@ -451,8 +451,8 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'signin' }) {
                           </div>
                         </div>
                         <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                          <button type="button" className="btn-secondary flex-1" onClick={() => setStep(1)}>Back</button>
-                          <button type="button" className="btn-primary flex-2" onClick={handleNextStep}>Next Step</button>
+                          <button type="button" className="btn-secondary" onClick={() => setStep(1)} style={{ flex: 1 }}>Back</button>
+                          <button type="button" className="btn-primary" onClick={handleNextStep} style={{ flex: 2 }}>Next Step</button>
                         </div>
                       </div>
                     ) : (
@@ -472,9 +472,9 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'signin' }) {
                             <input type={showPassword ? "text" : "password"} name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} placeholder="Confirm" required />
                           </div>
                         </div>
-                          <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                          <button type="button" className="btn-secondary flex-1" onClick={() => setStep(2)}>Back</button>
-                          <button type="submit" className="btn-primary flex-2" disabled={loading}>
+                        <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                          <button type="button" className="btn-secondary" onClick={() => setStep(2)} style={{ flex: 1 }}>Back</button>
+                          <button type="submit" className="btn-primary" style={{ flex: 2 }} disabled={loading}>
                             {loading ? <Loader className="animate-spin" size={18} /> : 'Sign Up'}
                           </button>
                         </div>
@@ -526,7 +526,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'signin' }) {
                   </button>
                 </div>
               </div>
-              <button type="submit" className="btn-primary w-full" disabled={loading}>
+              <button type="submit" className="btn-primary" style={{ width: '100%' }} disabled={loading}>
                 {loading ? <Loader className="animate-spin" size={18} /> : 'Sign In'}
               </button>
               
@@ -644,7 +644,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'signin' }) {
                       </div>
                     </div>
                     
-                    <button type="submit" className="btn-primary w-full" style={{ marginBottom: '16px' }}>
+                    <button type="submit" className="btn-primary" style={{ width: '100%', marginBottom: '16px' }}>
                       Continue
                     </button>
 
@@ -702,7 +702,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'signin' }) {
                         />
                       </div>
                     </div>
-                    <button type="submit" className="btn-primary w-full" disabled={loading}>
+                    <button type="submit" className="btn-primary" style={{ width: '100%' }} disabled={loading}>
                       {loading ? <Loader className="animate-spin" size={18} /> : 'Save & Login'}
                     </button>
                   </>
@@ -721,7 +721,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'signin' }) {
                         />
                       </div>
                     </div>
-                    <button type="submit" className="btn-primary w-full" disabled={loading}>
+                    <button type="submit" className="btn-primary" style={{ width: '100%' }} disabled={loading}>
                       {loading ? <Loader className="animate-spin" size={18} /> : 'Send Reset Code'}
                     </button>
                   </>
@@ -729,7 +729,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'signin' }) {
                 
                 <button 
                   type="button" 
-                  className="btn-ghost w-full" 
+                  className="btn-ghost" 
                   onClick={() => {
                     if (resetStep > 1) {
                         setResetStep(resetStep - 1);
@@ -739,6 +739,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'signin' }) {
                     }
                   }}
                   style={{ 
+                    width: '100%', 
                     marginTop: '16px', 
                     display: 'flex', 
                     alignItems: 'center', 

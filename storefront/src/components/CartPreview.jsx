@@ -128,8 +128,8 @@ export default function CartPreview() {
             ) : (
               <button 
                 onClick={removeCoupon} 
-                className="btn-outline w-full" 
-                style={{ fontSize: '12px', padding: '6px', color: 'var(--danger)', borderColor: 'var(--danger)' }}
+                className="btn-outline" 
+                style={{ width: '100%', fontSize: '12px', padding: '6px', color: 'var(--danger)', borderColor: 'var(--danger)' }}
               >
                 Remove Coupon
               </button>
@@ -140,7 +140,7 @@ export default function CartPreview() {
             <span>Total</span>
             <span>{formatPrice(subtotal - (appliedCoupon ? appliedCoupon.discountAmount : 0))}</span>
           </div>
-          <TransitionLink to="/cart" className="btn-primary w-full" style={{ textAlign: 'center', display: 'flex', textDecoration: 'none' }}>
+          <TransitionLink to="/cart" className="btn-primary" style={{ width: '100%', textAlign: 'center', display: 'flex', textDecoration: 'none' }}>
             <ShoppingBag size={18} style={{ marginRight: '8px' }} />
             Checkout Now
           </TransitionLink>
