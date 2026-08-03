@@ -129,7 +129,7 @@ export default function Navbar({
         <input 
           type="text" 
           id="search-input" 
-          className="input-ui"
+          className="input-ui input-with-icon"
           placeholder={searchPlaceholder} 
           aria-label="Search products and sections"
           value={searchQuery}

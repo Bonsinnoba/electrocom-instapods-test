@@ -994,7 +994,7 @@ label {
 
 .search-container input {
     width: 100%;
-    padding: 14px 20px 14px 56px;
+    padding: 14px 20px 14px 64px;
     background: var(--bg-surface);
     border: 1px solid var(--border-light);
     border-radius: 14px;
@@ -7115,7 +7115,8 @@ button.btn-login:hover {
 
 .support-search-input {
     width: 100%;
-    padding: 14px 48px 14px 56px;
+    padding: 14px 48px 14px 64px;
+    padding-left: 64px !important;
     border-radius: 14px;
     border: 1.5px solid var(--border-light);
     background: var(--bg-surface);
@@ -7819,5 +7820,15 @@ button.btn-login:hover {
 
 /* Inputs that have an icon absolutely positioned on the left */
 .input-with-icon {
-    padding-left: 56px !important; /* icon left (≈18px) + icon width (≈18px) + gap */
+    padding-left: 64px !important; /* increased to ensure icon never overlaps placeholder */
+}
+
+/* Ensure inputs that live inside containers with left icons get enough left padding.
+     Uses :has where available to avoid editing many component files. */
+.search-container:has(.search-icon) input,
+.support-search-wrap:has(.support-search-icon) input,
+.category-dropdown:has(.filter-icon) input,
+.input-wrapper:has(.left-icon) input,
+.has-left-icon input {
+    padding-left: 64px !important;
 }
