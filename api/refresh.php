@@ -5,6 +5,7 @@
 require 'cors_middleware.php';
 require_once 'db.php';
 require_once 'security.php';
+require_once 'brand_settings.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -28,10 +29,26 @@ if (!$refreshToken) {
 }
 
 try {
-    // Idle-session policy: 2h for the admin panel, 4h for the storefront.
+    $sessionTimeoutMinutes = 120;
+    try {
+        eh_ensure_site_settings_table($pdo);
+        $settingStmt = $pdo->prepare("SELECT setting_value FROM site_settings WHERE setting_key = 'sessionTimeout' LIMIT 1");
+        $settingStmt->execute();
+        $settingValue = $settingStmt->fetchColumn();
+        if ($settingValue !== false && $settingValue !== '') {
+            $parsedMinutes = (int)$settingValue;
+            if ($parsedMinutes > 0) {
+                $sessionTimeoutMinutes = $parsedMinutes;
+            }
+        }
+    } catch (Exception $e) {
+        error_log("Refresh session timeout lookup failed: " . $e->getMessage());
+    }
+
+    // Idle-session policy: configurable for the admin panel, 4h for the storefront.
     // This is enforced here regardless of what the client-side idle timer
     // does, so it can't be bypassed by tampering with frontend JS.
-    $idleWindowSeconds = ($appId === 'admin') ? (2 * 60 * 60) : (4 * 60 * 60);
+    $idleWindowSeconds = ($appId === 'admin') ? ($sessionTimeoutMinutes * 60) : (4 * 60 * 60);
 
     // Verify refresh token and get user_id
     $userId = verifyRefreshToken($pdo, $refreshToken, $idleWindowSeconds);

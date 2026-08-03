@@ -274,7 +274,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'signin' }) {
 
   return (
     <div className={`modal-backdrop active`} onClick={onClose}>
-      <div className={`auth-modal modal glass animate-scale-in ${isSignUp ? 'right-panel-active' : ''}`} onClick={(e) => e.stopPropagation()} style={{ position: 'relative', overflow: 'hidden' }}>
+      <div className={`auth-modal modal glass animate-scale-in ${isSignUp ? 'right-panel-active' : ''}`} onClick={(e) => e.stopPropagation()} style={{ position: 'relative' }}>
         <button 
           onClick={onClose} 
           style={{ 

@@ -1,7 +1,7 @@
 /* @refresh reload */
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 
-import { API_BASE_URL, setGlobalAccessToken } from '../services/api';
+import { API_BASE_URL, fetchSuperSettings, setGlobalAccessToken } from '../services/api';
 import IdleWarningModal from '../components/IdleWarningModal';
 
 const AuthContext = createContext();
@@ -15,7 +15,7 @@ export const useAuth = () => useContext(AuthContext);
 // boundary is genuine inactivity — enforced here for UX, and independently
 // re-enforced server-side in refresh.php so it can't be bypassed by disabling
 // this JS.
-const IDLE_LIMIT_MS = 2 * 60 * 60 * 1000; // 2 hours of inactivity
+const DEFAULT_IDLE_LIMIT_MS = 2 * 60 * 60 * 1000; // 2 hours of inactivity
 const IDLE_WARNING_LEAD_MS = 60 * 1000; // show the warning modal 60s before logout
 const IDLE_CHECK_INTERVAL_MS = 15 * 1000; // how often we check for inactivity
 const ACTIVITY_THROTTLE_MS = 5 * 1000; // don't record activity more than once per 5s
@@ -42,6 +42,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [idleWarning, setIdleWarning] = useState({ show: false, secondsLeft: 0 });
+  const [idleLimitMs, setIdleLimitMs] = useState(DEFAULT_IDLE_LIMIT_MS);
   // Use a ref so event listeners always see the current value without stale closures
   const isRefreshingRef = React.useRef(false);
   // Prevent multiple concurrent checkAuth calls
@@ -127,6 +128,39 @@ export const AuthProvider = ({ children }) => {
     }
   }, [accessToken, scheduleProactiveRefresh]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadIdleLimit = async () => {
+      if (!accessToken) {
+        if (!cancelled) setIdleLimitMs(DEFAULT_IDLE_LIMIT_MS);
+        return;
+      }
+
+      try {
+        const response = await fetchSuperSettings();
+        if (cancelled) return;
+
+        const timeoutMinutes = parseInt(response?.data?.sessionTimeout ?? '', 10);
+        if (Number.isFinite(timeoutMinutes) && timeoutMinutes > 0) {
+          setIdleLimitMs(timeoutMinutes * 60 * 1000);
+        } else {
+          setIdleLimitMs(DEFAULT_IDLE_LIMIT_MS);
+        }
+      } catch (error) {
+        console.warn('Unable to load session timeout setting:', error);
+        if (!cancelled) {
+          setIdleLimitMs(DEFAULT_IDLE_LIMIT_MS);
+        }
+      }
+    };
+
+    loadIdleLimit();
+    return () => {
+      cancelled = true;
+    };
+  }, [accessToken]);
+
   // --- Inactivity tracking ---
   const recordActivity = useCallback(() => {
     const now = Date.now();
@@ -183,15 +217,16 @@ export const AuthProvider = ({ children }) => {
 
     idleCheckIntervalRef.current = setInterval(() => {
       const idleMs = Date.now() - lastActivityRef.current;
+      const effectiveIdleLimitMs = idleLimitMs > 0 ? idleLimitMs : DEFAULT_IDLE_LIMIT_MS;
 
-      if (idleMs >= IDLE_LIMIT_MS) {
+      if (idleMs >= effectiveIdleLimitMs) {
         setIdleWarning({ show: false, secondsLeft: 0 });
         logout();
         return;
       }
 
-      if (idleMs >= IDLE_LIMIT_MS - IDLE_WARNING_LEAD_MS) {
-        const secondsLeft = Math.max(0, Math.ceil((IDLE_LIMIT_MS - idleMs) / 1000));
+      if (idleMs >= effectiveIdleLimitMs - IDLE_WARNING_LEAD_MS) {
+        const secondsLeft = Math.max(0, Math.ceil((effectiveIdleLimitMs - idleMs) / 1000));
         setIdleWarning({ show: true, secondsLeft });
       }
     }, IDLE_CHECK_INTERVAL_MS);

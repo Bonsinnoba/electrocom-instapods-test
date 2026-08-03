@@ -7,6 +7,7 @@
 require_once 'db.php';
 require_once 'notifications.php';
 
+ensure_notification_queue_table($pdo);
 $notifier = new NotificationService();
 $config = $notifier->config;
 

@@ -268,32 +268,6 @@ function AppContent() {
   const { logout, isAuthenticated } = useAuth();
   const { addToast } = useNotifications();
 
-  // Idle timeout implementation (Session Expiry)
-  useEffect(() => {
-    if (!settings?.sessionTimeout || !isAuthenticated) return;
-    
-    const timeoutMins = parseInt(settings.sessionTimeout);
-    let timer;
-    
-    const resetTimer = () => {
-      if (timer) clearTimeout(timer);
-      timer = setTimeout(() => {
-        logout();
-        addToast(`Disconnected: Session expired after ${timeoutMins}m of inactivity.`, 'info');
-      }, timeoutMins * 60 * 1000);
-    };
-
-    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
-    events.forEach(event => document.addEventListener(event, resetTimer));
-    
-    resetTimer();
-
-    return () => {
-      events.forEach(event => document.removeEventListener(event, resetTimer));
-      if (timer) clearTimeout(timer);
-    };
-  }, [settings?.sessionTimeout, isAuthenticated, logout, addToast]);
-
   // passive session expiry listener (401 from API)
   useEffect(() => {
     const handleUnauthorized = () => {

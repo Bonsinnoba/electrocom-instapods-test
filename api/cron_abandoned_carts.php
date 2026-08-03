@@ -73,7 +73,7 @@ try {
         $frontendUrl = $notifier->config['FRONTEND_URL'] ?? 'http://localhost:5173';
         $message .= "Your Cart:\n- {$itemListStr}\n\n";
         $message .= "Click here to complete your checkout: {$frontendUrl}/cart\n\n";
-        $message .= "We've also included a special 5% discount code to help you along: COMEBACK5\n\n";
+
         $message .= "Best regards,\nThe " . eh_brand_site_name() . " Team";
 
         // Send Email

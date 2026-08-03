@@ -58,6 +58,7 @@ try {
             if ($eventType === 'charge.success') {
                 $data = $payload['data'];
                 $reference = $data['reference'];
+                $amountPaid = $data['amount'] / 100;
                 $customerEmail = $data['customer']['email'];
 
                 // Find user by email
@@ -69,11 +70,18 @@ try {
                 }
 
                 if ($userId) {
-                    $stmt = $pdo->prepare("SELECT id, status FROM orders WHERE payment_reference = ?");
+                    $stmt = $pdo->prepare("SELECT id, status, total_amount FROM orders WHERE payment_reference = ?");
                     $stmt->execute([$reference]);
                     $order = $stmt->fetch(PDO::FETCH_ASSOC);
 
                     if ($order) {
+                        $expectedTotal = (float)$order['total_amount'];
+                        if (abs($amountPaid - $expectedTotal) > 0.10) {
+                            throw new Exception(
+                                "Amount mismatch for Order #{$order['id']} (Ref: {$reference}). "
+                                . "Expected GHS {$expectedTotal}, paid GHS {$amountPaid}. Order NOT completed — needs manual review."
+                            );
+                        }
                         completeOrder($order['id'], $pdo);
                         logger('ok', 'WEBHOOK_WORKER', "Order #{$order['id']} completed via webhook retry (event: {$eventId}).");
                     }

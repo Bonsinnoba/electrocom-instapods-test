@@ -368,20 +368,22 @@
     font-size: 16px;
     font-weight: 900;
     line-height: 1.1;
-}
-
-.compare-count-pill {
-    font-size: 11px;
-    color: var(--text-muted);
-    background: var(--bg-main);
-    padding: 2px 6px;
-    border-radius: 16px;
-    font-weight: 700;
-    display: inline-block;
-}
-
-.compare-add-btn {
-    padding: 8px !important;
+     min-width: 0;
+     overflow: hidden;
+     text-overflow: ellipsis;
+     white-space: nowrap;
+ }
+ 
+ .compare-count-pill {
+     font-size: 11px;
+     color: var(--text-muted);
+     background: var(--bg-main);
+     padding: 2px 6px;
+     border-radius: 16px;
+     font-weight: 700;
+     display: inline-block;
+     flex-shrink: 0;
+     margin-left: 6px;
     width: 44px;
     height: 44px;
     min-width: 44px;
@@ -2497,10 +2499,13 @@ button.btn-login:hover {
     max-height: 90vh;
 }
 
-.auth-modal h1 {
-    font-weight: bold;
-    margin: 0 0 10px;
-    color: var(--text-main);
+ /* Fix: limit auth modal to viewport height and allow internal scrolling so
+    the dialog never expands to fill the entire screen on small devices. */
+ .auth-modal.modal {
+     max-height: calc(90vh - 48px);
+     overflow-y: auto;
+ }
+.auth-modal h2 {
     font-size: 1.8rem;
     text-align: center;
 }

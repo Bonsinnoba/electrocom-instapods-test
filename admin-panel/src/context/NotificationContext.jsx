@@ -15,18 +15,18 @@ export const NotificationProvider = ({ children }) => {
   
   const maxSeenIdRef = useRef(0);
 
-  const addToast = (text, type = 'info') => {
+  const removeToast = useCallback((id) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  }, []);
+
+  const addToast = useCallback((text, type = 'info') => {
     const id = Date.now();
     const newToast = { id, text, type };
     setToasts(prev => [...prev, newToast]);
     setTimeout(() => {
       removeToast(id);
     }, 3000);
-  };
-
-  const removeToast = (id) => {
-    setToasts(prev => prev.filter(t => t.id !== id));
-  };
+  }, [removeToast]);
 
   const playNotificationSound = () => {
     try {

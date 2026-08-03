@@ -5,6 +5,7 @@
 
 require_once 'db.php';
 require_once 'notifications.php';
+require_once 'order_utils.php';
 require_once __DIR__ . '/brand_settings.php';
 
 $output = [];
@@ -12,6 +13,7 @@ $output[] = "Starting Automated Review Request Scan - " . date('Y-m-d H:i:s');
 
 try {
     $notifier = new NotificationService();
+    ensure_delivered_at_column($pdo);
 
     // Fetch orders that are 'delivered' and haven't had a review request sent yet.
     // We wait for at least 24 hours after delivery to ensure the customer has the product.
@@ -21,7 +23,7 @@ try {
         JOIN users u ON o.user_id = u.id
         WHERE (o.status = 'delivered' OR o.status = 'Delivered')
           AND o.review_requested_at IS NULL
-          AND o.updated_at < DATE_SUB(NOW(), INTERVAL 24 HOUR)
+          AND COALESCE(o.delivered_at, o.updated_at) < DATE_SUB(NOW(), INTERVAL 24 HOUR)
     ";
 
     $stmt = $pdo->prepare($query);

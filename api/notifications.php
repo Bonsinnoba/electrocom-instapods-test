@@ -3,6 +3,28 @@
 require_once 'security.php';
 require_once __DIR__ . '/brand_settings.php';
 
+if (!function_exists('ensure_notification_queue_table')) {
+    function ensure_notification_queue_table(PDO $pdo): void
+    {
+        $pdo->exec(
+            "CREATE TABLE IF NOT EXISTS notification_queue ("
+            . "id INT AUTO_INCREMENT PRIMARY KEY,"
+            . "type VARCHAR(50) NOT NULL,"
+            . "recipient VARCHAR(255) NOT NULL,"
+            . "subject VARCHAR(255) DEFAULT NULL,"
+            . "message TEXT NOT NULL,"
+            . "payload LONGTEXT DEFAULT NULL,"
+            . "status VARCHAR(20) NOT NULL DEFAULT 'pending',"
+            . "attempts INT NOT NULL DEFAULT 0,"
+            . "last_error TEXT DEFAULT NULL,"
+            . "scheduled_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,"
+            . "created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,"
+            . "processed_at DATETIME DEFAULT NULL"
+            . ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+        );
+    }
+}
+
 /**
  * Centralized Notification Service
  */
@@ -33,6 +55,7 @@ class NotificationService
         }
 
         try {
+            ensure_notification_queue_table($pdo);
             $stmt = $pdo->prepare("INSERT INTO notification_queue (type, recipient, subject, message, payload) VALUES (?, ?, ?, ?, ?)");
             $stmt->execute([
                 $type, 

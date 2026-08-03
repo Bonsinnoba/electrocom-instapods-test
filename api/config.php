@@ -79,7 +79,7 @@ error_log("Final DB_PASS: " . (isset($_ENV['DB_PASS']) ? 'length=' . strlen($_EN
 $config = [
     'APP_ENV'             => $_ENV['APP_ENV'] ?? 'production',
     'APP_URL'             => $_ENV['APP_URL'] ?? '',
-    'FRONTEND_URL'        => $_ENV['FRONTEND_URL'] ?? '',
+    'FRONTEND_URL'        => $_ENV['FRONTEND_URL'] ?? null,
     
     // Site Identity
     'SITE_NAME'           => $_ENV['SITE_NAME'] ?? 'My Store',
