@@ -129,6 +129,7 @@ export default function Navbar({
         <input 
           type="text" 
           id="search-input" 
+          className="input-ui"
           placeholder={searchPlaceholder} 
           aria-label="Search products and sections"
           value={searchQuery}

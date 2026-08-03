@@ -83,7 +83,7 @@ export default function Support({ searchQuery = '' }) {
             <input
               id="support-search"
               type="text"
-              className="support-search-input"
+              className="support-search-input input-ui"
               placeholder="Search FAQs…"
               value={localSearch}
               onChange={e => { setLocalSearch(e.target.value); setOpenIndex(null); }}

@@ -994,13 +994,13 @@ label {
 
 .search-container input {
     width: 100%;
-    padding: 12px 20px 12px 56px;
+    padding: 14px 20px 14px 56px;
     background: var(--bg-surface);
     border: 1px solid var(--border-light);
-    border-radius: 30px;
-    font-size: 15px;
+    border-radius: 14px;
+    font-size: 16px;
     outline: none;
-    transition: all 0.3s ease;
+    transition: all 0.18s ease;
     color: var(--text-main);
 }
 
@@ -7114,21 +7114,21 @@ button.btn-login:hover {
 }
 
 .support-search-input {
-  width: 100%;
-  padding: 14px 48px 14px 50px;
-  border-radius: 100px;
-  border: 1.5px solid var(--border-light);
-  background: var(--bg-surface);
-  color: var(--text-main);
-  font-size: 15px;
-  font-family: 'Inter', sans-serif;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-  outline: none;
+    width: 100%;
+    padding: 14px 48px 14px 56px;
+    border-radius: 14px;
+    border: 1.5px solid var(--border-light);
+    background: var(--bg-surface);
+    color: var(--text-main);
+    font-size: 15px;
+    font-family: 'Inter', sans-serif;
+    transition: border-color 0.16s ease, box-shadow 0.16s ease;
+    outline: none;
 }
 
 .support-search-input:focus {
-  border-color: var(--primary-blue);
-  box-shadow: 0 0 0 4px rgba(var(--primary-blue-rgb), 0.1);
+    border-color: var(--primary-blue);
+    box-shadow: 0 6px 20px rgba(var(--primary-blue-rgb), 0.08);
 }
 
 .support-search-clear {
@@ -7785,4 +7785,39 @@ button.btn-login:hover {
     padding: 6px 14px;
     font-size: 12px;
   }
+}
+
+/* Shared UI input (mobile-first, touch-friendly) */
+.input-ui {
+    background: var(--bg-surface);
+    color: var(--text-main);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 15px;
+    transition: box-shadow 0.16s ease, border-color 0.16s ease;
+    outline: none;
+    width: 100%;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+}
+
+.input-ui:focus {
+    border-color: var(--primary-blue);
+    box-shadow: 0 6px 20px rgba(var(--primary-blue-rgb), 0.08);
+}
+
+.input-ui::placeholder {
+    color: var(--text-muted);
+    opacity: 0.9;
+}
+
+/* Make input hit area larger on mobile */
+@media (max-width: 480px) {
+    .input-ui { padding: 14px 14px; font-size: 16px; border-radius: 12px; }
+}
+
+/* Inputs that have an icon absolutely positioned on the left */
+.input-with-icon {
+    padding-left: 56px !important; /* icon left (≈18px) + icon width (≈18px) + gap */
 }

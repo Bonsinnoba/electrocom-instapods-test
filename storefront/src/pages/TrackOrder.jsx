@@ -76,7 +76,8 @@ export default function TrackOrder() {
                   placeholder="e.g. ORD-12345"
                   value={orderId}
                   onChange={(e) => setOrderId(e.target.value)}
-                  style={{ padding: '14px 16px', borderRadius: '12px', border: '1px solid var(--border-light)', background: 'var(--bg-surface-secondary)', color: 'var(--text-main)', fontSize: '15px', outline: 'none' }}
+                  className="input-ui"
+                  style={{ background: 'var(--bg-surface-secondary)' }}
                 />
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -86,7 +87,8 @@ export default function TrackOrder() {
                   placeholder="The email used at checkout"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  style={{ padding: '14px 16px', borderRadius: '12px', border: '1px solid var(--border-light)', background: 'var(--bg-surface-secondary)', color: 'var(--text-main)', fontSize: '15px', outline: 'none' }}
+                  className="input-ui"
+                  style={{ background: 'var(--bg-surface-secondary)' }}
                 />
               </div>
             </div>

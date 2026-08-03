@@ -164,16 +164,8 @@ export default function Locations() {
             placeholder="Search by city, name, or address..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '14px 16px 14px 48px',
-              borderRadius: '12px',
-              border: '1px solid var(--border-light)',
-              background: 'var(--bg-surface)',
-              fontSize: '15px',
-              outline: 'none',
-              transition: 'border-color 0.2s'
-            }}
+            className="input-ui input-with-icon"
+            style={{ borderRadius: '12px', border: '1px solid var(--border-light)', background: 'var(--bg-surface)', fontSize: '15px' }}
             onFocus={(e) => e.target.style.borderColor = 'var(--primary-blue)'}
             onBlur={(e) => e.target.style.borderColor = 'var(--border-light)'}
           />

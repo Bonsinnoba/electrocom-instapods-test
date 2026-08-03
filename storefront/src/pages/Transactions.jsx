@@ -117,9 +117,9 @@ export default function Transactions() {
             placeholder="Search by ID, reference or title..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            className="input-ui input-with-icon"
             style={{ 
               width: '100%',
-              padding: '12px 16px 12px 48px',
               borderRadius: '14px',
               border: '1px solid var(--border-light)',
               background: 'var(--bg-main)',
