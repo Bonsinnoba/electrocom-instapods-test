@@ -111,7 +111,7 @@ export default function Transactions() {
         justifyContent: 'space-between'
       }}>
         <div style={{ position: 'relative', flex: 1, minWidth: '280px' }}>
-          <Search size={18} className="search-icon" size={18} />
+          <Search className="search-icon" size={18} />
           <input 
             type="text"
             placeholder="Search by ID, reference or title..."
