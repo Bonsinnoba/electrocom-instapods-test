@@ -55,100 +55,76 @@ export default function Login() {
 
   return (
     <div className="login-container" style={{
-      height: '100vh',
+      minHeight: '100vh',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       background: 'var(--bg-main)',
-      padding: '20px'
+      padding: '16px'
     }}>
-      <div className="card glass" style={{
+      <div className="login-card glass" style={{
         width: '100%',
-        maxWidth: '400px',
-        padding: '40px',
-        borderRadius: '32px',
-        boxShadow: '0 20px 40px rgba(0,0,0,0.2)'
+        maxWidth: '360px',
+        padding: '28px',
+        borderRadius: '24px',
+        boxShadow: '0 18px 32px rgba(0,0,0,0.14)'
       }}>
-        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
           <div style={{ 
-            width: '64px', 
-            height: '64px', 
+            width: '56px', 
+            height: '56px', 
             background: 'var(--primary-blue)', 
-            borderRadius: '16px', 
+            borderRadius: '14px', 
             display: 'flex', 
             alignItems: 'center', 
             justifyContent: 'center', 
-            margin: '0 auto 16px',
+            margin: '0 auto 14px',
             color: 'white'
           }}>
-            <ShieldCheck size={32} />
+            <ShieldCheck size={28} />
           </div>
-          <h1 style={{ fontSize: '24px', fontWeight: 800, margin: '0 0 8px 0' }}>Admin Login</h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>{siteName} Management Dashboard</p>
+          <h1 style={{ fontSize: '22px', fontWeight: 800, margin: '0 0 6px 0' }}>Admin Login</h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: '13px', margin: 0 }}>{siteName} Management Dashboard</p>
         </div>
 
         {error && (
-          <div style={{ 
-            background: 'rgba(239, 68, 68, 0.1)', 
-            color: '#ef4444', 
-            padding: '12px 16px', 
-            borderRadius: '12px', 
-            fontSize: '14px', 
-            marginBottom: '24px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px'
-          }}>
+          <div className="login-error">
             <AlertCircle size={18} /> {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '20px' }}>
+        <form onSubmit={handleSubmit} className="login-form">
           <div className="form-group">
-            <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)' }}>Email Address</label>
-            <div style={{ position: 'relative' }}>
-              <Mail size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+            <label className="login-label">Email Address</label>
+            <div className="login-field-wrapper">
+              <Mail size={18} className="login-field-icon" />
               <input 
                 type="email" 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="input-field" 
+                className="input-field login-input" 
                 placeholder={siteEmail || 'admin@example.com'} 
                 required
-                style={{ paddingLeft: '40px' }}
               />
             </div>
           </div>
 
           <div className="form-group">
-            <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)' }}>Password</label>
-            <div style={{ position: 'relative' }}>
-              <Lock size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+            <label className="login-label">Password</label>
+            <div className="login-field-wrapper">
+              <Lock size={18} className="login-field-icon" />
               <input 
                 type={showPassword ? "text" : "password"} 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="input-field" 
+                className="input-field login-input" 
                 placeholder="••••••••" 
                 required
-                style={{ paddingLeft: '40px', paddingRight: '44px' }}
               />
               <button 
                 type="button" 
                 onClick={() => setShowPassword(!showPassword)}
-                style={{
-                  position: 'absolute',
-                  right: '12px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'none',
-                  border: 'none',
-                  color: 'var(--text-muted)',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  padding: '4px'
-                }}
+                className="login-toggle"
               >
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
@@ -157,20 +133,10 @@ export default function Login() {
 
           <button 
             type="submit" 
-            className="btn-primary" 
+            className="btn-primary login-submit" 
             disabled={loading}
-            style={{ 
-              width: '100%', 
-              padding: '14px', 
-              fontSize: '16px', 
-              marginTop: '12px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px'
-            }}
           >
-            {loading ? <Loader className="animate-spin" size={20} /> : 'Enter Dashboard'}
+            {loading ? <Loader className="animate-spin" size={18} /> : 'Enter Dashboard'}
           </button>
         </form>
       </div>
