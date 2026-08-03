@@ -140,11 +140,11 @@ export default function OrderSuccess() {
         width: '100%',
         maxWidth: '400px'
       }}>
-        <Link to="/orders" className="btn-primary flex-1">
+        <Link to="/orders" className="btn-primary" style={{ flex: 1 }}>
           <Package size={18} />
           View Orders
         </Link>
-        <Link to="/shop" className="btn-secondary flex-1">
+        <Link to="/shop" className="btn-secondary" style={{ flex: 1 }}>
           <ShoppingBag size={18} />
           Shop More
         </Link>

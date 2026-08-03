@@ -512,14 +512,14 @@ export default function Settings({ searchQuery, isDarkMode, toggleDarkMode }) {
             <div style={{ display: 'flex', gap: '12px' }}>
               <button 
                 type="button"
-                className="btn-secondary flex-1"
+                className="btn-secondary" style={{ flex: 1 }} 
                 onClick={() => setShowDeleteConfirm(false)}
               >
                 Cancel
               </button>
               <button 
                 type="button"
-                className="btn-danger flex-1"
+                className="btn-danger" style={{ flex: 1 }}
                 onClick={handleDeleteAccount}
               >
                 Yes, Deactivate
@@ -673,13 +673,13 @@ export default function Settings({ searchQuery, isDarkMode, toggleDarkMode }) {
 
               <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
                 <button 
-                  type="button" className="btn-secondary flex-1"
+                  type="button" className="btn-secondary" style={{ flex: 1 }}
                   onClick={() => setShowPasswordModal(false)}
                 >
                   Cancel
                 </button>
                 <button 
-                  type="submit" className="btn-primary flex-2"
+                  type="submit" className="btn-primary" style={{ flex: 2 }}
                   disabled={pwLoading || !pwForm.current || !pwForm.next || !pwForm.confirm}
                 >
                   {pwLoading ? 'Saving…' : 'Update Password'}
