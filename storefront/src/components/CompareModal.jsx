@@ -118,13 +118,13 @@ export default function CompareModal() {
         }}
       >
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 28px 16px', borderBottom: '1px solid var(--border-light)', position: 'sticky', top: 0, background: 'var(--bg-surface)', zIndex: 10 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', borderBottom: '1px solid var(--border-light)', position: 'sticky', top: 0, background: 'var(--bg-surface)', zIndex: 10, flexWrap: 'wrap', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
             <GitCompareArrows size={20} color="var(--primary-blue)" />
-            <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 900 }}>Product Comparison</h2>
-            <span style={{ fontSize: '12px', color: 'var(--text-muted)', background: 'var(--bg-main)', padding: '2px 8px', borderRadius: '20px', fontWeight: 600 }}>{compareList.length} products</span>
+            <h2 className="compare-modal-title" style={{ margin: 0, flexShrink: 1, minWidth: 0 }}>Product Comparison</h2>
+            <span className="compare-count-pill" style={{ marginLeft: '6px' }}>{compareList.length} products</span>
           </div>
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '8px', marginLeft: 'auto' }}>
             <button onClick={clearCompare} style={{ background: 'var(--danger-bg)', color: 'var(--danger)', border: 'none', borderRadius: '8px', padding: '7px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Clear All">
               <Trash2 size={16} />
             </button>
@@ -180,8 +180,8 @@ export default function CompareModal() {
                 {compareList.map(product => (
                   <td key={product.id} style={{ padding: '20px 8px', textAlign: 'center' }}>
                     <button
-                      className="btn-primary"
-                      style={{ width: '100%', padding: '10px 16px', borderRadius: '12px', fontSize: '13px', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                      className="btn-primary compare-add-btn"
+                      style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                       onClick={() => {
                         const discount = parseInt(product.discount_percent) || 0;
                         const price = parseFloat(product.price) || 0;

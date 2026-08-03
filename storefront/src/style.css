@@ -303,6 +303,39 @@
     animation: compareModalFade 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Compare Modal - tweaks for header pill and add-to-cart buttons */
+.compare-modal-title {
+    font-size: 16px;
+    font-weight: 900;
+    line-height: 1.1;
+}
+
+.compare-count-pill {
+    font-size: 11px;
+    color: var(--text-muted);
+    background: var(--bg-main);
+    padding: 2px 6px;
+    border-radius: 16px;
+    font-weight: 700;
+    display: inline-block;
+}
+
+.compare-add-btn {
+    padding: 10px 14px !important;
+    border-radius: 12px !important;
+    font-size: 13px !important;
+    font-weight: 800 !important;
+}
+
+/* Mobile adjustments */
+@media (max-width: 480px) {
+    .compare-modal-title { font-size: 15px; }
+    .compare-count-pill { font-size: 10px; padding: 2px 5px; }
+    .compare-add-btn { padding: 8px 10px !important; font-size: 12px !important; }
+    /* Reduce table min width on small screens to avoid horizontal overflow */
+    .compare-modal-enter table { min-width: 380px !important; }
+}
+
 /* Enhanced Skeleton Shimmer Overlay */
 .skeleton {
     position: relative;
