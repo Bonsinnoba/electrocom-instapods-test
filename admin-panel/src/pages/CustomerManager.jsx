@@ -484,7 +484,7 @@ export default function CustomerManager() {
                 </div>
               </div>
               <div style={{ marginTop: '12px' }}>
-                <button type="submit" className="btn btn-primary" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '14px' }}>
+                <button type="submit" className="btn btn-primary btn-compact" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '12px 14px' }}>
                   <Save size={20} /> {editingCustomer ? 'Update Customer' : 'Create Customer'}
                 </button>
               </div>

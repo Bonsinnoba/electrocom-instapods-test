@@ -411,24 +411,24 @@ export default function POSInterface() {
            <p style={{ color: 'var(--text-muted)', marginBottom: '40px' }}>Order #ORD-{lastOrderId} processed successfully.</p>
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
               <button 
-                className="btn btn-primary" 
+                className="btn btn-primary btn-compact" 
                 onClick={() => { setShowSuccess(false); setTimeout(() => searchInputRef.current?.focus(), 100); }}
-                style={{ height: '42px', padding: '0 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700 }}
+                style={{ height: '38px', padding: '0 16px', borderRadius: '10px', fontSize: '13px', fontWeight: 700 }}
               >
                 NEW CUSTOMER <Plus size={16} />
               </button>
               <button 
-                className="btn btn-secondary" 
+                className="btn btn-secondary btn-compact" 
                 onClick={() => window.print()}
-                style={{ height: '42px', padding: '0 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700 }}
+                style={{ height: '38px', padding: '0 16px', borderRadius: '10px', fontSize: '13px', fontWeight: 700 }}
               >
                 <Printer size={16} /> PRINT
               </button>
               <button 
-                className="btn btn-secondary" 
+                className="btn btn-secondary btn-compact" 
                 onClick={handleEmailReceipt} 
                 disabled={sendingEmail}
-                style={{ height: '42px', padding: '0 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700 }}
+                style={{ height: '38px', padding: '0 16px', borderRadius: '10px', fontSize: '13px', fontWeight: 700 }}
               >
                 <Mail size={16} /> {sendingEmail ? 'SENDING...' : 'EMAIL'}
               </button>

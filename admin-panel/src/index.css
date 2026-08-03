@@ -192,12 +192,24 @@ textarea:focus-visible {
 }
 
 .btn {
-    padding: 10px 20px;
-    border-radius: var(--radius-sm);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 12px;
     font-weight: 600;
     cursor: pointer;
     border: none;
-    transition: all 0.2s;
+    transition: all 0.2s ease;
+}
+
+.btn-compact {
+    padding: 7px 12px;
+    border-radius: 10px;
+    gap: 5px;
+    font-size: 13px;
+    min-height: 34px;
 }
 
 .btn-primary {
@@ -979,12 +991,12 @@ select.input-premium {
 .btn-primary,
 .btn-secondary,
 .btn-danger {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    padding: 10px 20px;
-    border-radius: var(--radius-sm);
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 12px;
     font-weight: 600;
     cursor: pointer;
     border: 1px solid transparent;

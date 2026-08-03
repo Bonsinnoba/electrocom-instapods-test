@@ -486,7 +486,7 @@ export default function Dashboard() {
         <AlertTriangle size={48} color="var(--danger)" style={{ marginBottom: '24px' }} />
         <h2 style={{ fontSize: '24px', fontWeight: 800 }}>Analytics Unavailable</h2>
         <p style={{ color: 'var(--text-muted)', margin: '16px 0' }}>{error}</p>
-        <button className="btn btn-primary" onClick={() => loadAnalytics(true)}>Retry Connection</button>
+        <button className="btn btn-primary btn-compact" onClick={() => loadAnalytics(true)}>Retry Connection</button>
       </div>
     );
   }
