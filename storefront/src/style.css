@@ -321,10 +321,35 @@
 }
 
 .compare-add-btn {
-    padding: 10px 14px !important;
+    padding: 8px !important;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
     border-radius: 12px !important;
     font-size: 13px !important;
     font-weight: 800 !important;
+}
+
+/* Hide the button text by default (mobile); show only icon */
+.compare-add-btn .compare-add-text { display: none; }
+
+/* Show full button (icon + text) on tablets and larger */
+@media (min-width: 768px) {
+    .compare-add-btn {
+        width: auto;
+        height: auto;
+        min-width: 0;
+        padding: 10px 14px !important;
+        display: inline-flex;
+        gap: 8px;
+        align-items: center;
+        justify-content: center;
+    }
+    .compare-add-btn .compare-add-text {
+        display: inline-block;
+        font-size: 13px;
+        font-weight: 800;
+    }
 }
 
 /* Mobile adjustments */
@@ -1502,9 +1527,15 @@ label {
     border: 1px solid var(--border-light);
     border-radius: 16px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-    z-index: 1000;
+    z-index: 4001; /* ensure dropdown sits above compare bar (z=2000) and modal backdrop */
     overflow: hidden;
     padding: 12px;
+}
+
+/* When search is active, raise the container to a high stacking context so dropdown and input are not clipped by bottom bars */
+.search-container.active,
+.search-container:focus-within {
+    z-index: 4000;
 }
 
 .results-section {

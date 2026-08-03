@@ -42,104 +42,91 @@ export default function CompareBar() {
           boxShadow: '0 -8px 40px rgba(0,0,0,0.18)',
           display: 'flex',
           alignItems: 'center',
-          gap: '16px',
-          padding: '14px 24px',
+          gap: '12px',
+          padding: '10px 16px',
           backdropFilter: 'blur(16px)',
         }}
       >
         {/* Icon + Count */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
           <div style={{
-            background: 'rgba(var(--primary-blue-rgb), 0.1)',
+            background: 'rgba(var(--primary-blue-rgb), 0.08)',
             color: 'var(--primary-blue)',
             borderRadius: '10px',
             width: '36px', height: '36px',
             display: 'flex', alignItems: 'center', justifyContent: 'center'
           }}>
-            <GitCompareArrows size={18} />
+            <GitCompareArrows size={16} />
           </div>
-          <span style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-main)' }}>
-            {compareList.length}/3
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-main)', display: 'inline-block' }}>{compareList.length}/3</span>
+          </div>
         </div>
 
         {/* Product Slots */}
-        <div style={{ display: 'flex', gap: '10px', flex: 1, alignItems: 'center', overflow: 'hidden' }}>
+        <div style={{ display: 'flex', gap: '8px', flex: 1, alignItems: 'center', overflow: 'hidden' }}>
           {slots.map((product, idx) =>
             product ? (
               <div
                 key={product.id}
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
+                  width: '56px',
+                  height: '56px',
+                  borderRadius: '10px',
                   background: 'var(--bg-main)',
                   border: '1px solid var(--border-light)',
-                  borderRadius: '12px',
-                  padding: '6px 10px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                   position: 'relative',
-                  minWidth: 0,
-                  flex: '1 1 0',
-                  maxWidth: '220px',
+                  flexShrink: 0,
                 }}
               >
                 <img
                   src={product.image}
                   alt={product.name}
                   loading="lazy"
-                  style={{ width: '32px', height: '32px', objectFit: 'contain', borderRadius: '6px', background: '#fff', flexShrink: 0 }}
+                  style={{ width: '44px', height: '44px', objectFit: 'contain', borderRadius: '8px', background: '#fff' }}
                 />
-                <span style={{
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  color: 'var(--text-main)',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  flex: 1,
-                }}>
-                  {product.name}
-                </span>
                 <button
                   onClick={() => removeFromCompare(product.id)}
                   style={{
-                    background: 'none', border: 'none', cursor: 'pointer',
-                    color: 'var(--text-muted)', padding: '2px', borderRadius: '4px',
-                    display: 'flex', alignItems: 'center', flexShrink: 0,
-                    transition: 'color 0.2s',
+                    position: 'absolute', top: '-6px', right: '-6px',
+                    width: '26px', height: '26px', borderRadius: '8px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: 'var(--bg-main)', border: '1px solid var(--border-light)',
+                    color: 'var(--text-muted)', cursor: 'pointer',
                   }}
-                  onMouseOver={e => e.currentTarget.style.color = 'var(--danger)'}
-                  onMouseOut={e => e.currentTarget.style.color = 'var(--text-muted)'}
-                  title="Remove from comparison"
+                  title="Remove"
                 >
-                  <X size={13} />
+                  <X size={12} />
                 </button>
               </div>
             ) : (
               <div
                 key={`ghost-${idx}`}
                 style={{
-                  flex: '1 1 0',
-                  maxWidth: '220px',
-                  height: '48px',
+                  width: '56px',
+                  height: '56px',
+                  borderRadius: '10px',
                   border: '2px dashed var(--border-light)',
-                  borderRadius: '12px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   color: 'var(--text-muted)',
                   fontSize: '11px',
-                  opacity: 0.6,
+                  opacity: 0.7,
+                  flexShrink: 0,
                 }}
               >
-                + Add product
+                +
               </div>
             )
           )}
         </div>
 
         {/* Actions */}
-        <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+        <div style={{ display: 'flex', gap: '10px', flexShrink: 0, alignItems: 'center' }}>
           <button
             onClick={clearCompare}
             style={{
@@ -147,7 +134,7 @@ export default function CompareBar() {
               color: 'var(--danger)',
               border: '1px solid transparent',
               borderRadius: '10px',
-              padding: '8px 12px',
+              padding: '8px',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -167,13 +154,13 @@ export default function CompareBar() {
             disabled={compareList.length < 2}
             className="btn-primary"
             style={{
-              padding: '8px 14px',
-              borderRadius: '10px',
-              fontSize: '13px',
-              fontWeight: 800,
+              padding: '10px 18px',
+              borderRadius: '14px',
+              fontSize: '14px',
+              fontWeight: 900,
               display: 'flex',
               alignItems: 'center',
-              gap: '6px',
+              gap: '8px',
               opacity: compareList.length < 2 ? 0.5 : 1,
               cursor: compareList.length < 2 ? 'not-allowed' : 'pointer',
             }}

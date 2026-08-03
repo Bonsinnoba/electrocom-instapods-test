@@ -181,7 +181,8 @@ export default function CompareModal() {
                   <td key={product.id} style={{ padding: '20px 8px', textAlign: 'center' }}>
                     <button
                       className="btn-primary compare-add-btn"
-                      style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                      aria-label="Add to cart"
+                      style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                       onClick={() => {
                         const discount = parseInt(product.discount_percent) || 0;
                         const price = parseFloat(product.price) || 0;
@@ -190,7 +191,8 @@ export default function CompareModal() {
                         addToast(`${product.name} added to cart`, 'success');
                       }}
                     >
-                      <ShoppingCart size={14} /> Add to Cart
+                      <ShoppingCart size={16} />
+                      <span className="compare-add-text" style={{ display: 'none' }}>Add to Cart</span>
                     </button>
                   </td>
                 ))}
