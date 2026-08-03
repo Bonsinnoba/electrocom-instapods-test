@@ -161,8 +161,8 @@ export default function Navbar({
                   <button
                     key={term}
                     type="button"
-                    className="result-item w-full"
-                    style={{ border: 'none', background: 'transparent', cursor: 'pointer', textAlign: 'left' }}
+                    className="result-item"
+                    style={{ width: '100%', border: 'none', background: 'transparent', cursor: 'pointer', textAlign: 'left' }}
                     onClick={() => {
                       setSearchQuery(term);
                       setIsFocused(true);

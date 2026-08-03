@@ -75,16 +75,15 @@
     --btn-padding-sm: clamp(0.5rem, 0.4rem + 0.5vw, 0.75rem) clamp(1rem, 0.8rem + 1vw, 1.5rem);
     --btn-padding-md: clamp(0.75rem, 0.6rem + 0.75vw, 1rem) clamp(1.5rem, 1.2rem + 1.5vw, 2rem);
     --btn-padding-lg: clamp(1rem, 0.8rem + 1vw, 1.25rem) clamp(2rem, 1.6rem + 2vw, 2.5rem);
-
+}
     /* Animation system */
-    --anim-duration-fast: .12s;
-    --anim-duration: .22s;
-    --anim-duration-slow: .36s;
+    --anim-duration-fast: 120ms;
+    --anim-duration: 220ms;
+    --anim-duration-slow: 360ms;
     --anim-ease: cubic-bezier(0.2, 0.9, 0.2, 1);
     --anim-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
     --anim-translate-small: 6px;
     --anim-translate-medium: 12px;
-}
 
 /* Accessibility: respect reduced motion */
 @media (prefers-reduced-motion: reduce) {
@@ -129,7 +128,7 @@
     transition: transform var(--anim-duration) var(--anim-ease), box-shadow var(--anim-duration) var(--anim-ease);
 }
 .hover-lift:hover { transform: translateY(-4px); box-shadow: 0 12px 36px rgba(16,24,40,0.06); }
-.press { transition: transform var(--anim-duration-fast) var(--anim-ease); }
+.press { transition: transform var(--anim-fast) var(--anim-ease); }
 .press:active { transform: translateY(1px) scale(0.997); }
 
 .input-ui { transition: box-shadow var(--anim-duration) var(--anim-ease), border-color var(--anim-duration) var(--anim-ease); }
@@ -806,8 +805,7 @@ button.btn {
 
 /* Reduce button bulk on small screens */
 @media (max-width: 600px) {
-    /* Only target buttons that opt-in with the .btn class to avoid styling native controls */
-    .btn, button.btn { padding: 8px 12px; min-height: 40px; font-size: var(--font-size-sm); }
+    .btn, button { padding: 8px 12px; min-height: 40px; font-size: var(--font-size-sm); }
     .btn-icon { width: 40px; height: 40px; }
     .btn-cute { padding: 8px 12px; }
 }
@@ -817,15 +815,6 @@ button[style] { box-sizing: border-box; }
 
 /* Opt-in utility to force compact mode for mobile-like UIs */
 .btn-compact { padding: 6px 10px !important; min-height: 36px !important; font-size: var(--font-size-xs) !important; }
-
-/* Utility helpers */
-.w-full { width: 100% !important; }
-.flex-1 { flex: 1 !important; }
-.flex-2 { flex: 2 !important; }
-.text-center { text-align: center !important; }
-.d-flex { display: flex !important; }
-.items-center { align-items: center !important; }
-.justify-center { justify-content: center !important; }
 
 
 /* Color Swatches */
