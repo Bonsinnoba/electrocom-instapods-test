@@ -5635,6 +5635,21 @@ button.btn-login:hover {
     color: var(--text-main);
 }
 
+.product-modal .modal-close-btn {
+    position: static !important;
+    top: auto !important;
+    right: auto !important;
+    background: var(--bg-surface) !important;
+    border: 1px solid rgba(var(--text-muted-rgb), 0.18) !important;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08) !important;
+    color: var(--text-muted) !important;
+}
+
+.product-modal .modal-close-btn:hover {
+    background: var(--bg-surface-secondary) !important;
+    color: var(--text-main) !important;
+}
+
 .modal-icon-wrapper {
     width: 72px;
     height: 72px;
