@@ -429,7 +429,7 @@ export default function Shop({ products, onProductClick, searchQuery, loading })
             padding-top: 16px !important;
           }
           .product-grid {
-            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)) !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
             gap: 16px !important;
           }
           .desktop-filters {
@@ -446,6 +446,13 @@ export default function Shop({ products, onProductClick, searchQuery, loading })
           }
           .shop-secondary-nav {
             display: flex !important;
+          }
+        }
+
+        @media (max-width: 330px) {
+          .product-grid {
+            grid-template-columns: 1fr !important;
+            gap: 16px !important;
           }
         }
 
