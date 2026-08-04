@@ -277,9 +277,9 @@ function ProductModal({ product, products = [], isOpen, onClose, onAddToCart, on
             </div>
 
             {/* Config & Actions Group */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
               {/* Quantity & Color Row */}
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', alignItems: 'flex-end' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'flex-end' }}>
                 <div className="detail-section">
                   <label style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '8px', display: 'block' }}>Quantity</label>
                   <div className="quantity-selector" style={{ background: 'var(--bg-surface-secondary)', padding: '4px', borderRadius: '12px', opacity: isOutOfStock ? 0.5 : 1 }}>
@@ -373,13 +373,13 @@ function ProductModal({ product, products = [], isOpen, onClose, onAddToCart, on
                       disabled={isNotifying}
                       style={{
                         flex: 1.5,
-                        padding: '14px 10px',
-                        borderRadius: '14px',
+                        padding: '12px 10px',
+                        borderRadius: '12px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        gap: '8px',
-                        fontSize: '14px',
+                        gap: '6px',
+                        fontSize: '13px',
                         fontWeight: 700,
                         background: isNotifying ? 'var(--text-muted)' : 'var(--warning)',
                         color: 'white',
@@ -396,16 +396,16 @@ function ProductModal({ product, products = [], isOpen, onClose, onAddToCart, on
                       onClick={handleAddToWishlist}
                       style={{
                         flex: 1,
-                        padding: '14px 10px',
-                        borderRadius: '14px',
+                        padding: '12px 10px',
+                        borderRadius: '12px',
                         background: inWishlist ? 'var(--danger-bg)' : 'var(--bg-surface)',
                         color: inWishlist ? 'var(--danger)' : 'var(--primary-blue)',
                         borderColor: inWishlist ? 'var(--danger)' : 'var(--border-light)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        gap: '8px',
-                        fontSize: '14px',
+                        gap: '6px',
+                        fontSize: '13px',
                         fontWeight: 600,
                         border: '1px solid',
                         whiteSpace: 'nowrap',
@@ -424,13 +424,13 @@ function ProductModal({ product, products = [], isOpen, onClose, onAddToCart, on
                       disabled={isAdding}
                       style={{
                         flex: 1.5,
-                        padding: '14px 10px',
-                        borderRadius: '14px',
+                        padding: '12px 10px',
+                        borderRadius: '12px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        gap: '8px',
-                        fontSize: '14px',
+                        gap: '6px',
+                        fontSize: '13px',
                         fontWeight: 700,
                         boxShadow: isAdding ? '0 4px 20px rgba(16, 185, 129, 0.4)' : '0 4px 12px rgba(59, 130, 246, 0.2)',
                         background: isAdding ? 'var(--success)' : 'var(--primary-blue)',
@@ -447,16 +447,16 @@ function ProductModal({ product, products = [], isOpen, onClose, onAddToCart, on
                       onClick={handleAddToWishlist}
                       style={{
                         flex: 1,
-                        padding: '14px 10px',
-                        borderRadius: '14px',
+                        padding: '12px 10px',
+                        borderRadius: '12px',
                         background: inWishlist ? 'var(--danger-bg)' : 'var(--bg-surface)',
                         color: inWishlist ? 'var(--danger)' : 'var(--primary-blue)',
                         borderColor: inWishlist ? 'var(--danger)' : 'var(--border-light)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        gap: '8px',
-                        fontSize: '14px',
+                        gap: '6px',
+                        fontSize: '13px',
                         fontWeight: 600,
                         border: '1px solid',
                         whiteSpace: 'nowrap',
@@ -472,8 +472,8 @@ function ProductModal({ product, products = [], isOpen, onClose, onAddToCart, on
 
               {notifyMessage && (
                 <div style={{
-                  marginTop: '12px',
-                  padding: '12px',
+                  marginTop: '8px',
+                  padding: '10px',
                   borderRadius: '8px',
                   background: notifyMessage.includes('Failed') ? 'var(--danger-bg)' : 'var(--success-bg)',
                   color: notifyMessage.includes('Failed') ? 'var(--danger)' : 'var(--success)',
@@ -740,16 +740,16 @@ function ProductModal({ product, products = [], isOpen, onClose, onAddToCart, on
 
               {/* Related Products Section */}
               {related.length > 0 && (
-                <div className="related-products-section" style={{ marginTop: '32px', borderTop: '1px solid var(--border-light)', paddingTop: '24px' }}>
-                  <h3 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div className="related-products-section" style={{ marginTop: '22px', borderTop: '1px solid var(--border-light)', paddingTop: '18px' }}>
+                  <h3 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <ShoppingBag size={18} color="var(--primary-blue)" /> 
                     Frequently Bought Together
                   </h3>
-                  <div className="related-carousel" style={{ 
+                  <div className="related-carousel custom-scrollbar" style={{ 
                     display: 'flex', 
-                    gap: '16px', 
+                    gap: '12px', 
                     overflowX: 'auto', 
-                    paddingBottom: '16px',
+                    paddingBottom: '10px',
                     scrollSnapType: 'x mandatory',
                     WebkitOverflowScrolling: 'touch',
                     width: '100%',

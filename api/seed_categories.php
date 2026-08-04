@@ -21,9 +21,9 @@ $initialCategories = [
         'is_active' => true
     ],
     [
-        'name' => 'Electromechanical',
-        'slug' => 'electromechanical',
-        'description' => 'Electromechanical components including switches, relays, and motors',
+        'name' => 'Mechanical',
+        'slug' => 'mechanical',
+        'description' => 'Mechanical components including switches, relays, and motors',
         'icon' => 'Zap',
         'display_order' => 3,
         'is_active' => true
