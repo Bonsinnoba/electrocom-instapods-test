@@ -226,6 +226,17 @@
     scrollbar-color: rgba(var(--primary-blue-rgb), 0.4) transparent;
 }
 
+.compare-table-scroll {
+    scrollbar-width: none;
+}
+
+.compare-table-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.compare-table-scroll {
+    -ms-overflow-style: none;
+}
 
 
 @keyframes scaleIn {
