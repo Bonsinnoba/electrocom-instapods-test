@@ -429,7 +429,7 @@ function FlashSaleBanner({ products, onProductClick }) {
             )}
           </div>
         ) : (
-          <div style={{
+          <div className="banner-pill" style={{
             background: 'rgba(255, 255, 255, 0.03)',
             border: '1px solid rgba(255, 255, 255, 0.05)',
             borderRadius: '16px',

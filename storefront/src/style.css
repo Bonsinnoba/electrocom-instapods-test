@@ -75,7 +75,7 @@
     --btn-padding-sm: clamp(0.5rem, 0.4rem + 0.5vw, 0.75rem) clamp(1rem, 0.8rem + 1vw, 1.5rem);
     --btn-padding-md: clamp(0.75rem, 0.6rem + 0.75vw, 1rem) clamp(1.5rem, 1.2rem + 1.5vw, 2rem);
     --btn-padding-lg: clamp(1rem, 0.8rem + 1vw, 1.25rem) clamp(2rem, 1.6rem + 2vw, 2.5rem);
-}
+
     /* Animation system */
     --anim-duration-fast: 120ms;
     --anim-duration: 220ms;
@@ -84,6 +84,7 @@
     --anim-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
     --anim-translate-small: 6px;
     --anim-translate-medium: 12px;
+}
 
 /* Accessibility: respect reduced motion */
 @media (prefers-reduced-motion: reduce) {
@@ -5487,15 +5488,20 @@ button.btn-login:hover {
 
     .flash-sale-banner .banner-cta-button {
         padding: 0 16px;
-        height: 34px;
+        height: 32px;
         font-size: 12px;
         border-radius: 12px;
+        min-width: 140px;
+    }
+
+    .flash-sale-banner .banner-pill {
+        display: none;
     }
 
     .flash-sale-banner .countdown-box {
-        width: 34px;
-        height: 32px;
-        font-size: 15px;
+        width: 32px;
+        height: 30px;
+        font-size: 14px;
     }
 }
 
@@ -7003,10 +7009,13 @@ button.btn-login:hover {
         box-shadow: var(--glass-shadow);
         box-sizing: border-box;
         scrollbar-width: thin;
+        scrollbar-color: rgba(var(--primary-blue-rgb), 0.18) transparent;
+        -ms-overflow-style: none;
     }
 
     .home-side-recommendations::-webkit-scrollbar {
         width: 6px;
+        height: 6px;
     }
     
     .home-side-recommendations::-webkit-scrollbar-track {
@@ -7014,13 +7023,29 @@ button.btn-login:hover {
     }
     
     .home-side-recommendations::-webkit-scrollbar-thumb {
-        background: var(--border-light);
-        border-radius: 10px;
+        background: rgba(var(--primary-blue-rgb), 0.08);
+        border-radius: 999px;
+        transition: background 0.2s ease, width 0.2s ease;
+    }
+
+    .home-side-recommendations:hover::-webkit-scrollbar-thumb {
+        background: rgba(var(--primary-blue-rgb), 0.32);
+    }
+
+    .home-side-recommendations:hover::-webkit-scrollbar {
+        width: 6px;
     }
 
     /* Sleek custom scrollbar for sticky recommendations list */
+    .recommendations-list {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(var(--primary-blue-rgb), 0.08) transparent;
+        -ms-overflow-style: none;
+    }
+
     .recommendations-list::-webkit-scrollbar {
         width: 6px;
+        height: 6px;
     }
     
     .recommendations-list::-webkit-scrollbar-track {
@@ -7028,12 +7053,13 @@ button.btn-login:hover {
     }
     
     .recommendations-list::-webkit-scrollbar-thumb {
-        background: var(--border-light);
-        border-radius: 10px;
+        background: rgba(var(--primary-blue-rgb), 0.08);
+        border-radius: 999px;
+        transition: background 0.2s ease, width 0.2s ease;
     }
     
-    .recommendations-list::-webkit-scrollbar-thumb:hover {
-        background: var(--text-muted);
+    .recommendations-list:hover::-webkit-scrollbar-thumb {
+        background: rgba(var(--primary-blue-rgb), 0.32);
     }
 
     .home-side-recommendations .recommendations-title {
