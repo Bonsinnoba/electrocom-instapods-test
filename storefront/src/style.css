@@ -5469,7 +5469,7 @@ button.btn-login:hover {
         padding: 10px 10px;
         border-radius: 18px;
         gap: 10px;
-        min-height: 135px;
+        min-height: 130px;
     }
 
     .flash-sale-banner > div {
@@ -5489,20 +5489,20 @@ button.btn-login:hover {
     }
 
     .flash-sale-banner .banner-cta-button {
-        padding: 0 16px;
-        height: 32px;
+        padding: 0 14px;
+        height: 30px;
         font-size: 12px;
         border-radius: 12px;
-        min-width: 120px;
+        min-width: 110px;
         white-space: nowrap;
     }
 
     .flash-sale-banner .banner-pill {
-        padding: 10px 14px;
+        padding: 8px 12px;
         border-radius: 12px;
         font-size: 12px;
         flex: 1 1 auto;
-        min-width: 110px;
+        min-width: 100px;
     }
 
     .flash-sale-banner .banner-pill span {
@@ -5516,10 +5516,11 @@ button.btn-login:hover {
 
     .flash-sale-banner .banner-actions-row {
         display: flex !important;
-        flex-wrap: wrap !important;
-        gap: 10px !important;
+        flex-wrap: nowrap !important;
+        gap: 8px !important;
         align-items: center !important;
         justify-content: flex-start !important;
+        overflow-x: auto !important;
     }
 
     .flash-sale-banner .banner-actions-row > * {
@@ -5530,6 +5531,17 @@ button.btn-login:hover {
         width: 32px;
         height: 30px;
         font-size: 14px;
+    }
+}
+
+@media (max-width: 330px) {
+    .flash-sale-banner .banner-actions-row {
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+    }
+
+    .flash-sale-banner .banner-actions-row > * {
+        width: 100% !important;
     }
 }
 
