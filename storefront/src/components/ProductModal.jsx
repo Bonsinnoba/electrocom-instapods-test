@@ -219,32 +219,18 @@ function ProductModal({ product, products = [], isOpen, onClose, onAddToCart, on
   return (
     <div className={`modal-backdrop active`} onClick={onClose}>
       <div className="product-modal modal glass animate-scale-in" onClick={(e) => e.stopPropagation()} style={{ position: 'relative' }}>
-        <button 
-          onClick={onClose} 
-          style={{ 
-            position: 'absolute', 
-            top: '20px', 
-            right: '20px', 
-            width: '32px', 
-            height: '32px', 
-            padding: 0, 
-            borderRadius: '50%',
-            zIndex: 10,
-            background: 'none',
-            border: 'none',
-            color: 'var(--text-muted)',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'all 0.2s'
-          }}
-          onMouseOver={(e) => e.currentTarget.style.background = 'rgba(0,0,0,0.05)'}
-          onMouseOut={(e) => e.currentTarget.style.background = 'none'}
-        >
-          <X size={18} />
-        </button>
-        
+        <div className="product-modal-header">
+          <h3>Product Details</h3>
+          <button
+            type="button"
+            className="modal-close-btn"
+            onClick={onClose}
+            aria-label="Close product details"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
         <div className="product-modal-content">
           {/* Left Column: Image & Actions */}
           <div className="product-modal-image" style={{ minWidth: 0 }}>
@@ -504,12 +490,11 @@ function ProductModal({ product, products = [], isOpen, onClose, onAddToCart, on
 
           {/* Right Column: Info & Details */}
           <div className="product-modal-details" style={{ scrollBehavior: 'smooth', minWidth: 0 }}>
-            <h2 className="product-title" style={{ fontSize: '32px', marginBottom: '4px' }}>{product.name}</h2>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '16px' }}>
+            <h2 className="product-title" style={{ marginBottom: '4px' }}>{product.name}</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px' }}>
                     <p className="product-price" style={{ 
-                      fontSize: '32px', 
                       margin: 0, 
                       color: isSaleActive ? 'var(--success)' : 'inherit',
                       fontWeight: 800
@@ -518,7 +503,7 @@ function ProductModal({ product, products = [], isOpen, onClose, onAddToCart, on
                     </p>
                     {isSaleActive && (
                       <p style={{ 
-                        fontSize: '18px', 
+                        fontSize: '16px', 
                         margin: 0, 
                         color: 'var(--text-muted)', 
                         textDecoration: 'line-through',
@@ -563,8 +548,8 @@ function ProductModal({ product, products = [], isOpen, onClose, onAddToCart, on
             </div>
 
             {product.description && (
-              <div style={{ marginTop: '16px', marginBottom: '16px' }}>
-                <p style={{ fontSize: '14px', lineHeight: 1.6, color: 'var(--text-muted)', margin: 0 }}>
+              <div style={{ margin: '12px 0 10px' }}>
+                <p style={{ fontSize: '14px', lineHeight: 1.5, color: 'var(--text-muted)', margin: 0 }}>
                   {product.description}
                 </p>
               </div>
