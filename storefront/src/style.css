@@ -5466,24 +5466,26 @@ button.btn-login:hover {
 
 @media (max-width: 768px) {
     .flash-sale-banner {
-        padding: 12px 14px;
+        padding: 10px 12px;
         border-radius: 18px;
-        gap: 14px;
-        min-height: 170px;
+        gap: 12px;
+        min-height: 150px;
     }
 
     .flash-sale-banner > div {
-        gap: 10px;
+        gap: 8px;
     }
 
     .flash-sale-banner h2 {
-        font-size: 18px !important;
+        font-size: 17px !important;
+        line-height: 1.15 !important;
         margin: 0 !important;
     }
 
     .flash-sale-banner p {
-        font-size: 12px !important;
+        font-size: 11px !important;
         margin: 0 !important;
+        line-height: 1.4 !important;
     }
 
     .flash-sale-banner .banner-cta-button {
@@ -5491,11 +5493,32 @@ button.btn-login:hover {
         height: 32px;
         font-size: 12px;
         border-radius: 12px;
-        min-width: 140px;
+        min-width: 120px;
+        white-space: nowrap;
     }
 
     .flash-sale-banner .banner-pill {
-        display: none;
+        padding: 10px 14px;
+        border-radius: 12px;
+        font-size: 12px;
+        flex: 1 1 auto;
+        min-width: 110px;
+    }
+
+    .flash-sale-banner .banner-pill span {
+        font-size: 12px;
+    }
+
+    .flash-sale-banner .banner-pill svg {
+        width: 14px;
+        height: 14px;
+    }
+
+    .flash-sale-banner > div:last-child {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
     }
 
     .flash-sale-banner .countdown-box {
