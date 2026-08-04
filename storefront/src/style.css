@@ -5489,59 +5489,50 @@ button.btn-login:hover {
     }
 
     .flash-sale-banner .banner-cta-button {
-        padding: 0 14px;
-        height: 30px;
-        font-size: 12px;
+        padding: 0 10px;
+        height: 28px;
+        font-size: 11px;
         border-radius: 12px;
-        min-width: 110px;
+        min-width: 85px;
         white-space: nowrap;
     }
 
     .flash-sale-banner .banner-pill {
-        padding: 8px 12px;
+        padding: 6px 10px;
         border-radius: 12px;
-        font-size: 12px;
-        flex: 1 1 auto;
-        min-width: 100px;
+        font-size: 11px;
+        flex: 1 1 0;
+        min-width: 0;
     }
 
     .flash-sale-banner .banner-pill span {
-        font-size: 12px;
+        font-size: 11px;
     }
 
     .flash-sale-banner .banner-pill svg {
-        width: 14px;
-        height: 14px;
+        width: 12px;
+        height: 12px;
     }
 
     .flash-sale-banner .banner-actions-row {
         display: flex !important;
         flex-wrap: nowrap !important;
-        gap: 8px !important;
+        gap: 6px !important;
         align-items: center !important;
-        justify-content: flex-start !important;
-        overflow-x: auto !important;
+        justify-content: stretch !important;
+        overflow-x: hidden !important;
+        width: 100%;
     }
 
     .flash-sale-banner .banner-actions-row > * {
-        flex: none !important;
+        flex: 1 1 0 !important;
+        min-width: 0 !important;
     }
 
     .flash-sale-banner .countdown-box {
         width: 32px;
         height: 30px;
         font-size: 14px;
-    }
-}
-
-@media (max-width: 330px) {
-    .flash-sale-banner .banner-actions-row {
-        flex-wrap: wrap !important;
-        gap: 6px !important;
-    }
-
-    .flash-sale-banner .banner-actions-row > * {
-        width: 100% !important;
     }
 }
 
