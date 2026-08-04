@@ -11,10 +11,41 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'signin' }) {
   const navigate = useNavigate();
   const [isSignUp, setIsSignUp] = useState(false);
 
+  const resetModalState = () => {
+    setStep(1);
+    setShowPassword(false);
+    setFormData({
+      name: '',
+      email: '',
+      phone: '',
+      country: 'Ghana',
+      region: 'Greater Accra',
+      password: '',
+      confirmPassword: '',
+      verification_method: 'email'
+    });
+    setLoading(false);
+    setError('');
+    setVerificationStep(false);
+    setVerificationCode('');
+    setTempUser(null);
+    setIsForgotPassword(false);
+    setForgotPasswordEmail('');
+    setForgotPasswordMethod('email');
+    setForgotPasswordStatus({ type: '', message: '' });
+    setResetStep(1);
+    setResendCooldown(0);
+    setResetOtp('');
+    setNewResetPassword('');
+    setConfirmResetPassword('');
+    setIsRecoveryMode(false);
+    setRecoveryEmail('');
+  };
+
   useEffect(() => {
     if (isOpen) {
+      resetModalState();
       setIsSignUp(initialMode === 'signup');
-      setStep(1);
     }
   }, [isOpen, initialMode]);
 
@@ -161,6 +192,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'signin' }) {
         setError(response.message || 'Recovery failed. Please try again.');
       }
     } catch (err) {
+      console.error('Recovery error:', err);
       setError('Connection error. Please try again.');
     } finally {
       setLoading(false);
@@ -182,6 +214,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'signin' }) {
             setForgotPasswordStatus({ type: 'error', message: response.message || 'Failed to send reset code.' });
         }
     } catch (err) {
+        console.error('Forgot password error:', err);
         setForgotPasswordStatus({ type: 'error', message: 'Connection error. Please try again.' });
     } finally {
         setLoading(false);
@@ -201,7 +234,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'signin' }) {
       }, 1000);
     }
     return () => clearInterval(timer);
-  }, [resendCooldown > 0]);
+  }, [resendCooldown]);
 
   const handleResetPasswordSubmit = async (e) => {
     e.preventDefault();
@@ -238,6 +271,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'signin' }) {
         setForgotPasswordStatus({ type: 'error', message: response.message });
       }
     } catch (err) {
+      console.error('Reset password error:', err);
       setForgotPasswordStatus({ type: 'error', message: 'Connection error. Please try again.' });
     } finally {
       setLoading(false);

@@ -298,11 +298,10 @@ function FlashSaleBanner({ products, onProductClick }) {
       </div>
 
       {/* Timer & Product / Promo CTA side */}
-      <div style={{
+      <div className="banner-actions-row" style={{
         display: 'flex',
         flexWrap: 'wrap',
         alignItems: 'center',
-        gap: '24px',
         zIndex: 1,
         justifyContent: 'flex-start'
       }}>
@@ -433,10 +432,10 @@ function FlashSaleBanner({ products, onProductClick }) {
             background: 'rgba(255, 255, 255, 0.03)',
             border: '1px solid rgba(255, 255, 255, 0.05)',
             borderRadius: '16px',
-            padding: '12px 20px',
+            padding: '8px 14px',
             display: 'flex',
             alignItems: 'center',
-            gap: '8px'
+            gap: '6px'
           }}>
             <IconComponent size={16} color={bannerContent.color} />
             <span style={{ fontSize: '14px', fontWeight: 800, color: bannerContent.color }}>

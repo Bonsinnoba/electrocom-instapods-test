@@ -5466,14 +5466,14 @@ button.btn-login:hover {
 
 @media (max-width: 768px) {
     .flash-sale-banner {
-        padding: 10px 12px;
+        padding: 10px 10px;
         border-radius: 18px;
-        gap: 12px;
-        min-height: 150px;
+        gap: 10px;
+        min-height: 135px;
     }
 
     .flash-sale-banner > div {
-        gap: 8px;
+        gap: 6px;
     }
 
     .flash-sale-banner h2 {
@@ -5514,11 +5514,16 @@ button.btn-login:hover {
         height: 14px;
     }
 
-    .flash-sale-banner > div:last-child {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        align-items: center;
+    .flash-sale-banner .banner-actions-row {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 10px !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+    }
+
+    .flash-sale-banner .banner-actions-row > * {
+        flex: none !important;
     }
 
     .flash-sale-banner .countdown-box {
