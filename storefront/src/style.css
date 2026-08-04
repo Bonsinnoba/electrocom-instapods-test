@@ -5330,8 +5330,8 @@ button.btn-login:hover {
 
 /* Coupon & Promo Form */
 .cart-coupon-wrapper {
-    margin-top: 24px;
-    padding-top: 24px;
+    margin-top: 18px;
+    padding-top: 18px;
     border-top: 1px dashed var(--border-light);
 }
 
@@ -5343,15 +5343,15 @@ button.btn-login:hover {
 
 .cart-coupon-input {
     flex: 1;
-    height: 46px;
-    font-size: 14px;
+    height: 40px;
+    font-size: 13px;
 }
 
 .btn-coupon-apply {
-    padding: 0 20px;
-    height: 46px;
-    font-size: 14px;
-    border-radius: 12px;
+    padding: 0 16px;
+    height: 40px;
+    font-size: 13px;
+    border-radius: 10px;
     white-space: nowrap;
 }
 
@@ -5385,13 +5385,13 @@ button.btn-login:hover {
 
 .btn-checkout-summary {
     width: 100%;
-    padding: 16px;
-    border-radius: 16px;
-    margin-top: 28px;
-    font-size: 16px;
+    padding: 12px;
+    border-radius: 14px;
+    margin-top: 20px;
+    font-size: 15px;
     font-weight: 800;
     transition: all 0.3s ease;
-    box-shadow: 0 8px 24px rgba(var(--primary-blue-rgb), 0.25);
+    box-shadow: 0 8px 20px rgba(var(--primary-blue-rgb), 0.22);
 }
 
 .btn-checkout-summary:hover:not(:disabled) {
@@ -5436,6 +5436,67 @@ button.btn-login:hover {
     position: relative;
     border: 1px solid var(--glass-border);
     box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+}
+
+/* Compact storefront adjustments */
+.flash-sale-banner {
+    padding: 14px 16px;
+    border-radius: 20px;
+    gap: 18px;
+}
+
+.btn-checkout-summary {
+    padding: 10px 12px;
+    border-radius: 12px;
+    font-size: 14px;
+    margin-top: 16px;
+}
+
+.btn-coupon-apply {
+    padding: 0 14px;
+    height: 36px;
+    font-size: 13px;
+}
+
+.cart-coupon-input {
+    height: 36px;
+    font-size: 13px;
+}
+
+@media (max-width: 768px) {
+    .flash-sale-banner {
+        padding: 12px 14px;
+        border-radius: 18px;
+        gap: 14px;
+        min-height: 170px;
+    }
+
+    .flash-sale-banner > div {
+        gap: 10px;
+    }
+
+    .flash-sale-banner h2 {
+        font-size: 18px !important;
+        margin: 0 !important;
+    }
+
+    .flash-sale-banner p {
+        font-size: 12px !important;
+        margin: 0 !important;
+    }
+
+    .flash-sale-banner .banner-cta-button {
+        padding: 0 16px;
+        height: 34px;
+        font-size: 12px;
+        border-radius: 12px;
+    }
+
+    .flash-sale-banner .countdown-box {
+        width: 34px;
+        height: 32px;
+        font-size: 15px;
+    }
 }
 
 .modal-close-btn {
